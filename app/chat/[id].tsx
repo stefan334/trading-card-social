@@ -1,0 +1,108 @@
+import { Stack, useLocalSearchParams } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useAuth } from '../../src/context/AuthContext';
+import { useChatActions } from '../../src/hooks/useChatActions';
+import { useChatThread } from '../../src/hooks/useChatThread';
+import { useThreadMessages, type ChatMessage } from '../../src/hooks/useThreadMessages';
+
+function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
+  return (
+    <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
+      <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
+        <Text style={mine ? styles.mineText : styles.theirsText}>{message.body}</Text>
+      </View>
+    </View>
+  );
+}
+
+/** 1:1 message thread, routed as /chat/[id]. Realtime messages + send + mark-read. */
+export default function ChatThreadScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const { data: meta } = useChatThread(id);
+  const { data: messages, isLoading } = useThreadMessages(id);
+  const { sendMessage, markRead } = useChatActions();
+  const [text, setText] = useState('');
+  const listRef = useRef<FlatList<ChatMessage>>(null);
+
+  // Mark read on open and whenever new messages arrive while the thread is open.
+  useEffect(() => {
+    if (id) markRead.mutate(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, messages?.length]);
+
+  const title = meta?.other?.displayName || meta?.other?.username || 'Chat';
+
+  function handleSend() {
+    if (!id || !text.trim()) return;
+    sendMessage.mutate({ threadId: id, body: text });
+    setText('');
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={90}
+    >
+      <Stack.Screen options={{ title }} />
+
+      {isLoading ? (
+        <ActivityIndicator style={{ marginTop: 24 }} />
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={messages ?? []}
+          keyExtractor={(m) => m.id}
+          renderItem={({ item }) => <Bubble message={item} mine={item.senderId === user?.id} />}
+          contentContainerStyle={styles.list}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          ListEmptyComponent={<Text style={styles.empty}>Say hi 👋</Text>}
+        />
+      )}
+
+      <View style={styles.inputBar}>
+        <TextInput
+          style={styles.input}
+          placeholder="Message…"
+          value={text}
+          onChangeText={setText}
+          multiline
+        />
+        <Pressable style={[styles.send, !text.trim() && styles.sendDisabled]} onPress={handleSend} disabled={!text.trim()}>
+          <Text style={styles.sendText}>Send</Text>
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: 'white' },
+  list: { padding: 12, gap: 6, flexGrow: 1 },
+  empty: { textAlign: 'center', color: '#9CA3AF', marginTop: 40 },
+  bubbleRow: { flexDirection: 'row' },
+  rowMine: { justifyContent: 'flex-end' },
+  rowTheirs: { justifyContent: 'flex-start' },
+  bubble: { maxWidth: '78%', borderRadius: 16, paddingHorizontal: 14, paddingVertical: 9 },
+  mine: { backgroundColor: '#2563EB', borderBottomRightRadius: 4 },
+  theirs: { backgroundColor: '#F3F4F6', borderBottomLeftRadius: 4 },
+  mineText: { color: 'white', fontSize: 15 },
+  theirsText: { color: '#111827', fontSize: 15 },
+  inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 10, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  input: { flex: 1, maxHeight: 120, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, fontSize: 15 },
+  send: { backgroundColor: '#2563EB', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 10 },
+  sendDisabled: { opacity: 0.5 },
+  sendText: { color: 'white', fontWeight: '700' },
+});

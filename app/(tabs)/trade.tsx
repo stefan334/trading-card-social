@@ -1,0 +1,116 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
+import { useAuth } from '../../src/context/AuthContext';
+import { useInbox, type InboxItem } from '../../src/hooks/useInbox';
+import { isSupabaseConfigured } from '../../src/services/supabase/client';
+import type { TradeStatus } from '../../src/types/domain';
+import { formatRelativeTime } from '../../src/utils/time';
+
+const STATUS_COLOR: Record<TradeStatus, string> = {
+  proposed: '#2563EB', countered: '#B45309', accepted: '#0891B2',
+  completed: '#059669', declined: '#6B7280', cancelled: '#6B7280',
+};
+
+function Row({ item }: { item: InboxItem }) {
+  return (
+    <Link href={item.href as any} asChild>
+      <Pressable style={styles.row}>
+        {item.avatarUrl ? (
+          <Image source={{ uri: item.avatarUrl }} style={styles.avatar} />
+        ) : (
+          <Ionicons name="person-circle" size={46} color="#9CA3AF" />
+        )}
+        <View style={{ flex: 1 }}>
+          <View style={styles.titleRow}>
+            <Ionicons
+              name={item.kind === 'trade' ? 'swap-horizontal' : 'chatbubble-ellipses'}
+              size={14}
+              color="#9CA3AF"
+            />
+            <Text style={styles.name}>{item.title}</Text>
+          </View>
+          <Text style={[styles.sub, item.unread > 0 && styles.subUnread]} numberOfLines={1}>
+            {item.subtitle}
+          </Text>
+        </View>
+        <View style={styles.meta}>
+          {item.timestamp ? <Text style={styles.time}>{formatRelativeTime(item.timestamp)}</Text> : null}
+          {item.kind === 'trade' && item.status ? (
+            <Text style={[styles.status, { color: STATUS_COLOR[item.status] }]}>{item.status}</Text>
+          ) : null}
+          {item.needsAction ? <View style={styles.actionDot} /> : null}
+          {item.unread > 0 ? (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{item.unread > 9 ? '9+' : item.unread}</Text>
+            </View>
+          ) : null}
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
+
+/** Inbox tab: trades + direct messages in one place (see useInbox). */
+export default function InboxScreen() {
+  const { user } = useAuth();
+  const { items, isLoading } = useInbox();
+
+  if (!isSupabaseConfigured) {
+    return (
+      <View style={styles.container}>
+        <SupabaseSetupNotice />
+      </View>
+    );
+  }
+  if (!user) return <Text style={styles.muted}>Sign in to see your trades and messages.</Text>;
+  if (isLoading) return <ActivityIndicator style={{ marginTop: 24 }} />;
+
+  if (!items.length) {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyTitle}>Nothing here yet</Text>
+        <Text style={styles.muted}>
+          Open a collector's profile to propose a trade or send a message — they'll show up here.
+        </Text>
+        <Link href="/search?mode=users" asChild>
+          <Pressable style={styles.findButton}>
+            <Text style={styles.findText}>Find collectors</Text>
+          </Pressable>
+        </Link>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={items}
+      keyExtractor={(i) => i.key}
+      renderItem={({ item }) => <Row item={item} />}
+      ItemSeparatorComponent={() => <View style={styles.sep} />}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, paddingTop: 12 },
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  muted: { color: '#6B7280', textAlign: 'center', lineHeight: 20, marginHorizontal: 16 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 },
+  avatar: { width: 46, height: 46, borderRadius: 23 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  name: { fontSize: 15, fontWeight: '700' },
+  sub: { color: '#6B7280', marginTop: 2 },
+  subUnread: { color: '#111827', fontWeight: '600' },
+  meta: { alignItems: 'flex-end', gap: 3 },
+  time: { color: '#9CA3AF', fontSize: 12 },
+  status: { fontWeight: '700', fontSize: 11, textTransform: 'capitalize' },
+  actionDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#DC2626' },
+  badge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeText: { color: 'white', fontSize: 11, fontWeight: '700' },
+  sep: { height: 1, backgroundColor: '#F3F4F6', marginLeft: 72 },
+  findButton: { marginTop: 20, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
+  findText: { color: 'white', fontWeight: '700' },
+});

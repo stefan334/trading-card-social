@@ -1,0 +1,184 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { DraggableGrid } from 'react-native-draggable-grid';
+import { useBinder } from '../../../src/hooks/useBinder';
+import { useBinderActions } from '../../../src/hooks/useBinderActions';
+import { useCardSearch } from '../../../src/hooks/useCardSearch';
+import { useDebouncedValue } from '../../../src/hooks/useDebouncedValue';
+import { getProvider, listProviders } from '../../../src/services/tcg-providers';
+
+/** Binder editor, routed as /binder/edit/[id]: rename, add cards (search), remove, delete. */
+export default function BinderEditScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+  const { data: binder, isLoading } = useBinder(id);
+  const { rename, remove, addCard, removeCard, reorder, setCover } = useBinderActions();
+  const gameId = listProviders()[0]?.gameId ?? 'pokemon';
+
+  const [name, setName] = useState('');
+  const [query, setQuery] = useState('');
+  const debounced = useDebouncedValue(query);
+  const { data: results, isLoading: searching } = useCardSearch(debounced, gameId);
+  const [addingId, setAddingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (binder && !name) setName(binder.name);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [binder]);
+
+  if (isLoading || !binder) return <ActivityIndicator style={{ marginTop: 40 }} />;
+
+  const inBinder = new Set(binder.cards.map((c) => c.cardId));
+
+  async function addFromSearch(cardId: string) {
+    const card = results?.find((c) => c.id === cardId);
+    if (!card || !id) return;
+    setAddingId(cardId);
+    try {
+      const set = await getProvider(card.gameId).getSet(card.setId);
+      await addCard.mutateAsync({ binderId: id, card, set, position: binder!.cards.length });
+    } finally {
+      setAddingId(null);
+    }
+  }
+
+  async function deleteBinder() {
+    if (!id) return;
+    await remove.mutateAsync(id);
+    router.back();
+  }
+
+  // DraggableGrid needs each item to carry a stable `key`.
+  const gridData = binder.cards.map((c) => ({ ...c, key: c.binderCardId }));
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+      <Text style={styles.label}>Binder name</Text>
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        onBlur={() => name.trim() && name !== binder.name && rename.mutate({ binderId: binder.id, name })}
+      />
+
+      <Text style={styles.label}>Cards in this binder ({binder.cards.length})</Text>
+      <Text style={styles.hint}>Hold and drag to reorder · ★ sets the cover</Text>
+      {binder.cards.length === 0 ? (
+        <Text style={styles.muted}>Search below to add cards from any set.</Text>
+      ) : (
+        <View style={styles.gridWrap}>
+          <DraggableGrid
+            numColumns={3}
+            itemHeight={150}
+            data={gridData}
+            onDragRelease={(newData) =>
+              reorder.mutate({ binderId: binder.id, orderedIds: newData.map((d) => d.binderCardId) })
+            }
+            renderItem={(item) => {
+              const isCover = binder.coverCardId ? binder.coverCardId === item.cardId : item.position === 0;
+              return (
+                <View style={styles.tile} key={item.key}>
+                  {item.imageUrlSmall ? (
+                    <Image source={{ uri: item.imageUrlSmall }} style={styles.tileImg} />
+                  ) : (
+                    <View style={[styles.tileImg, styles.placeholder]} />
+                  )}
+                  <Pressable
+                    style={styles.coverBadge}
+                    hitSlop={6}
+                    onPress={() => setCover.mutate({ binderId: binder.id, cardId: item.cardId })}
+                  >
+                    <Ionicons name={isCover ? 'star' : 'star-outline'} size={16} color={isCover ? '#F59E0B' : 'white'} />
+                  </Pressable>
+                  <Pressable
+                    style={styles.removeBadge}
+                    hitSlop={6}
+                    onPress={() => removeCard.mutate({ binderCardId: item.binderCardId, binderId: binder.id })}
+                  >
+                    <Ionicons name="close" size={14} color="white" />
+                  </Pressable>
+                </View>
+              );
+            }}
+          />
+        </View>
+      )}
+
+      <Text style={styles.label}>Add cards</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Search cards by name"
+        autoCapitalize="none"
+        value={query}
+        onChangeText={setQuery}
+      />
+      {searching ? (
+        <ActivityIndicator style={{ marginTop: 12 }} />
+      ) : (
+        <FlatList
+          data={results ?? []}
+          keyExtractor={(c) => c.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.resultsRow}
+          renderItem={({ item }) => {
+            const already = inBinder.has(item.id);
+            return (
+              <Pressable style={styles.result} onPress={() => !already && addFromSearch(item.id)} disabled={already}>
+                {item.imageUrlSmall ? (
+                  <Image source={{ uri: item.imageUrlSmall }} style={[styles.cardImg, already && styles.dim]} />
+                ) : (
+                  <View style={[styles.cardImg, styles.placeholder]} />
+                )}
+                {addingId === item.id ? (
+                  <View style={styles.addOverlay}><ActivityIndicator color="white" /></View>
+                ) : already ? (
+                  <View style={styles.addOverlay}><Ionicons name="checkmark-circle" size={22} color="#059669" /></View>
+                ) : null}
+              </Pressable>
+            );
+          }}
+        />
+      )}
+
+      <Pressable style={styles.deleteBtn} onPress={deleteBinder} disabled={remove.isPending}>
+        <Text style={styles.deleteText}>Delete binder</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  label: { fontSize: 15, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 4 },
+  hint: { color: '#9CA3AF', fontSize: 12, marginHorizontal: 16, marginBottom: 8 },
+  muted: { color: '#6B7280', marginHorizontal: 16 },
+  input: {
+    marginHorizontal: 16, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10, fontSize: 15,
+  },
+  gridWrap: { paddingHorizontal: 12 },
+  tile: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 5 },
+  tileImg: { width: '92%', aspectRatio: 0.71, borderRadius: 6 },
+  coverBadge: { position: 'absolute', top: 8, left: 10, backgroundColor: '#00000066', borderRadius: 12, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  removeBadge: { position: 'absolute', top: 8, right: 10, backgroundColor: '#DC2626', borderRadius: 12, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
+  cardImg: { width: 70, height: 98, borderRadius: 6 },
+  placeholder: { backgroundColor: '#E5E7EB' },
+  dim: { opacity: 0.4 },
+  resultsRow: { paddingHorizontal: 16, gap: 8 },
+  result: { width: 70 },
+  addOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { margin: 16, marginTop: 32, borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  deleteText: { color: '#DC2626', fontWeight: '700' },
+});
