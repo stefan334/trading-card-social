@@ -7,6 +7,7 @@ import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { useUserSearch } from '../src/hooks/useUserSearch';
 import { listProviders } from '../src/services/tcg-providers';
+import { formatPrice } from '../src/utils/time';
 
 type Mode = 'cards' | 'users';
 
@@ -81,6 +82,9 @@ export default function SearchScreen() {
                 <Text numberOfLines={1} style={styles.cardName}>
                   {item.name}
                 </Text>
+                {item.market?.average != null ? (
+                  <Text style={styles.cardPrice}>{formatPrice(item.market.average, item.market.currency)}</Text>
+                ) : null}
               </Pressable>
             </Link>
           )}
@@ -136,6 +140,7 @@ const styles = StyleSheet.create({
   cardImage: { width: '100%', aspectRatio: 0.71, borderRadius: 6 },
   placeholder: { backgroundColor: '#E5E7EB' },
   cardName: { fontSize: 12, marginTop: 4 },
+  cardPrice: { fontSize: 12, fontWeight: '700', color: '#059669', marginTop: 1 },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
   userAvatar: { width: 44, height: 44, borderRadius: 22 },
   userName: { fontWeight: '700', fontSize: 15 },

@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { Image } from 'expo-image';
 import { useOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { getProvider } from '../../src/services/tcg-providers';
+import { formatPrice } from '../../src/utils/time';
 
 /**
  * Set completion screen, routed as /set/[id]. Shows every card in the set (live
@@ -65,6 +66,9 @@ export default function SetDetailScreen() {
                 <View style={[styles.cardImage, styles.placeholder]} />
               )}
               <Text style={styles.cardNumber}>#{item.number}</Text>
+              {item.market?.average != null ? (
+                <Text style={styles.cardPrice}>{formatPrice(item.market.average, item.market.currency)}</Text>
+              ) : null}
             </Pressable>
           </Link>
         );
@@ -88,4 +92,5 @@ const styles = StyleSheet.create({
   dimmed: { opacity: 0.25 },
   placeholder: { backgroundColor: '#E5E7EB' },
   cardNumber: { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  cardPrice: { fontSize: 11, fontWeight: '700', color: '#059669' },
 });

@@ -140,8 +140,9 @@ export const pokemonProvider: TcgProvider = {
       page,
       pageSize,
       orderBy: 'number',
-      // List views don't need prices/attacks/etc — fetch only what we show.
-      select: 'id,name,number,rarity,images,set',
+      // Fetch prices for list views too (so cards show a price while browsing),
+      // but still skip the big fields (attacks, rules, flavor text) for speed.
+      select: 'id,name,number,rarity,images,set,cardmarket,tcgplayer',
     });
 
     return {
