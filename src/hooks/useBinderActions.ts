@@ -67,6 +67,21 @@ export function useBinderActions() {
     },
   });
 
+  // Add a card the user already owns (already in the catalog, so no cache_card).
+  const addOwnedCard = useMutation({
+    mutationFn: async ({ binderId, cardId, position }: { binderId: string; cardId: string; position: number }) => {
+      if (!supabase) throw new Error('Not signed in.');
+      const { error } = await supabase
+        .from('binder_cards')
+        .upsert({ binder_id: binderId, card_id: cardId, position }, { onConflict: 'binder_id,card_id', ignoreDuplicates: true });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ['binder', v.binderId] });
+      qc.invalidateQueries({ queryKey: ['binders', meId] });
+    },
+  });
+
   const removeCard = useMutation({
     mutationFn: async ({ binderCardId }: { binderCardId: string; binderId: string }) => {
       if (!supabase) throw new Error('Not signed in.');
@@ -106,6 +121,6 @@ export function useBinderActions() {
     },
   });
 
-  return { create, rename, remove, addCard, removeCard, reorder, setCover };
+  return { create, rename, remove, addCard, addOwnedCard, removeCard, reorder, setCover };
 }
 

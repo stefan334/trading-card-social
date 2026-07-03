@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BindersRow } from '../../src/components/BindersRow';
@@ -28,25 +29,28 @@ export default function UserProfileScreen() {
 
   const actions = canFollow ? (
     <View style={{ gap: 10 }}>
-      <Pressable
-        style={[styles.button, isFollowing && styles.following]}
-        onPress={toggle}
-        disabled={toggling}
-      >
-        <Text style={[styles.buttonText, isFollowing && styles.followingText]}>
-          {isFollowing ? 'Following' : 'Follow'}
-        </Text>
-      </Pressable>
       <View style={styles.actionRow}>
+        <Pressable
+          style={[styles.button, styles.flex, isFollowing ? styles.following : styles.followBtn]}
+          onPress={toggle}
+          disabled={toggling}
+        >
+          <Ionicons name={isFollowing ? 'checkmark' : 'person-add'} size={16} color={isFollowing ? '#374151' : 'white'} />
+          <Text style={[styles.buttonText, isFollowing && styles.followingText]}>
+            {isFollowing ? 'Following' : 'Follow'}
+          </Text>
+        </Pressable>
         <Pressable style={[styles.button, styles.flex, styles.messageButton]} onPress={message} disabled={startThread.isPending}>
+          <Ionicons name="chatbubble-ellipses" size={16} color="#2563EB" />
           <Text style={[styles.buttonText, styles.messageText]}>Message</Text>
         </Pressable>
-        <Link href={`/trade/new?with=${id}`} asChild>
-          <Pressable style={[styles.button, styles.flex, styles.tradeButton]}>
-            <Text style={styles.buttonText}>Propose Trade</Text>
-          </Pressable>
-        </Link>
       </View>
+      <Link href={`/trade/new?with=${id}`} asChild>
+        <Pressable style={[styles.button, styles.tradeButton]}>
+          <Ionicons name="swap-horizontal" size={18} color="white" />
+          <Text style={styles.buttonText}>Propose Trade</Text>
+        </Pressable>
+      </Link>
     </View>
   ) : undefined;
 
@@ -73,13 +77,15 @@ export default function UserProfileScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, marginTop: 40, textAlign: 'center' },
   button: {
-    backgroundColor: '#2563EB',
+    flexDirection: 'row',
+    gap: 6,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#2563EB',
   },
+  followBtn: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
   following: { backgroundColor: '#F3F4F6', borderColor: '#D1D5DB' },
   buttonText: { color: 'white', fontWeight: '700', fontSize: 15 },
   followingText: { color: '#374151' },

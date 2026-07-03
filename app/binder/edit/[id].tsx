@@ -1,36 +1,24 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { DraggableGrid } from 'react-native-draggable-grid';
+import { useAuth } from '../../../src/context/AuthContext';
 import { useBinder } from '../../../src/hooks/useBinder';
 import { useBinderActions } from '../../../src/hooks/useBinderActions';
-import { useCardSearch } from '../../../src/hooks/useCardSearch';
-import { useDebouncedValue } from '../../../src/hooks/useDebouncedValue';
-import { getProvider, listProviders } from '../../../src/services/tcg-providers';
+import { useOwnedCards } from '../../../src/hooks/useOwnedCards';
 
-/** Binder editor, routed as /binder/edit/[id]: rename, add cards (search), remove, delete. */
+/** Binder editor, routed as /binder/edit/[id]: rename, add cards you own, reorder, remove, delete. */
 export default function BinderEditScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const { data: binder, isLoading } = useBinder(id);
-  const { rename, remove, addCard, removeCard, reorder, setCover } = useBinderActions();
-  const gameId = listProviders()[0]?.gameId ?? 'pokemon';
+  const { data: owned } = useOwnedCards(user?.id);
+  const { rename, remove, addOwnedCard, removeCard, reorder, setCover } = useBinderActions();
 
   const [name, setName] = useState('');
-  const [query, setQuery] = useState('');
-  const debounced = useDebouncedValue(query);
-  const { data: results, isLoading: searching } = useCardSearch(debounced, gameId);
   const [addingId, setAddingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,13 +30,11 @@ export default function BinderEditScreen() {
 
   const inBinder = new Set(binder.cards.map((c) => c.cardId));
 
-  async function addFromSearch(cardId: string) {
-    const card = results?.find((c) => c.id === cardId);
-    if (!card || !id) return;
+  async function addOwned(cardId: string) {
+    if (!id) return;
     setAddingId(cardId);
     try {
-      const set = await getProvider(card.gameId).getSet(card.setId);
-      await addCard.mutateAsync({ binderId: id, card, set, position: binder!.cards.length });
+      await addOwnedCard.mutateAsync({ binderId: id, cardId, position: binder!.cards.length });
     } finally {
       setAddingId(null);
     }
@@ -116,33 +102,26 @@ export default function BinderEditScreen() {
         </View>
       )}
 
-      <Text style={styles.label}>Add cards</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Search cards by name"
-        autoCapitalize="none"
-        value={query}
-        onChangeText={setQuery}
-      />
-      {searching ? (
-        <ActivityIndicator style={{ marginTop: 12 }} />
+      <Text style={styles.label}>Add from your collection</Text>
+      {!owned?.length ? (
+        <Text style={styles.muted}>You don't own any cards yet — add some from the Collection tab first.</Text>
       ) : (
         <FlatList
-          data={results ?? []}
-          keyExtractor={(c) => c.id}
+          data={owned}
+          keyExtractor={(c) => c.userCardId}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.resultsRow}
           renderItem={({ item }) => {
-            const already = inBinder.has(item.id);
+            const already = inBinder.has(item.cardId);
             return (
-              <Pressable style={styles.result} onPress={() => !already && addFromSearch(item.id)} disabled={already}>
+              <Pressable style={styles.result} onPress={() => !already && addOwned(item.cardId)} disabled={already}>
                 {item.imageUrlSmall ? (
                   <Image source={{ uri: item.imageUrlSmall }} style={[styles.cardImg, already && styles.dim]} />
                 ) : (
                   <View style={[styles.cardImg, styles.placeholder]} />
                 )}
-                {addingId === item.id ? (
+                {addingId === item.cardId ? (
                   <View style={styles.addOverlay}><ActivityIndicator color="white" /></View>
                 ) : already ? (
                   <View style={styles.addOverlay}><Ionicons name="checkmark-circle" size={22} color="#059669" /></View>

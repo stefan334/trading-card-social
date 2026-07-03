@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import type { CollectionSetGroup } from '../hooks/useCollectionBySet';
 
 function SetGroup({ group }: { group: CollectionSetGroup }) {

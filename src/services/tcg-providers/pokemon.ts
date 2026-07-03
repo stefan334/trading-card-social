@@ -119,6 +119,8 @@ export const pokemonProvider: TcgProvider = {
     const data = await apiFetch<{ data: PokemonApiSet[] }>('/sets', {
       q: query ? `name:"*${query}*"` : undefined,
       orderBy: '-releaseDate',
+      // Only fetch fields we render — shrinks the payload and speeds the response.
+      select: 'id,name,series,releaseDate,total,images',
     });
     return data.data.map(mapSet);
   },
@@ -138,6 +140,8 @@ export const pokemonProvider: TcgProvider = {
       page,
       pageSize,
       orderBy: 'number',
+      // List views don't need prices/attacks/etc — fetch only what we show.
+      select: 'id,name,number,rarity,images,set',
     });
 
     return {

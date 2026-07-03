@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { useAuth } from '../../src/context/AuthContext';
@@ -70,7 +71,7 @@ export default function CollectionScreen() {
         sets?.map((item) => (
           <Link key={item.id} href={`/set/${encodeURIComponent(item.id)}`} asChild>
             <Pressable style={styles.setRow}>
-              {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.setLogo} resizeMode="contain" />}
+              {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.setLogo} contentFit="contain" />}
               <View style={{ flex: 1 }}>
                 <Text style={styles.setName}>{item.name}</Text>
                 <Text style={styles.muted}>

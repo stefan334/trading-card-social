@@ -1,5 +1,6 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, Dimensions, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useAuth } from '../../src/context/AuthContext';
 import { useBinder } from '../../src/hooks/useBinder';
 
@@ -54,7 +55,7 @@ export default function BinderViewerScreen() {
             <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
               <Pressable style={styles.page}>
                 {item.imageUrlLarge ? (
-                  <Image source={{ uri: item.imageUrlLarge }} style={styles.card} resizeMode="contain" />
+                  <Image source={{ uri: item.imageUrlLarge }} style={styles.card} contentFit="contain" />
                 ) : (
                   <View style={[styles.card, styles.placeholder]} />
                 )}

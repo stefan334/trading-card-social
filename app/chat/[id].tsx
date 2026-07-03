@@ -1,3 +1,4 @@
+import { useHeaderHeight } from '@react-navigation/elements';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -35,6 +36,7 @@ export default function ChatThreadScreen() {
   const { sendMessage, markRead } = useChatActions();
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const headerHeight = useHeaderHeight();
 
   // Mark read on open and whenever new messages arrive while the thread is open.
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function ChatThreadScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
+      keyboardVerticalOffset={headerHeight}
     >
       <Stack.Screen options={{ title }} />
 

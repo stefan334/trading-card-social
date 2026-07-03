@@ -1,16 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCardOwnership } from '../../src/hooks/useCardOwnership';
@@ -68,7 +60,7 @@ export default function CardDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {card.imageUrlLarge && <Image source={{ uri: card.imageUrlLarge }} style={styles.image} resizeMode="contain" />}
+      {card.imageUrlLarge && <Image source={{ uri: card.imageUrlLarge }} style={styles.image} contentFit="contain" />}
       <Text style={styles.name}>{card.name}</Text>
       <Text style={styles.meta}>
         #{card.number}

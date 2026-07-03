@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { getProvider } from '../../src/services/tcg-providers';
 
@@ -41,7 +42,7 @@ export default function SetDetailScreen() {
       contentContainerStyle={styles.container}
       ListHeaderComponent={
         <View style={styles.header}>
-          {set?.imageUrl && <Image source={{ uri: set.imageUrl }} style={styles.logo} resizeMode="contain" />}
+          {set?.imageUrl && <Image source={{ uri: set.imageUrl }} style={styles.logo} contentFit="contain" />}
           <Text style={styles.setName}>{set?.name ?? 'Set'}</Text>
           {set?.series ? <Text style={styles.series}>{set.series}</Text> : null}
           <Text style={styles.count}>

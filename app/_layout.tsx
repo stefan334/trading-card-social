@@ -5,7 +5,19 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../src/context/AuthContext';
 import { useProtectedRoute } from '../src/hooks/useProtectedRoute';
 
-const queryClient = new QueryClient();
+// Cache aggressively: the Pokémon TCG API is slow, so keep fetched data "fresh"
+// for a while and serve it instantly from cache on revisit (pull-to-refresh and
+// mutations still update it). Big perceived-speed win across the app.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 min — don't refetch on every screen focus
+      gcTime: 1000 * 60 * 60, // keep unused data an hour
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function RootNavigator() {
   useProtectedRoute();

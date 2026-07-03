@@ -1,18 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useAuth } from '../../src/context/AuthContext';
-import { useForTradeCards, type ForTradeCard } from '../../src/hooks/useForTradeCards';
+import { useOwnedCards, type OwnedCard } from '../../src/hooks/useOwnedCards';
 import { useProfile } from '../../src/hooks/useProfile';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
 
@@ -22,15 +14,17 @@ function SelectableCards({
   onToggle,
   emptyText,
 }: {
-  cards: ForTradeCard[];
+  cards: OwnedCard[];
   selected: Set<string>;
   onToggle: (id: string) => void;
   emptyText: string;
 }) {
   if (!cards.length) return <Text style={styles.muted}>{emptyText}</Text>;
+  // For-trade cards first so they're easy to grab.
+  const sorted = [...cards].sort((a, b) => Number(b.isForTrade) - Number(a.isForTrade));
   return (
     <View style={styles.grid}>
-      {cards.map((c) => {
+      {sorted.map((c) => {
         const isSel = selected.has(c.userCardId);
         return (
           <Pressable key={c.userCardId} style={styles.tile} onPress={() => onToggle(c.userCardId)}>
@@ -38,6 +32,11 @@ function SelectableCards({
               <Image source={{ uri: c.imageUrlSmall }} style={[styles.cardImage, isSel && styles.selected]} />
             ) : (
               <View style={[styles.cardImage, styles.placeholder, isSel && styles.selected]} />
+            )}
+            {c.isForTrade && (
+              <View style={styles.tradeBadge}>
+                <Text style={styles.tradeBadgeText}>Trade</Text>
+              </View>
             )}
             {isSel && (
               <View style={styles.check}>
@@ -57,8 +56,8 @@ export default function NewTradeScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const { data: theirCards, isLoading: theirLoading } = useForTradeCards(withId);
-  const { data: myCards, isLoading: myLoading } = useForTradeCards(user?.id);
+  const { data: theirCards, isLoading: theirLoading } = useOwnedCards(withId);
+  const { data: myCards, isLoading: myLoading } = useOwnedCards(user?.id);
   const { data: theirProfile } = useProfile(withId);
   const { propose } = useTradeActions();
 
@@ -99,19 +98,21 @@ export default function NewTradeScreen() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
       <Text style={styles.section}>You want from {theirName}</Text>
+      <Text style={styles.hint}>Their cards — “Trade” = they've listed it as available.</Text>
       <SelectableCards
         cards={theirCards ?? []}
         selected={wantIds}
         onToggle={(id) => toggle(setWantIds, id)}
-        emptyText={`${theirName} has no cards marked for trade.`}
+        emptyText={`${theirName} has no cards in their collection yet.`}
       />
 
       <Text style={styles.section}>You give</Text>
+      <Text style={styles.hint}>Any of your cards — “Trade” = you've listed it as available.</Text>
       <SelectableCards
         cards={myCards ?? []}
         selected={giveIds}
         onToggle={(id) => toggle(setGiveIds, id)}
-        emptyText="You have no cards marked for trade. Open a card you own and toggle “For trade”."
+        emptyText="You don't own any cards yet."
       />
 
       <Text style={styles.section}>Note (optional)</Text>
@@ -141,7 +142,8 @@ export default function NewTradeScreen() {
 }
 
 const styles = StyleSheet.create({
-  section: { fontSize: 16, fontWeight: '700', marginTop: 20, marginBottom: 10 },
+  section: { fontSize: 16, fontWeight: '700', marginTop: 20, marginBottom: 2 },
+  hint: { color: '#9CA3AF', fontSize: 12, marginBottom: 10 },
   muted: { color: '#6B7280' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tile: { width: 76 },
@@ -149,6 +151,8 @@ const styles = StyleSheet.create({
   placeholder: { backgroundColor: '#E5E7EB' },
   selected: { borderWidth: 3, borderColor: '#2563EB' },
   check: { position: 'absolute', top: 2, right: 2, backgroundColor: 'white', borderRadius: 10 },
+  tradeBadge: { position: 'absolute', bottom: 2, left: 2, backgroundColor: '#059669', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
+  tradeBadgeText: { color: 'white', fontSize: 9, fontWeight: '700' },
   note: {
     borderWidth: 1,
     borderColor: '#D1D5DB',

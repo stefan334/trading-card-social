@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import {
   useMarkNotificationsRead,
   useNotifications,
@@ -100,7 +101,7 @@ export default function NotificationsScreen() {
       data={items}
       keyExtractor={(n) => n.id}
       renderItem={({ item }) => <NotificationRow item={item} />}
-      ItemSeparatorComponent={() => <View style={styles.sep} />}
+      contentContainerStyle={styles.listContent}
     />
   );
 }
@@ -109,13 +110,29 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { fontSize: 16, fontWeight: '700' },
   emptyMuted: { color: '#6B7280', textAlign: 'center', marginTop: 6, lineHeight: 20 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
-  unread: { backgroundColor: '#EFF6FF' },
+  listContent: { padding: 12, gap: 10 },
+  // Each notification is its own card, with breathing room from the screen edges.
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'white',
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  unread: { borderColor: '#BFDBFE', backgroundColor: '#F5F9FF' },
   iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   body: { fontSize: 15, lineHeight: 21, color: '#374151' },
   name: { fontWeight: '700', color: '#111827' },
   time: { color: '#9CA3AF', fontSize: 12, marginTop: 3 },
-  cardThumb: { width: 38, height: 53, borderRadius: 4 },
+  cardThumb: { width: 40, height: 56, borderRadius: 5 },
   unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#2563EB' },
-  sep: { height: 1, backgroundColor: '#F3F4F6', marginLeft: 68 },
 });

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import type { FeedPost } from '../hooks/useFeed';
 import { formatRelativeTime } from '../utils/time';
 
@@ -45,7 +46,7 @@ export function PostCard({ post }: { post: FeedPost }) {
           </Pressable>
         </Link>
       ) : post.imageUrl ? (
-        <Image source={{ uri: post.imageUrl }} style={styles.attachment} resizeMode="cover" />
+        <Image source={{ uri: post.imageUrl }} style={styles.attachment} contentFit="cover" />
       ) : null}
     </View>
   );
