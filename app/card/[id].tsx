@@ -21,6 +21,8 @@ const CONDITION_LABEL: Record<CardCondition, string> = {
   played: 'Played',
   poor: 'Poor',
 };
+const GRADERS = ['PSA', 'BGS', 'CGC', 'SGC'];
+const GRADE_VALUES = ['10', '9.5', '9', '8.5', '8', '7', '6'];
 
 /** One owned copy: condition + for-trade toggle + (when listed) an asking price. */
 function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
@@ -37,7 +39,15 @@ function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
   return (
     <View style={styles.copyBlock}>
       <View style={styles.copyRow}>
-        <Text style={styles.copyLabel}>{copy.condition ? CONDITION_LABEL[copy.condition] : 'Unspecified'}</Text>
+        <Text style={styles.copyLabel}>
+          {copy.grade ? (
+            <Text style={styles.gradeBadge}>{copy.grade}</Text>
+          ) : copy.condition ? (
+            CONDITION_LABEL[copy.condition]
+          ) : (
+            'Unspecified'
+          )}
+        </Text>
         <View style={styles.tradeToggle}>
           <Text style={styles.tradeText}>For trade</Text>
           <Switch
@@ -90,6 +100,9 @@ export default function CardDetailScreen() {
   const { data: wishlisted } = useIsWishlisted(id);
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
   const [condition, setCondition] = useState<CardCondition>('near_mint');
+  const [graded, setGraded] = useState(false);
+  const [grader, setGrader] = useState('PSA');
+  const [gradeValue, setGradeValue] = useState('10');
 
   if (isLoading) return <ActivityIndicator style={styles.center} />;
   if (error || !card) return <Text style={styles.center}>Failed to load card.</Text>;
@@ -145,29 +158,55 @@ export default function CardDetailScreen() {
       ) : (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Add to collection</Text>
-          <View style={styles.chips}>
-            {CONDITIONS.map((c) => {
-              const selected = c === condition;
-              return (
-                <Pressable
-                  key={c}
-                  style={[styles.chip, selected && styles.chipSelected]}
-                  onPress={() => setCondition(c)}
-                >
-                  <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{CONDITION_LABEL[c]}</Text>
-                </Pressable>
-              );
-            })}
+
+          <View style={styles.segment}>
+            <Pressable style={[styles.segBtn, !graded && styles.segOn]} onPress={() => setGraded(false)}>
+              <Text style={[styles.segText, !graded && styles.segTextOn]}>Raw</Text>
+            </Pressable>
+            <Pressable style={[styles.segBtn, graded && styles.segOn]} onPress={() => setGraded(true)}>
+              <Text style={[styles.segText, graded && styles.segTextOn]}>Graded</Text>
+            </Pressable>
           </View>
+
+          {graded ? (
+            <>
+              <View style={styles.chips}>
+                {GRADERS.map((g) => (
+                  <Pressable key={g} style={[styles.chip, g === grader && styles.chipSelected]} onPress={() => setGrader(g)}>
+                    <Text style={[styles.chipText, g === grader && styles.chipTextSelected]}>{g}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.chips}>
+                {GRADE_VALUES.map((v) => (
+                  <Pressable key={v} style={[styles.chip, v === gradeValue && styles.chipSelected]} onPress={() => setGradeValue(v)}>
+                    <Text style={[styles.chipText, v === gradeValue && styles.chipTextSelected]}>{v}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={styles.chips}>
+              {CONDITIONS.map((c) => {
+                const selected = c === condition;
+                return (
+                  <Pressable key={c} style={[styles.chip, selected && styles.chipSelected]} onPress={() => setCondition(c)}>
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{CONDITION_LABEL[c]}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
           <Pressable
             style={[styles.addButton, (!canAdd || add.isPending) && styles.disabled]}
             disabled={!canAdd || add.isPending}
-            onPress={() => set && add.mutate({ card, set, condition })}
+            onPress={() => set && add.mutate({ card, set, condition, grade: graded ? `${grader} ${gradeValue}` : null })}
           >
             {add.isPending ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.addButtonText}>Add copy ({CONDITION_LABEL[condition]})</Text>
+              <Text style={styles.addButtonText}>Add {graded ? `${grader} ${gradeValue}` : CONDITION_LABEL[condition]} copy</Text>
             )}
           </Pressable>
         </View>
@@ -211,6 +250,12 @@ const styles = StyleSheet.create({
   wishlistTextActive: { color: '#B45309' },
   section: { width: '100%', marginTop: 24 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  segment: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  segBtn: { flex: 1, paddingVertical: 9, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center' },
+  segOn: { backgroundColor: '#2563EB' },
+  segText: { fontWeight: '700', color: '#374151' },
+  segTextOn: { color: 'white' },
+  gradeBadge: { fontWeight: '800', color: '#B45309' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },

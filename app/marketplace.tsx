@@ -25,7 +25,7 @@ function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: numb
           <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
           <Text style={styles.sub}>
             #{item.number}
-            {item.condition ? ` · ${item.condition.replace('_', ' ')}` : ''}
+            {item.grade ? ` · ${item.grade}` : item.condition ? ` · ${item.condition.replace('_', ' ')}` : ''}
           </Text>
           <Link href={`/user/${item.owner?.id}`} style={styles.owner}>
             by {ownerName}

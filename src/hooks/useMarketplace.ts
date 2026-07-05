@@ -10,6 +10,7 @@ export interface MarketListing {
   imageUrlSmall: string | null;
   gameId: string;
   condition: string | null;
+  grade: string | null;
   salePrice: number | null; // asking cash price (EUR); null = open to card trades
   owner: { id: string; username: string; displayName: string | null; avatarUrl: string | null } | null;
 }
@@ -30,7 +31,7 @@ export function useMarketplace(gameId: string, search: string) {
       const { data, error } = await supabase!
         .from('user_cards')
         .select(
-          'id, condition, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id), owner:profiles(id, username, display_name, avatar_url)'
+          'id, condition, grade, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id), owner:profiles(id, username, display_name, avatar_url)'
         )
         .eq('is_for_trade', true)
         .order('acquired_at', { ascending: false })
@@ -46,6 +47,7 @@ export function useMarketplace(gameId: string, search: string) {
           imageUrlSmall: r.card.image_url_small,
           gameId: r.card.game_id,
           condition: r.condition,
+          grade: r.grade,
           salePrice: r.sale_price != null ? Number(r.sale_price) : null,
           owner: r.owner
             ? { id: r.owner.id, username: r.owner.username, displayName: r.owner.display_name, avatarUrl: r.owner.avatar_url }

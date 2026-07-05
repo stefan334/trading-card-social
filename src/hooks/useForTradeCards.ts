@@ -8,6 +8,7 @@ export interface ForTradeCard {
   number: string;
   imageUrlSmall: string | null;
   condition: string | null;
+  grade: string | null;
   salePrice: number | null; // asking cash price (EUR); null = open to card trades
 }
 
@@ -19,7 +20,7 @@ export function useForTradeCards(userId: string | undefined) {
     queryFn: async (): Promise<ForTradeCard[]> => {
       const { data, error } = await supabase!
         .from('user_cards')
-        .select('id, condition, sale_price, card:cards(id, name, number, image_url_small)')
+        .select('id, condition, grade, sale_price, card:cards(id, name, number, image_url_small)')
         .eq('owner_id', userId!)
         .eq('is_for_trade', true);
       if (error) throw error;
@@ -30,6 +31,7 @@ export function useForTradeCards(userId: string | undefined) {
         number: r.card.number,
         imageUrlSmall: r.card.image_url_small,
         condition: r.condition,
+        grade: r.grade,
         salePrice: r.sale_price != null ? Number(r.sale_price) : null,
       }));
     },

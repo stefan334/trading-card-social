@@ -26,6 +26,11 @@ export function ForTradeShowcase({ userId }: { userId: string }) {
               ) : (
                 <View style={[styles.img, styles.placeholder]} />
               )}
+              {c.grade ? (
+                <View style={styles.gradeBadge}>
+                  <Text style={styles.gradeText}>{c.grade}</Text>
+                </View>
+              ) : null}
               <Text style={styles.price} numberOfLines={1}>
                 {c.salePrice != null ? formatPrice(c.salePrice, 'EUR') : 'Open to trades'}
               </Text>
@@ -48,4 +53,6 @@ const styles = StyleSheet.create({
   placeholder: { backgroundColor: '#E5E7EB' },
   price: { fontSize: 12, fontWeight: '700', color: '#059669', marginTop: 3 },
   mkt: { fontSize: 10, color: '#9CA3AF' },
+  gradeBadge: { position: 'absolute', top: 4, left: 4, backgroundColor: '#B45309', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1 },
+  gradeText: { color: 'white', fontSize: 10, fontWeight: '800' },
 });
