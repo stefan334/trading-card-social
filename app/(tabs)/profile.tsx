@@ -44,9 +44,9 @@ export default function ProfileScreen() {
             <Text style={styles.buttonText}>Edit profile</Text>
           </Pressable>
         </Link>
-        <Link href="/scan" asChild>
+        <Link href="/add" asChild>
           <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Scan a card</Text>
+            <Text style={styles.buttonText}>Add cards</Text>
           </Pressable>
         </Link>
         <Pressable style={[styles.button, styles.signOut]} onPress={signOut}>

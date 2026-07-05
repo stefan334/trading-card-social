@@ -36,10 +36,10 @@ export default function CollectionScreen() {
             <Text style={styles.searchText}>Search cards by name</Text>
           </Pressable>
         </Link>
-        <Link href="/batch-add" asChild>
-          <Pressable style={styles.batchBtn}>
-            <Ionicons name="albums" size={18} color="white" />
-            <Text style={styles.batchText}>Batch</Text>
+        <Link href="/wishlist" asChild>
+          <Pressable style={styles.wishBtn}>
+            <Ionicons name="star" size={18} color="#F59E0B" />
+            <Text style={styles.wishText}>Wishlist</Text>
           </Pressable>
         </Link>
       </View>
@@ -108,8 +108,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
   },
   searchText: { color: '#9CA3AF', fontSize: 15 },
-  batchBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#2563EB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
-  batchText: { color: 'white', fontWeight: '700' },
+  wishBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#F59E0B', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9 },
+  wishText: { color: '#B45309', fontWeight: '700' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },

@@ -1,8 +1,45 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { Link, Tabs } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useUnreadChatTotal } from '../../src/hooks/useChatThreads';
 import { useUnreadNotificationCount } from '../../src/hooks/useNotifications';
+
+/** Raised, prominent center "+" that opens the Add tab from anywhere. */
+function AddTabButton({ onPress }: BottomTabBarButtonProps) {
+  return (
+    <View style={addBtn.wrap} pointerEvents="box-none">
+      <Pressable
+        onPress={onPress}
+        style={addBtn.btn}
+        android_ripple={{ color: '#1e40af', borderless: true }}
+        accessibilityLabel="Add cards"
+      >
+        <Ionicons name="add" size={30} color="white" />
+      </Pressable>
+    </View>
+  );
+}
+
+const addBtn = StyleSheet.create({
+  wrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  btn: {
+    top: -14,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6,
+  },
+});
 
 /** Top-right of the Feed: notifications bell (with unread badge) + search. */
 function FeedHeaderRight() {
@@ -76,12 +113,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="wishlist"
+        name="add"
         options={{
-          title: 'Wishlist',
-          tabBarIcon: ({ color, size }) => <Ionicons name="star" color={color} size={size} />,
+          title: 'Add cards',
+          tabBarLabel: () => null,
+          tabBarButton: (props) => <AddTabButton {...props} />,
         }}
       />
+      {/* Wishlist stays reachable at /wishlist (via Collection) but is off the tab bar. */}
+      <Tabs.Screen name="wishlist" options={{ title: 'Wishlist', href: null }} />
       <Tabs.Screen
         name="trade"
         options={{

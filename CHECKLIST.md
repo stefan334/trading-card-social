@@ -173,8 +173,11 @@ decisions.
       distance/city; toggle off for everywhere. Traders settle payment/delivery among themselves.
 - [x] **Card grading** (`0015`): raw (condition) or graded (PSA/BGS/CGC/SGC + grade), shown on copies,
       For-Trade showcase, and marketplace listings.
-- [x] **Batch add** (`BatchProvider`, `app/batch-add.tsx`): queue cards via scan (batch mode) + search,
-      pick one condition, "Add all N" → single grouped feed post (open-a-pack flow).
+- [x] **Add cards ("cart" model)** — center **"+" tab** (`app/(tabs)/add.tsx`) reachable from anywhere:
+      search or scan to drop cards into a shared cart (`BatchProvider`), a pinned bottom bar shows the
+      pack, a review sheet picks one condition for the lot and "Add all N" → single grouped feed post.
+      Scanner (`app/scan.tsx`) always feeds the same cart (capture → confirm → next). Single-add is just
+      a cart of one — no separate batch mode. Wishlist moved off the tab bar (Collection → star button).
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)

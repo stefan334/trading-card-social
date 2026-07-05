@@ -40,7 +40,6 @@ function RootNavigator() {
       <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade' }} />
       <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade' }} />
       <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal' }} />
-      <Stack.Screen name="batch-add" options={{ headerShown: true, title: 'Add Cards' }} />
     </Stack>
   );
 }

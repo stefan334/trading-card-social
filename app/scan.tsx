@@ -1,25 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useAuth } from '../src/context/AuthContext';
 import { useBatch } from '../src/context/BatchContext';
 import { useCardSearch } from '../src/hooks/useCardSearch';
-import { useCollectionActions } from '../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { getProvider, listProviders } from '../src/services/tcg-providers';
 import { ocrAvailable, recognizeCard } from '../src/services/ocr';
-import { uploadScan } from '../src/services/supabase/storage';
 import type { Card } from '../src/types/card';
-import type { CardCondition } from '../src/types/domain';
-
-const CONDITIONS: CardCondition[] = ['mint', 'near_mint', 'excellent', 'good', 'played', 'poor'];
-const LABEL: Record<CardCondition, string> = {
-  mint: 'Mint', near_mint: 'Near Mint', excellent: 'Excellent', good: 'Good', played: 'Played', poor: 'Poor',
-};
 
 interface Captured {
   uri: string;
@@ -27,16 +18,14 @@ interface Captured {
 }
 
 /**
- * Camera scan flow (Phase 8 MVP): capture a photo → search/confirm the matching
- * card in the DB → add to collection with the scan photo saved to Storage.
- * Automatic OCR/visual recognition is a future step (V2 — best in a dev build).
+ * Camera scan flow: capture a photo → OCR/search to confirm the matching card →
+ * drop it into the shared "cart" and keep scanning. The Add tab commits the whole
+ * cart at once (one condition for the lot, one grouped feed post), so scanning a
+ * full pack is just capture-confirm-repeat. Set the condition/grade when adding.
  */
 export default function ScanScreen() {
-  const { user } = useAuth();
-  const { batch } = useLocalSearchParams<{ batch?: string }>();
-  const isBatch = batch === '1';
   const router = useRouter();
-  const { items: batchItems, add: addToBatch } = useBatch();
+  const { items: cart, add: addToCart } = useBatch();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
@@ -45,10 +34,7 @@ export default function ScanScreen() {
   const [query, setQuery] = useState('');
   const debounced = useDebouncedValue(query);
   const [selected, setSelected] = useState<Card | null>(null);
-  const [condition, setCondition] = useState<CardCondition>('near_mint');
-  const [added, setAdded] = useState(false);
   const [zoom, setZoom] = useState(0);
-  const [addError, setAddError] = useState<string | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
 
@@ -67,14 +53,11 @@ export default function ScanScreen() {
     enabled: Boolean(selected?.setId),
     queryFn: () => getProvider(gameId).getSet(selected!.setId),
   });
-  const { add } = useCollectionActions();
 
   function reset() {
     setPhoto(null);
     setQuery('');
     setSelected(null);
-    setAdded(false);
-    setAddError(null);
     setDetectedNumber(null);
   }
 
@@ -94,40 +77,11 @@ export default function ScanScreen() {
     }
   }
 
-  // In batch mode, add the confirmed card to the tray and jump back to the camera
-  // for the next one (no per-card save; the batch screen commits them together).
-  function addToBatchAndContinue() {
+  // Drop the confirmed card into the cart and jump back to the camera for the next.
+  function addToCartAndContinue() {
     if (!selected || !set) return;
-    addToBatch(selected, set);
-    setPhoto(null);
-    setSelected(null);
-    setDetectedNumber(null);
-    setQuery('');
-    setAddError(null);
-  }
-
-  async function confirmAdd() {
-    if (isBatch) {
-      addToBatchAndContinue();
-      return;
-    }
-    if (!selected || !set || !user) return;
-    setAddError(null);
-    try {
-      let imageUrl: string | undefined;
-      // Saving the scan photo is best-effort — never block adding the card on it.
-      if (photo?.base64) {
-        try {
-          imageUrl = await uploadScan(photo.base64, user.id);
-        } catch {
-          imageUrl = undefined;
-        }
-      }
-      await add.mutateAsync({ card: selected, set, condition, imageUrl });
-      setAdded(true);
-    } catch (e: any) {
-      setAddError(e?.message ?? 'Could not add the card. Please try again.');
-    }
+    addToCart(selected, set);
+    reset();
   }
 
   // --- Permission gate ---
@@ -143,30 +97,15 @@ export default function ScanScreen() {
     );
   }
 
-  // --- Added confirmation ---
-  if (added && selected) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.successTitle}>Added {selected.name} ✓</Text>
-        <Text style={styles.muted}>It's in your collection.</Text>
-        <Pressable style={styles.primary} onPress={reset}>
-          <Text style={styles.primaryText}>Scan another</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
   // --- Camera ---
   if (!photo) {
     return (
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={zoom} />
         <Text style={styles.hint}>Line the card up and tap to capture.</Text>
-        {isBatch ? (
-          <Pressable style={styles.batchDone} onPress={() => router.back()}>
-            <Text style={styles.batchDoneText}>Done · {batchItems.length} queued</Text>
-          </Pressable>
-        ) : null}
+        <Pressable style={styles.done} onPress={() => router.back()}>
+          <Text style={styles.doneText}>Done{cart.length ? ` · ${cart.length} in cart` : ''}</Text>
+        </Pressable>
         <View style={styles.zoomBar}>
           <Pressable style={styles.zoomBtn} onPress={() => setZoom((z) => Math.max(0, z - 0.1))}>
             <Ionicons name="remove" size={22} color="white" />
@@ -192,22 +131,10 @@ export default function ScanScreen() {
         <Text style={styles.confirmName}>{selected.name}</Text>
         <Text style={styles.muted}>#{selected.number}{set ? ` · ${set.name}` : ''}</Text>
 
-        {!isBatch && (
-          <View style={styles.chips}>
-            {CONDITIONS.map((c) => (
-              <Pressable key={c} style={[styles.chip, c === condition && styles.chipOn]} onPress={() => setCondition(c)}>
-                <Text style={[styles.chipText, c === condition && styles.chipTextOn]}>{LABEL[c]}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
-
-        {addError ? <Text style={styles.error}>{addError}</Text> : null}
-
-        <Pressable style={[styles.primary, (add.isPending || setLoading) && styles.disabled]} onPress={confirmAdd} disabled={add.isPending || setLoading}>
-          {add.isPending || setLoading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>{isBatch ? 'Add to batch & scan next' : 'Add to collection'}</Text>}
+        <Pressable style={[styles.primary, setLoading && styles.disabled]} onPress={addToCartAndContinue} disabled={setLoading}>
+          {setLoading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>Add to cart &amp; scan next</Text>}
         </Pressable>
-        <Pressable onPress={() => { setSelected(null); setAddError(null); }} style={styles.linkBtn}>
+        <Pressable onPress={() => setSelected(null)} style={styles.linkBtn}>
           <Text style={styles.link}>Not this card — search again</Text>
         </Pressable>
       </View>
@@ -273,14 +200,12 @@ const styles = StyleSheet.create({
   zoomBar: { position: 'absolute', bottom: 120, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#00000088', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   zoomBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#ffffff33', alignItems: 'center', justifyContent: 'center' },
   zoomLabel: { color: 'white', fontWeight: '700', minWidth: 42, textAlign: 'center' },
-  batchDone: { position: 'absolute', top: 16, right: 16, backgroundColor: '#059669', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
-  batchDoneText: { color: 'white', fontWeight: '700' },
-  error: { color: '#DC2626', textAlign: 'center' },
+  done: { position: 'absolute', top: 16, right: 16, backgroundColor: '#059669', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
+  doneText: { color: 'white', fontWeight: '700' },
   muted: { color: '#6B7280', textAlign: 'center' },
   primary: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 24, alignItems: 'center' },
   primaryText: { color: 'white', fontWeight: '700', fontSize: 15 },
   disabled: { opacity: 0.5 },
-  successTitle: { fontSize: 20, fontWeight: '800' },
   matchHeader: { flexDirection: 'row', gap: 12, padding: 16, alignItems: 'center' },
   thumb: { width: 60, height: 84, borderRadius: 6 },
   matchTitle: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
@@ -295,9 +220,4 @@ const styles = StyleSheet.create({
   confirmRow: { flexDirection: 'row', gap: 12 },
   confirmImg: { width: 120, height: 168, borderRadius: 8 },
   confirmName: { fontSize: 20, fontWeight: '800', marginTop: 6 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginVertical: 8 },
-  chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  chipOn: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
-  chipText: { color: '#374151', fontWeight: '600', fontSize: 13 },
-  chipTextOn: { color: 'white' },
 });
