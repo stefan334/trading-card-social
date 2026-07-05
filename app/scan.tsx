@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuth } from '../src/context/AuthContext';
+import { useBatch } from '../src/context/BatchContext';
 import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useCollectionActions } from '../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
@@ -31,6 +33,10 @@ interface Captured {
  */
 export default function ScanScreen() {
   const { user } = useAuth();
+  const { batch } = useLocalSearchParams<{ batch?: string }>();
+  const isBatch = batch === '1';
+  const router = useRouter();
+  const { items: batchItems, add: addToBatch } = useBatch();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
@@ -88,7 +94,23 @@ export default function ScanScreen() {
     }
   }
 
+  // In batch mode, add the confirmed card to the tray and jump back to the camera
+  // for the next one (no per-card save; the batch screen commits them together).
+  function addToBatchAndContinue() {
+    if (!selected || !set) return;
+    addToBatch(selected, set);
+    setPhoto(null);
+    setSelected(null);
+    setDetectedNumber(null);
+    setQuery('');
+    setAddError(null);
+  }
+
   async function confirmAdd() {
+    if (isBatch) {
+      addToBatchAndContinue();
+      return;
+    }
     if (!selected || !set || !user) return;
     setAddError(null);
     try {
@@ -140,6 +162,11 @@ export default function ScanScreen() {
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={zoom} />
         <Text style={styles.hint}>Line the card up and tap to capture.</Text>
+        {isBatch ? (
+          <Pressable style={styles.batchDone} onPress={() => router.back()}>
+            <Text style={styles.batchDoneText}>Done · {batchItems.length} queued</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.zoomBar}>
           <Pressable style={styles.zoomBtn} onPress={() => setZoom((z) => Math.max(0, z - 0.1))}>
             <Ionicons name="remove" size={22} color="white" />
@@ -165,18 +192,20 @@ export default function ScanScreen() {
         <Text style={styles.confirmName}>{selected.name}</Text>
         <Text style={styles.muted}>#{selected.number}{set ? ` · ${set.name}` : ''}</Text>
 
-        <View style={styles.chips}>
-          {CONDITIONS.map((c) => (
-            <Pressable key={c} style={[styles.chip, c === condition && styles.chipOn]} onPress={() => setCondition(c)}>
-              <Text style={[styles.chipText, c === condition && styles.chipTextOn]}>{LABEL[c]}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {!isBatch && (
+          <View style={styles.chips}>
+            {CONDITIONS.map((c) => (
+              <Pressable key={c} style={[styles.chip, c === condition && styles.chipOn]} onPress={() => setCondition(c)}>
+                <Text style={[styles.chipText, c === condition && styles.chipTextOn]}>{LABEL[c]}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         {addError ? <Text style={styles.error}>{addError}</Text> : null}
 
         <Pressable style={[styles.primary, (add.isPending || setLoading) && styles.disabled]} onPress={confirmAdd} disabled={add.isPending || setLoading}>
-          {add.isPending || setLoading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>Add to collection</Text>}
+          {add.isPending || setLoading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>{isBatch ? 'Add to batch & scan next' : 'Add to collection'}</Text>}
         </Pressable>
         <Pressable onPress={() => { setSelected(null); setAddError(null); }} style={styles.linkBtn}>
           <Text style={styles.link}>Not this card — search again</Text>
@@ -244,6 +273,8 @@ const styles = StyleSheet.create({
   zoomBar: { position: 'absolute', bottom: 120, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#00000088', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   zoomBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#ffffff33', alignItems: 'center', justifyContent: 'center' },
   zoomLabel: { color: 'white', fontWeight: '700', minWidth: 42, textAlign: 'center' },
+  batchDone: { position: 'absolute', top: 16, right: 16, backgroundColor: '#059669', borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8 },
+  batchDoneText: { color: 'white', fontWeight: '700' },
   error: { color: '#DC2626', textAlign: 'center' },
   muted: { color: '#6B7280', textAlign: 'center' },
   primary: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 14, paddingHorizontal: 24, alignItems: 'center' },

@@ -29,12 +29,20 @@ export default function CollectionScreen() {
     <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
       {!isSupabaseConfigured && <SupabaseSetupNotice />}
 
-      <Link href="/search?mode=cards" asChild>
-        <Pressable style={styles.searchBar}>
-          <Ionicons name="search" size={18} color="#9CA3AF" />
-          <Text style={styles.searchText}>Search cards by name</Text>
-        </Pressable>
-      </Link>
+      <View style={styles.topRow}>
+        <Link href="/search?mode=cards" asChild>
+          <Pressable style={[styles.searchBar, { flex: 1 }]}>
+            <Ionicons name="search" size={18} color="#9CA3AF" />
+            <Text style={styles.searchText}>Search cards by name</Text>
+          </Pressable>
+        </Link>
+        <Link href="/batch-add" asChild>
+          <Pressable style={styles.batchBtn}>
+            <Ionicons name="albums" size={18} color="white" />
+            <Text style={styles.batchText}>Batch</Text>
+          </Pressable>
+        </Link>
+      </View>
 
       {games.length > 1 && (
         <View style={styles.chips}>
@@ -89,18 +97,19 @@ export default function CollectionScreen() {
 const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginBottom: 4 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginHorizontal: 16,
-    marginBottom: 4,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
     backgroundColor: '#F3F4F6',
   },
   searchText: { color: '#9CA3AF', fontSize: 15 },
+  batchBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#2563EB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  batchText: { color: 'white', fontWeight: '700' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },

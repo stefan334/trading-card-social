@@ -168,6 +168,13 @@ decisions.
 - [x] Global **Marketplace** (`app/marketplace.tsx`, `useMarketplace`): browse every card listed for
       trade across all users (excludes your own), with asking price / "open to trades", the market avg
       reference (`useCardPrices`), seller, name search + game filter. Storefront icon in the Feed header.
+- [x] **Location-based** (`0016`): profiles store rounded (~1km, private) coords + city (`expo-location`,
+      set in edit-profile). "Near me" toggle (default on) filters + sorts by distance (60km) and shows
+      distance/city; toggle off for everywhere. Traders settle payment/delivery among themselves.
+- [x] **Card grading** (`0015`): raw (condition) or graded (PSA/BGS/CGC/SGC + grade), shown on copies,
+      For-Trade showcase, and marketplace listings.
+- [x] **Batch add** (`BatchProvider`, `app/batch-add.tsx`): queue cards via scan (batch mode) + search,
+      pick one condition, "Add all N" → single grouped feed post (open-a-pack flow).
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)

@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../src/context/AuthContext';
+import { BatchProvider } from '../src/context/BatchContext';
 import { useProtectedRoute } from '../src/hooks/useProtectedRoute';
 
 // Cache aggressively: the Pokémon TCG API is slow, so keep fetched data "fresh"
@@ -39,6 +40,7 @@ function RootNavigator() {
       <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade' }} />
       <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade' }} />
       <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal' }} />
+      <Stack.Screen name="batch-add" options={{ headerShown: true, title: 'Add Cards' }} />
     </Stack>
   );
 }
@@ -48,8 +50,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RootNavigator />
-          <StatusBar style="auto" />
+          <BatchProvider>
+            <RootNavigator />
+            <StatusBar style="auto" />
+          </BatchProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
