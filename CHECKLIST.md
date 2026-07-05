@@ -129,9 +129,12 @@ decisions.
 - [x] Feed data model: `posts` table + `get_feed(page_limit, page_offset)` RPC (`0002_feed.sql`)
 - [x] Home Feed screen renders posts from self + followed users (`useFeed`, `PostCard`), with
       empty/loading/signed-out states and pull-to-refresh
-- [ ] Compose a post: share a card (card_showcase) or a text update, optional image
-- [ ] Auto-generate feed events on activity: `card_added` when a card is added, `trade_completed`
-      when a trade completes (DB triggers or Edge Functions inserting `posts` rows)
+- [x] **Activity feed is auto-generated** (`0013_feed_activity.sql`), no manual posting: triggers create
+      a `card_added` post when a card is added and a `card_listed` post (with price) when one is listed
+      for trade. `useFeed` **groups a burst** of the same activity by one user ("added 12 cards"), and
+      `PostCard` renders it with card thumbnails. Verified e2e.
+- [ ] `trade_completed` feed event on trade completion (optional; add to `confirm_trade`)
+- [ ] Compose a manual post (text/showcase) — deliberately dropped; the feed is activity-driven
 - [x] Follow / unfollow users (`useFollow`, on public profiles — built in Phase 2)
 - [x] Search/discover users by username/display name (`useUserSearch`, `/search` Users tab, reachable
       from the Feed header search icon). Verified vs live DB.

@@ -29,6 +29,8 @@ export function useCollectionActions() {
     qc.invalidateQueries({ queryKey: ['collection', meId] });
     qc.invalidateQueries({ queryKey: ['collection-by-set', meId] });
     qc.invalidateQueries({ queryKey: ['profile', meId] });
+    qc.invalidateQueries({ queryKey: ['feed', meId] }); // adding/listing creates feed activity
+    qc.invalidateQueries({ queryKey: ['for-trade-cards', meId] });
     if (cardId) qc.invalidateQueries({ queryKey: ['card-ownership', meId, cardId] });
   }
 
