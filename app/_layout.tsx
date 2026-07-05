@@ -28,6 +28,7 @@ function RootNavigator() {
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
       <Stack.Screen name="search" options={{ headerShown: true, title: 'Search' }} />
+      <Stack.Screen name="marketplace" options={{ headerShown: true, title: 'Marketplace' }} />
       <Stack.Screen name="chat/[id]" options={{ headerShown: true, title: 'Chat' }} />
       <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit Profile', presentation: 'modal' }} />
       <Stack.Screen name="user/[id]" options={{ headerShown: true, title: 'Profile' }} />

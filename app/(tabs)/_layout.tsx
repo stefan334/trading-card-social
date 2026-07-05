@@ -28,6 +28,17 @@ function FeedHeaderRight() {
   );
 }
 
+/** Header-left of the Feed: a shortcut into the global marketplace. */
+function MarketplaceButton() {
+  return (
+    <Link href="/marketplace" asChild>
+      <Pressable hitSlop={12} style={{ marginLeft: 16 }}>
+        <Ionicons name="storefront-outline" size={24} color="#2563EB" />
+      </Pressable>
+    </Link>
+  );
+}
+
 const badge = StyleSheet.create({
   dot: {
     position: 'absolute',
@@ -53,6 +64,7 @@ export default function TabLayout() {
         options={{
           title: 'Feed',
           tabBarIcon: ({ color, size }) => <Ionicons name="home" color={color} size={size} />,
+          headerLeft: () => <MarketplaceButton />,
           headerRight: () => <FeedHeaderRight />,
         }}
       />

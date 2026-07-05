@@ -162,7 +162,9 @@ decisions.
       (`ForTradeShowcase`) on profiles with price / "open to trades"; **wishlists are now public** so
       profiles + the trade builder show what someone wants. Trade builder shows the counterpart's
       wishlist. Verified e2e (cross-user price + wishlist read).
-- [ ] Global "browse the marketplace" feed of all for-trade listings (currently per-profile)
+- [x] Global **Marketplace** (`app/marketplace.tsx`, `useMarketplace`): browse every card listed for
+      trade across all users (excludes your own), with asking price / "open to trades", the market avg
+      reference (`useCardPrices`), seller, name search + game filter. Storefront icon in the Feed header.
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
