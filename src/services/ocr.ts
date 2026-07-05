@@ -21,9 +21,15 @@ export interface CardOcr {
   raw: string;
 }
 
-const KEYWORDS = /^(hp|basic|stage\s?\d|trainer|energy|item|supporter|stadium|weakness|resistance|retreat|ex|gx|vmax|vstar|illus|©|pok[eé]mon)$/i;
+// Lines that are clearly NOT the card name (game text, stats, flavour, credits).
+const NOT_NAME =
+  /(\d\s*\/\s*\d|\d+\s*hp\b|^(stage\s*\d|basic|evolves|put\b|length|weight|illus|©|\(c\)|trainer|energy|weakness|resistance|retreat|ability|pok[eé]mon\s*power|edition))/i;
 
-/** Pull a card name + collector number out of a raw OCR text blob (heuristic). */
+/**
+ * Pull a card name + collector number out of a raw OCR text blob (heuristic).
+ * The name isn't reliably first (cards often lead with "STAGE 2" / evolve text),
+ * so we skip game-text lines and prefer a short line (names are 1–3 words).
+ */
 function parseCard(raw: string): CardOcr {
   const numMatch = raw.match(/\b(\d{1,3})\s*\/\s*\d{1,3}\b/);
   const number = numMatch ? String(parseInt(numMatch[1], 10)) : null;
@@ -33,14 +39,12 @@ function parseCard(raw: string): CardOcr {
     .map((l) => l.trim())
     .filter(Boolean);
 
-  // The name is usually one of the first prominent lines: mostly letters, a few
-  // words, and not a game keyword or a pure number.
   let name: string | null = null;
   for (const line of lines) {
+    if (NOT_NAME.test(line)) continue;
+    if (line.split(/\s+/).length > 3) continue; // long line = description, not a name
     const cleaned = line.replace(/[^A-Za-z '.\-é]/g, '').trim();
     if (cleaned.length < 3) continue;
-    if (KEYWORDS.test(cleaned)) continue;
-    if (/^\d+$/.test(line)) continue;
     name = cleaned;
     break;
   }
