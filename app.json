@@ -33,7 +33,13 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "CardLink needs access to your photos to set your avatar and share cards in chat."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

@@ -1,4 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -16,12 +19,16 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useChatThread } from '../../src/hooks/useChatThread';
 import { useThreadMessages, type ChatMessage } from '../../src/hooks/useThreadMessages';
+import { uploadImage } from '../../src/services/supabase/storage';
 
 function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
   return (
     <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
       <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-        <Text style={mine ? styles.mineText : styles.theirsText}>{message.body}</Text>
+        {message.imageUrl ? (
+          <Image source={{ uri: message.imageUrl }} style={styles.image} contentFit="cover" />
+        ) : null}
+        {message.body ? <Text style={mine ? styles.mineText : styles.theirsText}>{message.body}</Text> : null}
       </View>
     </View>
   );
@@ -46,10 +53,29 @@ export default function ChatThreadScreen() {
 
   const title = meta?.other?.displayName || meta?.other?.username || 'Chat';
 
+  const [sendingImage, setSendingImage] = useState(false);
+
   function handleSend() {
     if (!id || !text.trim()) return;
     sendMessage.mutate({ threadId: id, body: text });
     setText('');
+  }
+
+  async function attachImage() {
+    if (!id || !user) return;
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.5,
+      base64: true,
+    });
+    if (res.canceled || !res.assets[0]?.base64) return;
+    setSendingImage(true);
+    try {
+      const url = await uploadImage(res.assets[0].base64, user.id, 'chat');
+      sendMessage.mutate({ threadId: id, imageUrl: url });
+    } finally {
+      setSendingImage(false);
+    }
   }
 
   return (
@@ -75,6 +101,9 @@ export default function ChatThreadScreen() {
       )}
 
       <View style={styles.inputBar}>
+        <Pressable style={styles.attach} onPress={attachImage} disabled={sendingImage}>
+          {sendingImage ? <ActivityIndicator size="small" /> : <Ionicons name="image" size={24} color="#2563EB" />}
+        </Pressable>
         <TextInput
           style={styles.input}
           placeholder="Message…"
@@ -102,7 +131,9 @@ const styles = StyleSheet.create({
   theirs: { backgroundColor: '#F3F4F6', borderBottomLeftRadius: 4 },
   mineText: { color: 'white', fontSize: 15 },
   theirsText: { color: '#111827', fontSize: 15 },
+  image: { width: 180, height: 240, borderRadius: 10, marginBottom: 4 },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, padding: 10, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  attach: { paddingHorizontal: 4, paddingVertical: 9 },
   input: { flex: 1, maxHeight: 120, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9, fontSize: 15 },
   send: { backgroundColor: '#2563EB', borderRadius: 20, paddingHorizontal: 18, paddingVertical: 10 },
   sendDisabled: { opacity: 0.5 },

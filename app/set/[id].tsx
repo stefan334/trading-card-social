@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { getProvider } from '../../src/services/tcg-providers';
@@ -28,11 +29,13 @@ export default function SetDetailScreen() {
   });
 
   const { data: ownedIds } = useOwnedCardIds(id);
+  const [missingOnly, setMissingOnly] = useState(false);
 
-  const cards = cardPage?.cards ?? [];
-  const total = set?.totalCards || cardPage?.totalCount || cards.length;
+  const allCards = cardPage?.cards ?? [];
+  const total = set?.totalCards || cardPage?.totalCount || allCards.length;
   const ownedCount = ownedIds?.size ?? 0;
   const pct = total > 0 ? Math.round((ownedCount / total) * 100) : 0;
+  const cards = missingOnly ? allCards.filter((c) => !ownedIds?.has(c.id)) : allCards;
 
   return (
     <FlatList
@@ -51,6 +54,10 @@ export default function SetDetailScreen() {
           </Text>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${pct}%` }]} />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleLabel}>Show missing only</Text>
+            <Switch value={missingOnly} onValueChange={setMissingOnly} />
           </View>
         </View>
       }
@@ -86,6 +93,8 @@ const styles = StyleSheet.create({
   count: { fontWeight: '700', color: '#2563EB', marginTop: 10 },
   progressTrack: { height: 8, width: '80%', backgroundColor: '#E5E7EB', borderRadius: 4, marginTop: 8 },
   progressFill: { height: 8, backgroundColor: '#2563EB', borderRadius: 4 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  toggleLabel: { color: '#374151', fontWeight: '600' },
   row: { justifyContent: 'flex-start' },
   cell: { width: '33.33%', padding: 4, alignItems: 'center' },
   cardImage: { width: '100%', aspectRatio: 0.71, borderRadius: 6 },

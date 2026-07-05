@@ -23,11 +23,13 @@ export function useChatActions() {
   });
 
   const sendMessage = useMutation({
-    mutationFn: async ({ threadId, body }: { threadId: string; body: string }) => {
+    mutationFn: async ({ threadId, body, imageUrl }: { threadId: string; body?: string; imageUrl?: string }) => {
       if (!supabase || !meId) throw new Error('Not signed in.');
-      const text = body.trim();
-      if (!text) return;
-      const { error } = await supabase.from('chat_messages').insert({ thread_id: threadId, sender_id: meId, body: text });
+      const text = (body ?? '').trim();
+      if (!text && !imageUrl) return;
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({ thread_id: threadId, sender_id: meId, body: text, image_url: imageUrl ?? null });
       if (error) throw error;
     },
     // The message appends via the realtime subscription; just refresh the list preview/unread.

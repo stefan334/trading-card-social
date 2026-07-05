@@ -1,3 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -11,13 +14,14 @@ import {
 } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
+import { uploadImage } from '../src/services/supabase/storage';
 import { listProviders } from '../src/services/tcg-providers';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
-/** Edit the signed-in user's profile fields. Avatar image upload is deferred (Phase 2). */
+/** Edit the signed-in user's profile fields, including avatar photo. */
 export default function EditProfileScreen() {
-  const { profile, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
   const games = listProviders();
 
@@ -25,8 +29,35 @@ export default function EditProfileScreen() {
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [favoriteGameId, setFavoriteGameId] = useState(profile?.favoriteGameId ?? games[0]?.gameId ?? 'pokemon');
+  const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl ?? null);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function pickAvatar() {
+    if (!supabase || !user) return;
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+      base64: true,
+    });
+    if (res.canceled || !res.assets[0]?.base64) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadImage(res.assets[0].base64, user.id, 'avatar');
+      const { error: upErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+      if (upErr) throw upErr;
+      setAvatarUrl(url);
+      await refreshProfile();
+    } catch (e: any) {
+      setError(e?.message ?? 'Could not upload photo.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSave() {
     if (!supabase || !profile) return;
@@ -67,6 +98,20 @@ export default function EditProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Pressable style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading}>
+        {avatarUrl ? (
+          <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarEmpty]}>
+            <Ionicons name="person" size={40} color="#9CA3AF" />
+          </View>
+        )}
+        <View style={styles.avatarBadge}>
+          {uploading ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="camera" size={16} color="white" />}
+        </View>
+      </Pressable>
+      <Text style={styles.avatarHint}>Tap to change photo</Text>
+
       <Text style={styles.label}>Username</Text>
       <TextInput
         style={styles.input}
@@ -135,4 +180,12 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: 'white', fontWeight: '700', fontSize: 16 },
   error: { color: '#DC2626', marginTop: 8 },
+  avatarWrap: { alignSelf: 'center', marginTop: 4 },
+  avatar: { width: 96, height: 96, borderRadius: 48 },
+  avatarEmpty: { backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center' },
+  avatarBadge: {
+    position: 'absolute', bottom: 0, right: 0, width: 30, height: 30, borderRadius: 15,
+    backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white',
+  },
+  avatarHint: { textAlign: 'center', color: '#6B7280', fontSize: 13, marginTop: 6, marginBottom: 4 },
 });
