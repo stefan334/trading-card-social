@@ -3,10 +3,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
+import { Link } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useOwnedCards, type OwnedCard } from '../../src/hooks/useOwnedCards';
 import { useProfile } from '../../src/hooks/useProfile';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
+import { useWishlist } from '../../src/hooks/useWishlist';
 
 function SelectableCards({
   cards,
@@ -59,6 +61,7 @@ export default function NewTradeScreen() {
   const { data: theirCards, isLoading: theirLoading } = useOwnedCards(withId);
   const { data: myCards, isLoading: myLoading } = useOwnedCards(user?.id);
   const { data: theirProfile } = useProfile(withId);
+  const { data: theirWishlist } = useWishlist(withId);
   const { propose } = useTradeActions();
 
   const [wantIds, setWantIds] = useState<Set<string>>(new Set());
@@ -97,6 +100,25 @@ export default function NewTradeScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+      {theirWishlist && theirWishlist.length > 0 && (
+        <View style={styles.wishlistBox}>
+          <Text style={styles.wishlistTitle}>💡 {theirName}'s wishlist — great things to offer</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.wishlistRow}>
+            {theirWishlist.map((w) => (
+              <Link key={w.wishlistId} href={`/card/${encodeURIComponent(w.cardId)}`} asChild>
+                <Pressable style={styles.wishTile}>
+                  {w.imageUrlSmall ? (
+                    <Image source={{ uri: w.imageUrlSmall }} style={styles.wishImg} />
+                  ) : (
+                    <View style={[styles.wishImg, styles.placeholder]} />
+                  )}
+                </Pressable>
+              </Link>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       <Text style={styles.section}>You want from {theirName}</Text>
       <Text style={styles.hint}>Their cards — “Trade” = they've listed it as available.</Text>
       <SelectableCards
@@ -144,6 +166,11 @@ export default function NewTradeScreen() {
 const styles = StyleSheet.create({
   section: { fontSize: 16, fontWeight: '700', marginTop: 20, marginBottom: 2 },
   hint: { color: '#9CA3AF', fontSize: 12, marginBottom: 10 },
+  wishlistBox: { backgroundColor: '#FEF3C7', borderRadius: 12, padding: 12 },
+  wishlistTitle: { fontWeight: '700', color: '#92400E', marginBottom: 8 },
+  wishlistRow: { gap: 8 },
+  wishTile: { width: 60 },
+  wishImg: { width: 60, height: 84, borderRadius: 5 },
   muted: { color: '#6B7280' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tile: { width: 76 },

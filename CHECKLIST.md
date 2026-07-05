@@ -157,6 +157,13 @@ decisions.
 - [x] Chat about a trade before/after accepting ("Message about this trade" → trade-scoped thread)
 - [x] Schema: `trades`/`trade_items`/`chat_*` FKs to `profiles` now have `ON DELETE CASCADE` (`0008`),
       so account deletion cascades cleanly — verified a user with trades/chats/reviews can be deleted
+- [x] **Marketplace / listings** (`0012_marketplace.sql`): per-copy asking price (`user_cards.sale_price`,
+      EUR, informational — no in-app payment) set on card detail; a **"For Trade" showcase**
+      (`ForTradeShowcase`) on profiles with price / "open to trades"; **wishlists are now public** so
+      profiles + the trade builder show what someone wants. Trade builder shows the counterpart's
+      wishlist. Verified e2e (cross-user price + wishlist read).
+- [ ] Global "browse the marketplace" feed of all for-trade listings (currently per-profile)
+- [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
 

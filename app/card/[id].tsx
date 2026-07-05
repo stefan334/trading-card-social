@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
-import { useCardOwnership } from '../../src/hooks/useCardOwnership';
+import { useCardOwnership, type OwnedCopy } from '../../src/hooks/useCardOwnership';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useIsWishlisted, useWishlistActions } from '../../src/hooks/useWishlistActions';
 import { getProvider } from '../../src/services/tcg-providers';
@@ -21,6 +21,51 @@ const CONDITION_LABEL: Record<CardCondition, string> = {
   played: 'Played',
   poor: 'Poor',
 };
+
+/** One owned copy: condition + for-trade toggle + (when listed) an asking price. */
+function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
+  const { remove, toggleForTrade, setSalePrice } = useCollectionActions();
+  const [price, setPrice] = useState(copy.salePrice != null ? String(copy.salePrice) : '');
+
+  function savePrice() {
+    const trimmed = price.trim().replace(',', '.');
+    const n = trimmed === '' ? null : Number(trimmed);
+    if (n !== null && Number.isNaN(n)) return;
+    if (n !== copy.salePrice) setSalePrice.mutate({ userCardId: copy.id, price: n, cardId });
+  }
+
+  return (
+    <View style={styles.copyBlock}>
+      <View style={styles.copyRow}>
+        <Text style={styles.copyLabel}>{copy.condition ? CONDITION_LABEL[copy.condition] : 'Unspecified'}</Text>
+        <View style={styles.tradeToggle}>
+          <Text style={styles.tradeText}>For trade</Text>
+          <Switch
+            value={copy.isForTrade}
+            onValueChange={(v) => toggleForTrade.mutate({ userCardId: copy.id, isForTrade: v, cardId })}
+          />
+        </View>
+        <Pressable onPress={() => remove.mutate({ userCardId: copy.id, cardId })} hitSlop={8}>
+          <Text style={styles.remove}>Remove</Text>
+        </Pressable>
+      </View>
+      {copy.isForTrade && (
+        <View style={styles.priceRow}>
+          <Text style={styles.euro}>€</Text>
+          <TextInput
+            style={styles.priceInput}
+            placeholder="Asking price"
+            keyboardType="decimal-pad"
+            value={price}
+            onChangeText={setPrice}
+            onBlur={savePrice}
+          />
+          <Text style={styles.priceHint}>{price.trim() ? 'or open to trades' : 'blank = open to card trades'}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
 
 /** Card detail + collection management, routed as /card/[id] (id like "pokemon:base1-4"). */
 export default function CardDetailScreen() {
@@ -41,7 +86,7 @@ export default function CardDetailScreen() {
   });
 
   const { data: owned } = useCardOwnership(id);
-  const { add, remove, toggleForTrade } = useCollectionActions();
+  const { add } = useCollectionActions();
   const { data: wishlisted } = useIsWishlisted(id);
   const { addToWishlist, removeFromWishlist } = useWishlistActions();
   const [condition, setCondition] = useState<CardCondition>('near_mint');
@@ -132,21 +177,7 @@ export default function CardDetailScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>You own {owned.length} {owned.length === 1 ? 'copy' : 'copies'}</Text>
           {owned.map((copy) => (
-            <View key={copy.id} style={styles.copyRow}>
-              <Text style={styles.copyLabel}>
-                {copy.condition ? CONDITION_LABEL[copy.condition] : 'Unspecified'}
-              </Text>
-              <View style={styles.tradeToggle}>
-                <Text style={styles.tradeText}>For trade</Text>
-                <Switch
-                  value={copy.isForTrade}
-                  onValueChange={(v) => toggleForTrade.mutate({ userCardId: copy.id, isForTrade: v, cardId: id })}
-                />
-              </View>
-              <Pressable onPress={() => remove.mutate({ userCardId: copy.id, cardId: id })} hitSlop={8}>
-                <Text style={styles.remove}>Remove</Text>
-              </Pressable>
-            </View>
+            <CopyRow key={copy.id} copy={copy} cardId={id} />
           ))}
         </View>
       )}
@@ -188,16 +219,19 @@ const styles = StyleSheet.create({
   addButton: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
   addButtonText: { color: 'white', fontWeight: '700', fontSize: 15 },
   disabled: { opacity: 0.5 },
+  copyBlock: { borderTopWidth: 1, borderTopColor: '#F3F4F6', paddingVertical: 6 },
   copyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    paddingVertical: 6,
   },
   copyLabel: { fontWeight: '600', flex: 1 },
   tradeToggle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   tradeText: { color: '#6B7280', fontSize: 13 },
   remove: { color: '#DC2626', fontWeight: '600', marginLeft: 12 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 6 },
+  euro: { fontSize: 16, fontWeight: '700', color: '#059669' },
+  priceInput: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, width: 100, fontSize: 15 },
+  priceHint: { color: '#9CA3AF', fontSize: 11, flex: 1 },
 });

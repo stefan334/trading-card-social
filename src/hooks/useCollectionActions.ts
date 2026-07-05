@@ -79,11 +79,22 @@ export function useCollectionActions() {
   const toggleForTrade = useMutation({
     mutationFn: async ({ userCardId, isForTrade }: { userCardId: string; isForTrade: boolean; cardId?: string }) => {
       if (!supabase) throw new Error('Not signed in.');
-      const { error } = await supabase.from('user_cards').update({ is_for_trade: isForTrade }).eq('id', userCardId);
+      // Un-listing a card also clears its asking price.
+      const patch = isForTrade ? { is_for_trade: true } : { is_for_trade: false, sale_price: null };
+      const { error } = await supabase.from('user_cards').update(patch).eq('id', userCardId);
       if (error) throw error;
     },
     onSuccess: (_data, vars) => invalidate(vars.cardId),
   });
 
-  return { add, remove, toggleForTrade };
+  const setSalePrice = useMutation({
+    mutationFn: async ({ userCardId, price }: { userCardId: string; price: number | null; cardId?: string }) => {
+      if (!supabase) throw new Error('Not signed in.');
+      const { error } = await supabase.from('user_cards').update({ sale_price: price }).eq('id', userCardId);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => invalidate(vars.cardId),
+  });
+
+  return { add, remove, toggleForTrade, setSalePrice };
 }

@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BindersRow } from '../../src/components/BindersRow';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
+import { ForTradeShowcase } from '../../src/components/ForTradeShowcase';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { ProfileView } from '../../src/components/ProfileView';
 import { useAuth } from '../../src/context/AuthContext';
@@ -35,6 +36,7 @@ export default function ProfileScreen() {
       <ProfileView profile={profile} />
 
       <BindersRow userId={profile.id} isOwner />
+      <ForTradeShowcase userId={profile.id} />
 
       <View style={styles.actions}>
         <Link href="/edit-profile" asChild>

@@ -8,9 +8,10 @@ export interface ForTradeCard {
   number: string;
   imageUrlSmall: string | null;
   condition: string | null;
+  salePrice: number | null; // asking cash price (EUR); null = open to card trades
 }
 
-/** A user's cards marked available for trade (for building a trade offer). */
+/** A user's cards marked available for trade, with asking price. */
 export function useForTradeCards(userId: string | undefined) {
   return useQuery({
     queryKey: ['for-trade-cards', userId],
@@ -18,7 +19,7 @@ export function useForTradeCards(userId: string | undefined) {
     queryFn: async (): Promise<ForTradeCard[]> => {
       const { data, error } = await supabase!
         .from('user_cards')
-        .select('id, condition, card:cards(id, name, number, image_url_small)')
+        .select('id, condition, sale_price, card:cards(id, name, number, image_url_small)')
         .eq('owner_id', userId!)
         .eq('is_for_trade', true);
       if (error) throw error;
@@ -29,6 +30,7 @@ export function useForTradeCards(userId: string | undefined) {
         number: r.card.number,
         imageUrlSmall: r.card.image_url_small,
         condition: r.condition,
+        salePrice: r.sale_price != null ? Number(r.sale_price) : null,
       }));
     },
   });
