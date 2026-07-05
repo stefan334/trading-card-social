@@ -156,4 +156,20 @@ export const pokemonProvider: TcgProvider = {
     const data = await apiFetch<{ data: PokemonApiCard }>(`/cards/${stripNamespace(cardId)}`, {});
     return mapCard(data.data);
   },
+
+  async getCardsByIds(cardIds) {
+    const ids = cardIds.map(stripNamespace);
+    const out: Card[] = [];
+    // Batch into OR-queries to keep the URL short.
+    for (let i = 0; i < ids.length; i += 20) {
+      const chunk = ids.slice(i, i + 20);
+      const data = await apiFetch<{ data: PokemonApiCard[] }>('/cards', {
+        q: chunk.map((id) => `id:${id}`).join(' OR '),
+        pageSize: chunk.length,
+        select: 'id,name,number,images,set,cardmarket,tcgplayer',
+      });
+      out.push(...data.data.map(mapCard));
+    }
+    return out;
+  },
 };

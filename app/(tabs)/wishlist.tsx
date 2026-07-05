@@ -4,9 +4,11 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { Image } from 'expo-image';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { useAuth } from '../../src/context/AuthContext';
+import { useCardPrices } from '../../src/hooks/useCardPrices';
 import { useWishlist } from '../../src/hooks/useWishlist';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
 import { listProviders } from '../../src/services/tcg-providers';
+import { formatPrice } from '../../src/utils/time';
 
 /**
  * Wishlist tab: cards the user wants. Adding a wishlisted card is done from the
@@ -18,6 +20,7 @@ export default function WishlistScreen() {
   const games = listProviders();
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
   const { data: cards, isLoading } = useWishlist(user?.id, gameId);
+  const { data: prices } = useCardPrices((cards ?? []).map((c) => c.cardId));
 
   if (!isSupabaseConfigured) {
     return (
@@ -62,20 +65,26 @@ export default function WishlistScreen() {
           numColumns={3}
           columnWrapperStyle={styles.row}
           contentContainerStyle={{ padding: 12 }}
-          renderItem={({ item }) => (
-            <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
-              <Pressable style={styles.cell}>
-                {item.imageUrlSmall ? (
-                  <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImage} />
-                ) : (
-                  <View style={[styles.cardImage, styles.placeholder]} />
-                )}
-                <Text numberOfLines={1} style={styles.cardName}>
-                  {item.name}
-                </Text>
-              </Pressable>
-            </Link>
-          )}
+          renderItem={({ item }) => {
+            const price = prices?.get(item.cardId);
+            return (
+              <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
+                <Pressable style={styles.cell}>
+                  {item.imageUrlSmall ? (
+                    <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImage} />
+                  ) : (
+                    <View style={[styles.cardImage, styles.placeholder]} />
+                  )}
+                  <Text numberOfLines={1} style={styles.cardName}>
+                    {item.name}
+                  </Text>
+                  {price?.average != null ? (
+                    <Text style={styles.cardPrice}>{formatPrice(price.average, price.currency)}</Text>
+                  ) : null}
+                </Pressable>
+              </Link>
+            );
+          }}
         />
       )}
     </View>
@@ -95,4 +104,5 @@ const styles = StyleSheet.create({
   cardImage: { width: '100%', aspectRatio: 0.71, borderRadius: 6 },
   placeholder: { backgroundColor: '#E5E7EB' },
   cardName: { fontSize: 12, marginTop: 4 },
+  cardPrice: { fontSize: 12, fontWeight: '700', color: '#059669', marginTop: 1 },
 });

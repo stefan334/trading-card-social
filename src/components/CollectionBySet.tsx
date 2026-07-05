@@ -1,9 +1,12 @@
 import { Link } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import type { CardMarketPrice } from '../types/card';
+import { useCardPrices } from '../hooks/useCardPrices';
 import type { CollectionSetGroup } from '../hooks/useCollectionBySet';
+import { formatPrice } from '../utils/time';
 
-function SetGroup({ group }: { group: CollectionSetGroup }) {
+function SetGroup({ group, prices }: { group: CollectionSetGroup; prices?: Map<string, CardMarketPrice> }) {
   const pct = group.totalCards > 0 ? Math.round((group.ownedDistinct / group.totalCards) * 100) : 0;
 
   return (
@@ -30,33 +33,41 @@ function SetGroup({ group }: { group: CollectionSetGroup }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.cardRow}
-        renderItem={({ item }) => (
-          <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
-            <Pressable style={styles.cardTile}>
-              {item.imageUrlSmall ? (
-                <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImage} />
-              ) : (
-                <View style={[styles.cardImage, styles.cardPlaceholder]} />
-              )}
-              {item.isForTrade ? (
-                <View style={styles.tradeBadge}>
-                  <Text style={styles.tradeBadgeText}>Trade</Text>
-                </View>
-              ) : null}
-            </Pressable>
-          </Link>
-        )}
+        renderItem={({ item }) => {
+          const price = prices?.get(item.cardId);
+          return (
+            <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
+              <Pressable style={styles.cardTile}>
+                {item.imageUrlSmall ? (
+                  <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImage} />
+                ) : (
+                  <View style={[styles.cardImage, styles.cardPlaceholder]} />
+                )}
+                {item.isForTrade ? (
+                  <View style={styles.tradeBadge}>
+                    <Text style={styles.tradeBadgeText}>Trade</Text>
+                  </View>
+                ) : null}
+                {price?.average != null ? (
+                  <Text style={styles.price}>{formatPrice(price.average, price.currency)}</Text>
+                ) : null}
+              </Pressable>
+            </Link>
+          );
+        }}
       />
     </View>
   );
 }
 
-/** Renders a collection grouped by set with completion bars. Read-only; taps navigate to detail. */
+/** Renders a collection grouped by set with completion bars + live prices. Taps navigate to detail. */
 export function CollectionBySet({ groups }: { groups: CollectionSetGroup[] }) {
+  const cardIds = groups.flatMap((g) => g.cards.map((c) => c.cardId));
+  const { data: prices } = useCardPrices(cardIds);
   return (
     <View>
       {groups.map((g) => (
-        <SetGroup key={g.setId} group={g} />
+        <SetGroup key={g.setId} group={g} prices={prices} />
       ))}
     </View>
   );
@@ -84,4 +95,5 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   tradeBadgeText: { color: 'white', fontSize: 10, fontWeight: '700' },
+  price: { fontSize: 11, fontWeight: '700', color: '#059669', marginTop: 2 },
 });

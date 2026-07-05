@@ -49,4 +49,6 @@ export interface TcgProvider {
     totalCount: number;
   }>;
   getCard(cardId: string): Promise<Card>;
+  /** Batch lookup (used to enrich DB-sourced cards with live prices). */
+  getCardsByIds(cardIds: string[]): Promise<Card[]>;
 }
