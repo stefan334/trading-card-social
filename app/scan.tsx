@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuth } from '../src/context/AuthContext';
@@ -9,6 +9,7 @@ import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useCollectionActions } from '../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { getProvider, listProviders } from '../src/services/tcg-providers';
+import { ocrAvailable, recognizeCard } from '../src/services/ocr';
 import { uploadScan } from '../src/services/supabase/storage';
 import type { Card } from '../src/types/card';
 import type { CardCondition } from '../src/types/domain';
@@ -42,8 +43,19 @@ export default function ScanScreen() {
   const [added, setAdded] = useState(false);
   const [zoom, setZoom] = useState(0);
   const [addError, setAddError] = useState<string | null>(null);
+  const [detecting, setDetecting] = useState(false);
+  const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
 
   const { data: results, isLoading: searching } = useCardSearch(selected ? '' : debounced, gameId);
+
+  // Auto-select the card whose collector number matches what OCR read.
+  useEffect(() => {
+    if (!detectedNumber || selected || !results?.length) return;
+    const match = results.find((c) => c.number === detectedNumber);
+    if (match) setSelected(match);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [results, detectedNumber, selected]);
+
   const { data: set, isLoading: setLoading } = useQuery({
     queryKey: ['set', selected?.setId],
     enabled: Boolean(selected?.setId),
@@ -57,11 +69,23 @@ export default function ScanScreen() {
     setSelected(null);
     setAdded(false);
     setAddError(null);
+    setDetectedNumber(null);
   }
 
   async function capture() {
     const shot = await cameraRef.current?.takePictureAsync({ base64: true, quality: 0.5 });
-    if (shot) setPhoto({ uri: shot.uri, base64: shot.base64 ?? null });
+    if (!shot) return;
+    setPhoto({ uri: shot.uri, base64: shot.base64 ?? null });
+
+    // Auto-detect the card (OCR) if a vision key is configured; otherwise the
+    // user types the name manually. Either way, they confirm the match.
+    if (shot.base64 && ocrAvailable()) {
+      setDetecting(true);
+      const ocr = await recognizeCard(shot.base64);
+      setDetecting(false);
+      if (ocr?.number) setDetectedNumber(ocr.number);
+      if (ocr?.name) setQuery(ocr.name);
+    }
   }
 
   async function confirmAdd() {
@@ -167,11 +191,13 @@ export default function ScanScreen() {
       <View style={styles.matchHeader}>
         <Image source={{ uri: photo.uri }} style={styles.thumb} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.matchTitle}>What card is this?</Text>
+          <Text style={styles.matchTitle}>
+            {detecting ? 'Reading the card…' : ocrAvailable() ? 'Is this it? (edit if wrong)' : 'What card is this?'}
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Type the card name"
-            autoFocus
+            autoFocus={!ocrAvailable()}
             autoCapitalize="none"
             value={query}
             onChangeText={setQuery}
@@ -182,7 +208,7 @@ export default function ScanScreen() {
         <Text style={styles.link}>Retake photo</Text>
       </Pressable>
 
-      {searching ? (
+      {searching || detecting ? (
         <ActivityIndicator style={{ marginTop: 20 }} />
       ) : (
         <FlatList
