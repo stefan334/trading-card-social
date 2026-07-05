@@ -10,6 +10,9 @@ export interface AuthProfile {
   bio: string | null;
   favoriteGameId: string | null;
   onboardedAt: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  locationName: string | null;
 }
 
 interface AuthContextValue {
@@ -35,6 +38,9 @@ function mapProfile(row: any): AuthProfile {
     bio: row.bio,
     favoriteGameId: row.favorite_game_id,
     onboardedAt: row.onboarded_at,
+    latitude: row.latitude != null ? Number(row.latitude) : null,
+    longitude: row.longitude != null ? Number(row.longitude) : null,
+    locationName: row.location_name,
   };
 }
 
@@ -47,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url, bio, favorite_game_id, onboarded_at')
+      .select('id, username, display_name, avatar_url, bio, favorite_game_id, onboarded_at, latitude, longitude, location_name')
       .eq('id', userId)
       .single();
     // On a brand-new sign-up the profile row is created by a DB trigger; if it

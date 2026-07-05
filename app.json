@@ -39,6 +39,12 @@
         {
           "photosPermission": "CardLink needs access to your photos to set your avatar and share cards in chat."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "CardLink uses your location to show cards for trade from collectors near you."
+        }
       ]
     ],
     "experiments": {

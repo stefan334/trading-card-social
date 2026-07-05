@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -30,9 +31,46 @@ export default function EditProfileScreen() {
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [favoriteGameId, setFavoriteGameId] = useState(profile?.favoriteGameId ?? games[0]?.gameId ?? 'pokemon');
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatarUrl ?? null);
+  const [locationName, setLocationName] = useState(profile?.locationName ?? null);
   const [uploading, setUploading] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function setLocation() {
+    if (!supabase || !user) return;
+    setError(null);
+    setLocating(true);
+    try {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        setError('Location permission is needed to find local traders.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+      // Round to ~1km for privacy (profiles are public).
+      const lat = Math.round(pos.coords.latitude * 100) / 100;
+      const lng = Math.round(pos.coords.longitude * 100) / 100;
+      let city: string | null = null;
+      try {
+        const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+        city = geo[0] ? [geo[0].city ?? geo[0].subregion, geo[0].region].filter(Boolean).join(', ') || null : null;
+      } catch {
+        city = null;
+      }
+      const { error: upErr } = await supabase
+        .from('profiles')
+        .update({ latitude: lat, longitude: lng, location_name: city })
+        .eq('id', user.id);
+      if (upErr) throw upErr;
+      setLocationName(city ?? 'Location set');
+      await refreshProfile();
+    } catch (e: any) {
+      setError(e?.message ?? 'Could not get your location.');
+    } finally {
+      setLocating(false);
+    }
+  }
 
   async function pickAvatar() {
     if (!supabase || !user) return;
@@ -134,6 +172,17 @@ export default function EditProfileScreen() {
         placeholder="Tell collectors what you're after"
       />
 
+      <Text style={styles.label}>Location</Text>
+      <Pressable style={styles.locationBtn} onPress={setLocation} disabled={locating}>
+        <Ionicons name="location" size={18} color="#2563EB" />
+        {locating ? (
+          <ActivityIndicator />
+        ) : (
+          <Text style={styles.locationText}>{locationName ?? 'Set my location'}</Text>
+        )}
+      </Pressable>
+      <Text style={styles.locationHint}>Used to find local traders. Stored roughly (~1km) and shown as your area.</Text>
+
       <Text style={styles.label}>Favorite TCG</Text>
       <View style={styles.chips}>
         {games.map((g) => {
@@ -188,4 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'white',
   },
   avatarHint: { textAlign: 'center', color: '#6B7280', fontSize: 13, marginTop: 6, marginBottom: 4 },
+  locationBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
+  locationText: { fontSize: 16, fontWeight: '600', color: '#111827' },
+  locationHint: { color: '#9CA3AF', fontSize: 12, marginTop: 6 },
 });

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SupabaseSetupNotice } from '../src/components/SupabaseSetupNotice';
 import { useCardPrices } from '../src/hooks/useCardPrices';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
@@ -29,6 +29,7 @@ function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: numb
           </Text>
           <Link href={`/user/${item.owner?.id}`} style={styles.owner}>
             by {ownerName}
+            {item.distanceKm != null ? ` · ~${item.distanceKm} km` : item.ownerLocation ? ` · ${item.ownerLocation}` : ''}
           </Link>
         </View>
         <View style={styles.priceCol}>
@@ -47,8 +48,9 @@ export default function MarketplaceScreen() {
   const games = listProviders();
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
   const [query, setQuery] = useState('');
+  const [nearMe, setNearMe] = useState(true);
   const debounced = useDebouncedValue(query);
-  const { listings, isLoading } = useMarketplace(gameId, debounced);
+  const { listings, isLoading, canFilterNear } = useMarketplace(gameId, debounced, nearMe);
   const { data: prices } = useCardPrices(listings.map((l) => l.cardId));
 
   if (!isSupabaseConfigured) {
@@ -71,6 +73,19 @@ export default function MarketplaceScreen() {
           onChangeText={setQuery}
         />
       </View>
+
+      <View style={styles.nearRow}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Ionicons name="location" size={16} color={nearMe && canFilterNear ? '#2563EB' : '#9CA3AF'} />
+          <Text style={styles.nearLabel}>Near me only</Text>
+        </View>
+        <Switch value={nearMe} onValueChange={setNearMe} />
+      </View>
+      {nearMe && !canFilterNear ? (
+        <Link href="/edit-profile" style={styles.nearHint}>
+          Set your location in your profile to see local traders →
+        </Link>
+      ) : null}
 
       {games.length > 1 && (
         <View style={styles.chips}>
@@ -111,6 +126,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#D1D5DB',
   },
   input: { flex: 1, paddingVertical: 10, fontSize: 16 },
+  nearRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 4 },
+  nearLabel: { fontWeight: '600', color: '#374151' },
+  nearHint: { color: '#2563EB', paddingHorizontal: 14, paddingBottom: 6, fontSize: 13 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12, marginBottom: 4 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   chipOn: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
