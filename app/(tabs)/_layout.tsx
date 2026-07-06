@@ -110,6 +110,14 @@ export default function TabLayout() {
         options={{
           title: 'Collection',
           tabBarIcon: ({ color, size }) => <Ionicons name="albums" color={color} size={size} />,
+          headerRight: () => (
+            <Link href="/wishlist" asChild>
+              <Pressable hitSlop={12} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginRight: 16 }}>
+                <Ionicons name="star" size={20} color="#F59E0B" />
+                <Text style={{ color: '#B45309', fontWeight: '700' }}>Wishlist</Text>
+              </Pressable>
+            </Link>
+          ),
         }}
       />
       <Tabs.Screen

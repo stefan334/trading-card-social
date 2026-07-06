@@ -31,10 +31,16 @@ const ICON: Partial<Record<FeedItem['type'], { name: keyof typeof Ionicons.glyph
 };
 
 /** A feed activity item: who did what, with the involved card(s). */
-export function PostCard({ item }: { item: FeedItem }) {
+export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
   const name = item.author.displayName || item.author.username;
   const verb = headline(item);
   const icon = ICON[item.type];
+  // A card someone else listed for trade is actionable — offer them a trade,
+  // pre-filling the very card they listed when it's a single-card post.
+  const canOffer = item.type === 'card_listed' && !!meId && item.author.id !== meId;
+  const offerHref =
+    `/trade/new?with=${item.author.id}` +
+    (item.cards.length === 1 ? `&card=${encodeURIComponent(item.cards[0].id)}` : '');
 
   return (
     <View style={styles.card}>
@@ -71,6 +77,15 @@ export function PostCard({ item }: { item: FeedItem }) {
           ))}
         </ScrollView>
       ) : null}
+
+      {canOffer ? (
+        <Link href={offerHref as any} asChild>
+          <Pressable style={styles.offerBtn}>
+            <Ionicons name="swap-horizontal" size={16} color="white" />
+            <Text style={styles.offerText}>Make an offer</Text>
+          </Pressable>
+        </Link>
+      ) : null}
     </View>
   );
 }
@@ -87,4 +102,6 @@ const styles = StyleSheet.create({
   cardRow: { gap: 8, paddingTop: 12 },
   cardImage: { width: 74, height: 103, borderRadius: 6 },
   placeholder: { backgroundColor: '#E5E7EB' },
+  offerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 10, marginTop: 12 },
+  offerText: { color: 'white', fontWeight: '700', fontSize: 14 },
 });

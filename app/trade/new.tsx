@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
@@ -54,7 +54,7 @@ function SelectableCards({
 
 /** Trade builder, routed as /trade/new?with=<userId>. Pick their cards + yours, add a note, send. */
 export default function NewTradeScreen() {
-  const { with: withId } = useLocalSearchParams<{ with: string }>();
+  const { with: withId, card: wantCardId } = useLocalSearchParams<{ with: string; card?: string }>();
   const { user } = useAuth();
   const router = useRouter();
 
@@ -68,6 +68,15 @@ export default function NewTradeScreen() {
   const [giveIds, setGiveIds] = useState<Set<string>>(new Set());
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Arriving from a listing / feed post ("Make an offer") pre-selects the card
+  // they listed, so the offer starts with the thing you actually want.
+  useEffect(() => {
+    if (!wantCardId || !theirCards) return;
+    const matches = theirCards.filter((c) => c.cardId === wantCardId).map((c) => c.userCardId);
+    if (matches.length) setWantIds((prev) => (prev.size ? prev : new Set(matches)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantCardId, theirCards]);
 
   function toggle(setter: React.Dispatch<React.SetStateAction<Set<string>>>, id: string) {
     setter((prev) => {

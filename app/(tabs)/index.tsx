@@ -64,7 +64,7 @@ export default function FeedScreen() {
     <FlatList
       data={items}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <PostCard item={item} />}
+      renderItem={({ item }) => <PostCard item={item} meId={user.id} />}
       contentContainerStyle={{ paddingBottom: 24 }}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     />

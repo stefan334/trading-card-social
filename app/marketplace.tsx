@@ -14,32 +14,40 @@ import { formatPrice } from '../src/utils/time';
 function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: number }) {
   const ownerName = item.owner?.displayName || item.owner?.username || 'Someone';
   return (
-    <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
-      <Pressable style={styles.row}>
-        {item.imageUrlSmall ? (
-          <Image source={{ uri: item.imageUrlSmall }} style={styles.thumb} />
-        ) : (
-          <View style={[styles.thumb, styles.placeholder]} />
-        )}
-        <View style={{ flex: 1 }}>
-          <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.sub}>
-            #{item.number}
-            {item.grade ? ` · ${item.grade}` : item.condition ? ` · ${item.condition.replace('_', ' ')}` : ''}
-          </Text>
-          <Link href={`/user/${item.owner?.id}`} style={styles.owner}>
-            by {ownerName}
-            {item.distanceKm != null ? ` · ~${item.distanceKm} km` : item.ownerLocation ? ` · ${item.ownerLocation}` : ''}
-          </Link>
-        </View>
-        <View style={styles.priceCol}>
-          <Text style={styles.price}>
-            {item.salePrice != null ? formatPrice(item.salePrice, 'EUR') : 'Open to trades'}
-          </Text>
-          {marketAvg != null ? <Text style={styles.mkt}>mkt {formatPrice(marketAvg, 'EUR')}</Text> : null}
-        </View>
-      </Pressable>
-    </Link>
+    <View style={styles.row}>
+      <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
+        <Pressable style={styles.rowMain}>
+          {item.imageUrlSmall ? (
+            <Image source={{ uri: item.imageUrlSmall }} style={styles.thumb} />
+          ) : (
+            <View style={[styles.thumb, styles.placeholder]} />
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+            <Text style={styles.sub}>
+              #{item.number}
+              {item.grade ? ` · ${item.grade}` : item.condition ? ` · ${item.condition.replace('_', ' ')}` : ''}
+            </Text>
+            <Text style={styles.owner} numberOfLines={1}>
+              by {ownerName}
+              {item.distanceKm != null ? ` · ~${item.distanceKm} km` : item.ownerLocation ? ` · ${item.ownerLocation}` : ''}
+            </Text>
+          </View>
+        </Pressable>
+      </Link>
+      <View style={styles.priceCol}>
+        <Text style={styles.price}>
+          {item.salePrice != null ? formatPrice(item.salePrice, 'EUR') : 'Open to trades'}
+        </Text>
+        {marketAvg != null ? <Text style={styles.mkt}>mkt {formatPrice(marketAvg, 'EUR')}</Text> : null}
+        <Link href={`/trade/new?with=${item.owner?.id}&card=${encodeURIComponent(item.cardId)}` as any} asChild>
+          <Pressable style={styles.offerBtn}>
+            <Ionicons name="swap-horizontal" size={14} color="white" />
+            <Text style={styles.offerText}>Offer</Text>
+          </Pressable>
+        </Link>
+      </View>
+    </View>
   );
 }
 
@@ -135,14 +143,17 @@ const styles = StyleSheet.create({
   chipText: { color: '#374151', fontWeight: '600' },
   chipTextOn: { color: 'white' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  rowMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   thumb: { width: 48, height: 67, borderRadius: 5 },
   placeholder: { backgroundColor: '#E5E7EB' },
   name: { fontSize: 15, fontWeight: '700' },
   sub: { color: '#6B7280', fontSize: 13, marginTop: 1, textTransform: 'capitalize' },
-  owner: { color: '#2563EB', fontSize: 13, marginTop: 2 },
-  priceCol: { alignItems: 'flex-end' },
+  owner: { color: '#6B7280', fontSize: 13, marginTop: 2 },
+  priceCol: { alignItems: 'flex-end', gap: 4 },
   price: { fontWeight: '800', color: '#059669', fontSize: 15 },
-  mkt: { color: '#9CA3AF', fontSize: 11, marginTop: 2 },
+  mkt: { color: '#9CA3AF', fontSize: 11 },
+  offerBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#2563EB', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, marginTop: 2 },
+  offerText: { color: 'white', fontWeight: '700', fontSize: 13 },
   sep: { height: 1, backgroundColor: '#F3F4F6', marginLeft: 74 },
   empty: { color: '#6B7280', textAlign: 'center', marginTop: 40, marginHorizontal: 24, lineHeight: 20 },
 });

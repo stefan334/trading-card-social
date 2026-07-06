@@ -29,20 +29,12 @@ export default function CollectionScreen() {
     <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
       {!isSupabaseConfigured && <SupabaseSetupNotice />}
 
-      <View style={styles.topRow}>
-        <Link href="/search?mode=cards" asChild>
-          <Pressable style={[styles.searchBar, { flex: 1 }]}>
-            <Ionicons name="search" size={18} color="#9CA3AF" />
-            <Text style={styles.searchText}>Search cards by name</Text>
-          </Pressable>
-        </Link>
-        <Link href="/wishlist" asChild>
-          <Pressable style={styles.wishBtn}>
-            <Ionicons name="star" size={18} color="#F59E0B" />
-            <Text style={styles.wishText}>Wishlist</Text>
-          </Pressable>
-        </Link>
-      </View>
+      <Link href="/search?mode=cards" asChild>
+        <Pressable style={styles.searchBar}>
+          <Ionicons name="search" size={18} color="#9CA3AF" />
+          <Text style={styles.searchText}>Search cards by name</Text>
+        </Pressable>
+      </Link>
 
       {games.length > 1 && (
         <View style={styles.chips}>
@@ -97,19 +89,18 @@ export default function CollectionScreen() {
 const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
-  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginBottom: 4 },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginHorizontal: 16,
+    marginBottom: 4,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
     backgroundColor: '#F3F4F6',
   },
   searchText: { color: '#9CA3AF', fontSize: 15 },
-  wishBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#F59E0B', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 9 },
-  wishText: { color: '#B45309', fontWeight: '700' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
