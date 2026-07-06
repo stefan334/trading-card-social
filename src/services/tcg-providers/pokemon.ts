@@ -159,17 +159,20 @@ export const pokemonProvider: TcgProvider = {
 
   async getCardsByIds(cardIds) {
     const ids = cardIds.map(stripNamespace);
-    const out: Card[] = [];
-    // Batch into OR-queries to keep the URL short.
-    for (let i = 0; i < ids.length; i += 20) {
-      const chunk = ids.slice(i, i + 20);
-      const data = await apiFetch<{ data: PokemonApiCard[] }>('/cards', {
-        q: chunk.map((id) => `id:${id}`).join(' OR '),
-        pageSize: chunk.length,
-        select: 'id,name,number,images,set,cardmarket,tcgplayer',
-      });
-      out.push(...data.data.map(mapCard));
-    }
-    return out;
+    // Batch into OR-queries to keep each URL short, but fire the chunks in
+    // parallel so a big collection's prices land in ~one round-trip, not N.
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += 20) chunks.push(ids.slice(i, i + 20));
+
+    const pages = await Promise.all(
+      chunks.map((chunk) =>
+        apiFetch<{ data: PokemonApiCard[] }>('/cards', {
+          q: chunk.map((id) => `id:${id}`).join(' OR '),
+          pageSize: chunk.length,
+          select: 'id,name,number,images,set,cardmarket,tcgplayer',
+        })
+      )
+    );
+    return pages.flatMap((data) => data.data.map(mapCard));
   },
 };
