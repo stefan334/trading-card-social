@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
+import { dbGetSetCards } from '../../src/services/catalog';
 import { getProvider } from '../../src/services/tcg-providers';
 import { formatPrice } from '../../src/utils/time';
 
@@ -25,7 +26,12 @@ export default function SetDetailScreen() {
   const { data: cardPage, isLoading } = useQuery({
     queryKey: ['set-cards', id],
     enabled: Boolean(id && gameId),
-    queryFn: () => getProvider(gameId!).searchCards({ setId: id!, pageSize: 250 }),
+    queryFn: async () => {
+      // DB-first (instant + prices already attached); fall back to the live API.
+      const local = await dbGetSetCards(id!);
+      if (local && local.length) return { cards: local, page: 1, totalCount: local.length };
+      return getProvider(gameId!).searchCards({ setId: id!, pageSize: 250 });
+    },
   });
 
   const { data: ownedIds } = useOwnedCardIds(id);

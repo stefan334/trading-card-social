@@ -178,6 +178,14 @@ decisions.
       pack, a review sheet picks one condition for the lot and "Add all N" → single grouped feed post.
       Scanner (`app/scan.tsx`) always feeds the same cart (capture → confirm → next). Single-add is just
       a cart of one — no separate batch mode. Wishlist moved off the tab bar (Collection → star button).
+- [x] **Catalog Sync** (`0017`, `scripts/sync-catalog.mjs`, `.github/workflows/catalog-sync.yml`):
+      a daily GitHub Actions cron sweeps the provider and upserts the full catalog + prices into our
+      DB over a direct service connection (bypasses RLS). Adds `cards.price_*` columns, a `pg_trgm`
+      name index, and a `catalog_sync_runs` log. App reads are **DB-first** (`src/services/catalog.ts`):
+      browse sets, card search, set completion, and collection/wishlist prices come from our DB
+      instantly; the live API stays a per-card fallback for anything not yet synced.
+      **Setup:** add repo secrets `DATABASE_URL` + `POKEMON_TCG_API_KEY`; run `npm run sync:catalog`
+      (needs `DATABASE_URL`) or trigger the workflow once to backfill.
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)

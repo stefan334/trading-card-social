@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import { dbGetPrices } from '../services/catalog';
 import { getProvider } from '../services/tcg-providers';
 import type { CardMarketPrice } from '../types/card';
 
 /**
- * Live prices for a set of card ids (used to enrich DB-sourced cards — collection,
- * wishlist — which don't store prices). Batched per game via getCardsByIds and
- * cached; returns a Map of cardId -> market price.
+ * Prices for a set of card ids (used to enrich DB-sourced cards — collection,
+ * wishlist — which don't store prices on their own rows). DB-first: reads the
+ * synced catalog prices in one query, then only hits the live provider API for
+ * ids the catalog hasn't synced yet. Returns a Map of cardId -> market price.
  */
 export function useCardPrices(cardIds: string[]) {
   const ids = [...new Set(cardIds)].sort();
@@ -15,17 +17,23 @@ export function useCardPrices(cardIds: string[]) {
     enabled: ids.length > 0,
     staleTime: 1000 * 60 * 30, // prices don't move minute-to-minute
     queryFn: async (): Promise<Map<string, CardMarketPrice>> => {
-      const byGame = new Map<string, string[]>();
-      for (const id of ids) {
-        const game = id.split(':')[0];
-        if (!byGame.has(game)) byGame.set(game, []);
-        byGame.get(game)!.push(id);
-      }
+      const db = await dbGetPrices(ids);
+      const prices = db?.prices ?? new Map<string, CardMarketPrice>();
+      const known = db?.known ?? new Set<string>();
 
-      const prices = new Map<string, CardMarketPrice>();
-      for (const [game, gameIds] of byGame) {
-        const cards = await getProvider(game).getCardsByIds(gameIds);
-        for (const c of cards) if (c.market) prices.set(c.id, c.market);
+      // Fall back to the live API only for ids not yet in the synced catalog.
+      const missing = ids.filter((id) => !known.has(id));
+      if (missing.length) {
+        const byGame = new Map<string, string[]>();
+        for (const id of missing) {
+          const game = id.split(':')[0];
+          if (!byGame.has(game)) byGame.set(game, []);
+          byGame.get(game)!.push(id);
+        }
+        for (const [game, gameIds] of byGame) {
+          const cards = await getProvider(game).getCardsByIds(gameIds);
+          for (const c of cards) if (c.market) prices.set(c.id, c.market);
+        }
       }
       return prices;
     },
