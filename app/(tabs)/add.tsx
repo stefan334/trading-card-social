@@ -144,10 +144,14 @@ export default function AddScreen() {
       </View>
 
       {browsing ? (
-        <Pressable style={styles.browseBanner} onPress={() => setBrowseSet(null)}>
-          <Text style={styles.browseText} numberOfLines={1}>Browsing: {browseSet!.name}</Text>
-          <Ionicons name="close-circle" size={18} color="#2563EB" />
-        </Pressable>
+        <View style={styles.browseBanner}>
+          <Ionicons name="albums" size={16} color="#2563EB" />
+          <Text style={styles.browseText} numberOfLines={1}>{browseSet!.name}</Text>
+          <Pressable onPress={() => setBrowseSet(null)} hitSlop={14} style={styles.browseClose}>
+            <Ionicons name="close-circle" size={20} color="#2563EB" />
+            <Text style={styles.browseCloseText}>Clear</Text>
+          </Pressable>
+        </View>
       ) : null}
 
       {/* Results / empty states */}
@@ -344,8 +348,10 @@ const styles = StyleSheet.create({
   scanBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' },
   setsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 44, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#2563EB' },
   setsBtnText: { color: '#2563EB', fontWeight: '700' },
-  browseBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginHorizontal: 16, marginTop: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#EFF6FF' },
+  browseBanner: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginTop: 4, paddingLeft: 12, paddingRight: 6, paddingVertical: 8, borderRadius: 8, backgroundColor: '#EFF6FF' },
   browseText: { color: '#2563EB', fontWeight: '700', flex: 1 },
+  browseClose: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4 },
+  browseCloseText: { color: '#2563EB', fontWeight: '700', fontSize: 13 },
   pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
   pickerTitle: { fontSize: 20, fontWeight: '800' },
   pickerSearch: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#F3F4F6' },
