@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
@@ -19,14 +20,22 @@ import { useCardSearch } from '../../src/hooks/useCardSearch';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
 import { useScreenView } from '../../src/services/analytics';
-import { dbGetSet } from '../../src/services/catalog';
+import { dbGetSet, dbGetSetCards, dbGetSets } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
+import type { Card } from '../../src/types/card';
 import type { CardCondition } from '../../src/types/domain';
 
 const CONDITIONS: CardCondition[] = ['mint', 'near_mint', 'excellent', 'good', 'played', 'poor'];
 const LABEL: Record<CardCondition, string> = {
   mint: 'Mint', near_mint: 'Near Mint', excellent: 'Excellent', good: 'Good', played: 'Played', poor: 'Poor',
 };
+const FINISHES = [
+  { key: 'normal', label: 'Normal' },
+  { key: 'holo', label: 'Holo' },
+  { key: 'reverse_holo', label: 'Reverse Holo' },
+  { key: 'foil', label: 'Foil' },
+] as const;
+type Finish = (typeof FINISHES)[number]['key'];
 
 /**
  * Add tab (the center "+"): one place to build up a "pack" of cards and add them
@@ -46,9 +55,27 @@ export default function AddScreen() {
   const debounced = useDebouncedValue(query);
   const { data: results, isLoading } = useCardSearch(debounced, gameId);
 
+  // Browse-by-set: pick a set and add straight from its full card pool.
+  const [browseSet, setBrowseSet] = useState<{ id: string; name: string } | null>(null);
+  const [setPickerOpen, setSetPickerOpen] = useState(false);
+  const [setSearch, setSetSearch] = useState('');
+  const { data: allSets } = useQuery({ queryKey: ['add-sets', gameId], queryFn: () => dbGetSets(gameId) });
+  const { data: setCards, isLoading: setCardsLoading } = useQuery({
+    queryKey: ['add-set-cards', browseSet?.id],
+    enabled: !!browseSet,
+    queryFn: () => dbGetSetCards(browseSet!.id),
+  });
+
+  const browsing = !!browseSet;
+  const displayCards: Card[] = browsing ? setCards ?? [] : results ?? [];
+  const displayLoading = browsing ? setCardsLoading : isLoading;
+  const showGrid = browsing || debounced.trim().length >= 2;
+  const filteredSets = (allSets ?? []).filter((s) => s.name.toLowerCase().includes(setSearch.trim().toLowerCase()));
+
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [condition, setCondition] = useState<CardCondition>('near_mint');
+  const [finish, setFinish] = useState<Finish>('normal');
   const [adding, setAdding] = useState(false);
   const { add } = useCollectionActions();
 
@@ -59,10 +86,8 @@ export default function AddScreen() {
     return m;
   }, [items]);
 
-  async function addResult(cardId: string) {
-    const card = results?.find((c) => c.id === cardId);
-    if (!card) return;
-    setBusyId(cardId);
+  async function addResult(card: Card) {
+    setBusyId(card.id);
     try {
       // DB-first (instant once catalog is synced); fall back to the live API.
       const set = (await dbGetSet(card.setId)) ?? (await getProvider(card.gameId).getSet(card.setId));
@@ -77,7 +102,7 @@ export default function AddScreen() {
     setAdding(true);
     try {
       for (const it of items) {
-        await add.mutateAsync({ card: it.card, set: it.set, condition });
+        await add.mutateAsync({ card: it.card, set: it.set, condition, finish: finish === 'normal' ? null : finish });
       }
       clear();
       setReviewOpen(false);
@@ -107,6 +132,10 @@ export default function AddScreen() {
             </Pressable>
           )}
         </View>
+        <Pressable style={styles.setsBtn} onPress={() => setSetPickerOpen(true)}>
+          <Ionicons name="albums" size={18} color="#2563EB" />
+          <Text style={styles.setsBtnText}>Sets</Text>
+        </Pressable>
         <Link href="/scan" asChild>
           <Pressable style={styles.scanBtn}>
             <Ionicons name="camera" size={20} color="white" />
@@ -114,21 +143,28 @@ export default function AddScreen() {
         </Link>
       </View>
 
+      {browsing ? (
+        <Pressable style={styles.browseBanner} onPress={() => setBrowseSet(null)}>
+          <Text style={styles.browseText} numberOfLines={1}>Browsing: {browseSet!.name}</Text>
+          <Ionicons name="close-circle" size={18} color="#2563EB" />
+        </Pressable>
+      ) : null}
+
       {/* Results / empty states */}
-      {debounced.trim().length < 2 ? (
+      {!showGrid ? (
         <View style={styles.hintWrap}>
           <Ionicons name="albums-outline" size={40} color="#C7CBD1" />
           <Text style={styles.hintTitle}>Build your pack</Text>
           <Text style={styles.hint}>
-            Search for a card by name, or tap the camera to scan. Everything you pick drops into the
-            tray below — add them all at once.
+            Search by name, tap <Text style={{ fontWeight: '700' }}>Sets</Text> to browse a whole set, or
+            scan. Everything you pick drops into the tray below — add them all at once.
           </Text>
         </View>
-      ) : isLoading ? (
+      ) : displayLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : (
         <FlatList
-          data={results ?? []}
+          data={displayCards}
           keyExtractor={(c) => c.id}
           numColumns={3}
           contentContainerStyle={{ padding: 8, paddingBottom: items.length ? 108 : 16 }}
@@ -136,7 +172,7 @@ export default function AddScreen() {
           renderItem={({ item }) => {
             const count = countByCard.get(item.id) ?? 0;
             return (
-              <Pressable style={styles.cell} onPress={() => addResult(item.id)} disabled={busyId === item.id}>
+              <Pressable style={styles.cell} onPress={() => addResult(item)} disabled={busyId === item.id}>
                 <View>
                   {item.imageUrlSmall ? (
                     <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImg} />
@@ -226,6 +262,15 @@ export default function AddScreen() {
             ))}
           </View>
 
+          <Text style={styles.label}>Finish</Text>
+          <View style={styles.chips}>
+            {FINISHES.map((f) => (
+              <Pressable key={f.key} style={[styles.chip, f.key === finish && styles.chipOn]} onPress={() => setFinish(f.key)}>
+                <Text style={[styles.chipText, f.key === finish && styles.chipTextOn]}>{f.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
           <Pressable
             style={[styles.addAll, (!items.length || adding) && styles.disabled]}
             onPress={addAll}
@@ -239,6 +284,54 @@ export default function AddScreen() {
           </Pressable>
         </View>
       </Modal>
+
+      {/* Set picker */}
+      <Modal visible={setPickerOpen} animationType="slide" onRequestClose={() => setSetPickerOpen(false)}>
+        <View style={styles.pickerHeader}>
+          <Text style={styles.pickerTitle}>Browse a set</Text>
+          <Pressable hitSlop={8} onPress={() => setSetPickerOpen(false)}>
+            <Ionicons name="close" size={26} color="#111827" />
+          </Pressable>
+        </View>
+        <View style={styles.pickerSearch}>
+          <Ionicons name="search" size={18} color="#9CA3AF" />
+          <TextInput
+            style={styles.input}
+            placeholder="Find a set"
+            placeholderTextColor="#9CA3AF"
+            value={setSearch}
+            onChangeText={setSetSearch}
+            autoCapitalize="none"
+          />
+        </View>
+        <FlatList
+          data={filteredSets}
+          keyExtractor={(s) => s.id}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.setRow}
+              onPress={() => {
+                setBrowseSet({ id: item.id, name: item.name });
+                setSetPickerOpen(false);
+                setSetSearch('');
+              }}
+            >
+              {item.imageUrl ? (
+                <Image source={{ uri: item.imageUrl }} style={styles.setLogo} contentFit="contain" />
+              ) : (
+                <View style={styles.setLogo} />
+              )}
+              <View style={{ flex: 1 }}>
+                <Text style={styles.setName}>{item.name}</Text>
+                <Text style={styles.setMeta}>{item.series ? `${item.series} · ` : ''}{item.totalCards} cards</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+            </Pressable>
+          )}
+          ListEmptyComponent={<Text style={styles.muted}>No sets found.</Text>}
+        />
+      </Modal>
     </View>
   );
 }
@@ -249,6 +342,17 @@ const styles = StyleSheet.create({
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F3F4F6' },
   input: { flex: 1, fontSize: 15, padding: 0 },
   scanBtn: { width: 44, height: 44, borderRadius: 10, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center' },
+  setsBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, height: 44, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#2563EB' },
+  setsBtnText: { color: '#2563EB', fontWeight: '700' },
+  browseBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginHorizontal: 16, marginTop: 4, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: '#EFF6FF' },
+  browseText: { color: '#2563EB', fontWeight: '700', flex: 1 },
+  pickerHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+  pickerTitle: { fontSize: 20, fontWeight: '800' },
+  pickerSearch: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginBottom: 8, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, backgroundColor: '#F3F4F6' },
+  setRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 10 },
+  setLogo: { width: 46, height: 30 },
+  setName: { fontSize: 15, fontWeight: '600' },
+  setMeta: { color: '#6B7280', fontSize: 13, marginTop: 1 },
 
   hintWrap: { alignItems: 'center', paddingHorizontal: 40, marginTop: 64, gap: 8 },
   hintTitle: { fontSize: 18, fontWeight: '700', marginTop: 4 },

@@ -15,6 +15,8 @@ function headline(item: FeedItem): string {
       const price = item.body ? ` for ${formatPrice(Number(item.body), 'EUR')}` : '';
       return n > 1 ? `listed ${n} cards for trade` : `listed a card for trade${price}`;
     }
+    case 'card_wishlisted':
+      return n > 1 ? `added ${n} cards to their wishlist` : 'added a card to their wishlist';
     case 'card_showcase':
       return 'shared a card';
     case 'trade_completed':
@@ -27,6 +29,7 @@ function headline(item: FeedItem): string {
 const ICON: Partial<Record<FeedItem['type'], { name: keyof typeof Ionicons.glyphMap; color: string }>> = {
   card_added: { name: 'add-circle', color: '#2563EB' },
   card_listed: { name: 'pricetag', color: '#059669' },
+  card_wishlisted: { name: 'star', color: '#F59E0B' },
   trade_completed: { name: 'swap-horizontal', color: '#059669' },
 };
 

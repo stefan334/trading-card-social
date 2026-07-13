@@ -12,6 +12,7 @@ export interface AddToCollectionInput {
   quantity?: number;
   condition?: CardCondition;
   grade?: string | null; // e.g. "PSA 10"; null = raw
+  finish?: string | null; // e.g. "reverse_holo"; null = normal
   isForTrade?: boolean;
   imageUrl?: string; // user's own scanned photo, if any
 }
@@ -37,7 +38,7 @@ export function useCollectionActions() {
   }
 
   const add = useMutation({
-    mutationFn: async ({ card, set, quantity = 1, condition, grade, isForTrade = false, imageUrl }: AddToCollectionInput) => {
+    mutationFn: async ({ card, set, quantity = 1, condition, grade, finish, isForTrade = false, imageUrl }: AddToCollectionInput) => {
       if (!supabase || !meId) throw new Error('Not signed in.');
 
       const gameName = getProvider(card.gameId).displayName;
@@ -64,6 +65,7 @@ export function useCollectionActions() {
         quantity,
         condition: grade ? null : condition ?? null,
         grade: grade ?? null,
+        finish: finish ?? null,
         is_for_trade: isForTrade,
         image_url: imageUrl ?? null,
       });

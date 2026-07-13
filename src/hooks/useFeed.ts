@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
 
-export type FeedType = 'text' | 'card_showcase' | 'card_added' | 'card_listed' | 'trade_completed';
+export type FeedType = 'text' | 'card_showcase' | 'card_added' | 'card_listed' | 'card_wishlisted' | 'trade_completed';
 
 export interface FeedCard {
   id: string;
@@ -83,7 +83,7 @@ export function useFeed(userId: string | undefined, meLocation?: string | null) 
       const items: FeedItem[] = [];
       for (const r of rows) {
         const last = items[items.length - 1];
-        const groupable = r.type === 'card_added' || r.type === 'card_listed';
+        const groupable = r.type === 'card_added' || r.type === 'card_listed' || r.type === 'card_wishlisted';
         const sameBurst =
           last &&
           groupable &&

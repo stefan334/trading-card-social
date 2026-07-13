@@ -5,6 +5,7 @@ import { BindersRow } from '../../src/components/BindersRow';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { ForTradeShowcase } from '../../src/components/ForTradeShowcase';
 import { ProfileView } from '../../src/components/ProfileView';
+import { WishlistShowcase } from '../../src/components/WishlistShowcase';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useCollectionBySet } from '../../src/hooks/useCollectionBySet';
 import { useFollow } from '../../src/hooks/useFollow';
@@ -67,6 +68,7 @@ export default function UserProfileScreen() {
 
       {id ? <BindersRow userId={id} isOwner={false} /> : null}
       {id ? <ForTradeShowcase userId={id} /> : null}
+      {id ? <WishlistShowcase userId={id} /> : null}
 
       <Text style={styles.sectionTitle}>Collection</Text>
       {collectionLoading ? (
