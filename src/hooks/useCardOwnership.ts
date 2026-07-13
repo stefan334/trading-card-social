@@ -8,6 +8,7 @@ export interface OwnedCopy {
   quantity: number;
   condition: CardCondition | null;
   grade: string | null;
+  finish: string | null;
   isForTrade: boolean;
   salePrice: number | null;
 }
@@ -23,7 +24,7 @@ export function useCardOwnership(cardId: string | undefined) {
     queryFn: async (): Promise<OwnedCopy[]> => {
       const { data, error } = await supabase!
         .from('user_cards')
-        .select('id, quantity, condition, grade, is_for_trade, sale_price')
+        .select('id, quantity, condition, grade, finish, is_for_trade, sale_price')
         .eq('owner_id', meId!)
         .eq('card_id', cardId!)
         .order('acquired_at', { ascending: true });
@@ -33,6 +34,7 @@ export function useCardOwnership(cardId: string | undefined) {
         quantity: r.quantity,
         condition: r.condition,
         grade: r.grade,
+        finish: r.finish,
         isForTrade: r.is_for_trade,
         salePrice: r.sale_price != null ? Number(r.sale_price) : null,
       }));

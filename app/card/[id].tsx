@@ -39,15 +39,20 @@ function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
   return (
     <View style={styles.copyBlock}>
       <View style={styles.copyRow}>
-        <Text style={styles.copyLabel}>
-          {copy.grade ? (
-            <Text style={styles.gradeBadge}>{copy.grade}</Text>
-          ) : copy.condition ? (
-            CONDITION_LABEL[copy.condition]
-          ) : (
-            'Unspecified'
-          )}
-        </Text>
+        <View style={styles.copyLabelRow}>
+          <Text style={styles.copyLabel}>
+            {copy.grade ? (
+              <Text style={styles.gradeBadge}>{copy.grade}</Text>
+            ) : copy.condition ? (
+              CONDITION_LABEL[copy.condition]
+            ) : (
+              'Unspecified'
+            )}
+          </Text>
+          {copy.finish ? (
+            <Text style={styles.finishBadge}>{copy.finish.replace(/_/g, ' ')}</Text>
+          ) : null}
+        </View>
         <View style={styles.tradeToggle}>
           <Text style={styles.tradeText}>For trade</Text>
           <Switch
@@ -256,6 +261,8 @@ const styles = StyleSheet.create({
   segText: { fontWeight: '700', color: '#374151' },
   segTextOn: { color: 'white' },
   gradeBadge: { fontWeight: '800', color: '#B45309' },
+  copyLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  finishBadge: { fontSize: 12, fontWeight: '700', color: '#6D28D9', backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, textTransform: 'capitalize' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
