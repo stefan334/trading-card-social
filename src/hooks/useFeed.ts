@@ -60,10 +60,6 @@ export function useFeed(userId: string | undefined, meLocation?: string | null) 
 
       const rows = (data ?? [])
         .filter((row: any) => row.author && !row.author.is_banned)
-        // If you've set a location, only show non-followed people who share your
-        // city (they're the ones you could actually meet up with). With no
-        // location set, fall back to showing everyone so the feed isn't empty.
-        .filter((row: any) => !meLocation || priority(row.author) < 2)
         .map((row: any) => ({
           id: row.id as string,
           type: row.type as FeedType,

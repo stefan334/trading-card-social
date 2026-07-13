@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { Link, Tabs } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
+import { useAutoLocation } from '../../src/hooks/useAutoLocation';
 import { useUnreadChatTotal } from '../../src/hooks/useChatThreads';
 import { useUnreadNotificationCount } from '../../src/hooks/useNotifications';
 
@@ -97,6 +98,7 @@ const badge = StyleSheet.create({
 export default function TabLayout() {
   const unreadChats = useUnreadChatTotal();
   const { profile } = useAuth();
+  useAutoLocation(); // ask once on entry, then keep location current automatically
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: '#2563EB' }}>
       <Tabs.Screen
