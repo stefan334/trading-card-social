@@ -18,6 +18,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useCardSearch } from '../../src/hooks/useCardSearch';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
+import { useScreenView } from '../../src/services/analytics';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
 import type { CardCondition } from '../../src/types/domain';
 
@@ -36,6 +37,7 @@ const LABEL: Record<CardCondition, string> = {
 export default function AddScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  useScreenView('add');
   const { items, add: addToCart, removeAt, clear } = useBatch();
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
 

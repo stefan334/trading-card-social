@@ -7,6 +7,7 @@ import { Link } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useOwnedCards, type OwnedCard } from '../../src/hooks/useOwnedCards';
 import { useProfile } from '../../src/hooks/useProfile';
+import { track } from '../../src/services/analytics';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
 import { useWishlist } from '../../src/hooks/useWishlist';
 
@@ -96,6 +97,7 @@ export default function NewTradeScreen() {
         theirUserCardIds: [...wantIds],
         note,
       });
+      track('trade_proposed', { withId, give: giveIds.size, want: wantIds.size });
       router.replace(`/trade/${tradeId}`);
     } catch (e: any) {
       setError(e?.message ?? 'Could not send the trade.');

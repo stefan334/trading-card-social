@@ -7,6 +7,7 @@ import { SupabaseSetupNotice } from '../src/components/SupabaseSetupNotice';
 import { useCardPrices } from '../src/hooks/useCardPrices';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { useMarketplace, type MarketListing } from '../src/hooks/useMarketplace';
+import { useScreenView } from '../src/services/analytics';
 import { isSupabaseConfigured } from '../src/services/supabase/client';
 import { listProviders } from '../src/services/tcg-providers';
 import { formatPrice } from '../src/utils/time';
@@ -54,6 +55,7 @@ function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: numb
 /** Global marketplace: browse every card listed for trade, opened from the Feed header. */
 export default function MarketplaceScreen() {
   const games = listProviders();
+  useScreenView('marketplace');
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
   const [query, setQuery] = useState('');
   const [nearMe, setNearMe] = useState(true);

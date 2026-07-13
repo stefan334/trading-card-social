@@ -30,6 +30,12 @@ export default function UserProfileScreen() {
 
   const actions = canFollow ? (
     <View style={{ gap: 10 }}>
+      <Link href={`/trade/new?with=${id}`} asChild>
+        <Pressable style={styles.tradeButton}>
+          <Ionicons name="swap-horizontal" size={18} color="white" />
+          <Text style={styles.tradeText}>Propose a trade</Text>
+        </Pressable>
+      </Link>
       <View style={styles.actionRow}>
         <Pressable
           style={[styles.button, styles.flex, isFollowing ? styles.following : styles.followBtn]}
@@ -46,10 +52,10 @@ export default function UserProfileScreen() {
           <Text style={[styles.buttonText, styles.messageText]}>Message</Text>
         </Pressable>
       </View>
-      <Link href={`/trade/new?with=${id}`} asChild>
-        <Pressable style={[styles.button, styles.tradeButton]}>
-          <Ionicons name="swap-horizontal" size={18} color="white" />
-          <Text style={styles.buttonText}>Propose Trade</Text>
+      <Link href={`/report?profile=${id}&name=${encodeURIComponent(profile.username)}` as any} asChild>
+        <Pressable style={styles.reportBtn} hitSlop={6}>
+          <Ionicons name="flag-outline" size={13} color="#9CA3AF" />
+          <Text style={styles.reportText}>Report user</Text>
         </Pressable>
       </Link>
     </View>
@@ -93,9 +99,20 @@ const styles = StyleSheet.create({
   followingText: { color: '#374151' },
   actionRow: { flexDirection: 'row', gap: 10 },
   flex: { flex: 1 },
-  tradeButton: { backgroundColor: '#059669', borderColor: '#047857' },
+  tradeButton: {
+    flexDirection: 'row',
+    gap: 8,
+    backgroundColor: '#059669',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tradeText: { color: 'white', fontWeight: '800', fontSize: 16 },
   messageButton: { backgroundColor: 'white', borderColor: '#2563EB' },
   messageText: { color: '#2563EB' },
+  reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },
+  reportText: { color: '#9CA3AF', fontSize: 13, fontWeight: '600' },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 4 },
   muted: { color: '#6B7280', marginHorizontal: 16, marginTop: 8 },
 });

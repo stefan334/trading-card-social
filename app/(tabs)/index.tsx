@@ -3,6 +3,7 @@ import { PostCard } from '../../src/components/PostCard';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFeed } from '../../src/hooks/useFeed';
+import { useScreenView } from '../../src/services/analytics';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
 
 /**
@@ -13,6 +14,7 @@ import { isSupabaseConfigured } from '../../src/services/supabase/client';
 export default function FeedScreen() {
   const { user, loading: authLoading } = useAuth();
   const { data: items, isLoading, isRefetching, refetch } = useFeed(user?.id);
+  useScreenView('feed');
 
   if (!isSupabaseConfigured) {
     return (

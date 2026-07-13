@@ -40,6 +40,11 @@ function RootNavigator() {
       <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade' }} />
       <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade' }} />
       <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal' }} />
+      <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Feedback' }} />
+      <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact us' }} />
+      <Stack.Screen name="terms" options={{ headerShown: true, title: 'Terms & Conditions' }} />
+      <Stack.Screen name="report" options={{ headerShown: true, title: 'Report', presentation: 'modal' }} />
+      <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin' }} />
     </Stack>
   );
 }

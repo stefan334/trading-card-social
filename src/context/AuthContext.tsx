@@ -13,6 +13,8 @@ export interface AuthProfile {
   latitude: number | null;
   longitude: number | null;
   locationName: string | null;
+  isAdmin: boolean;
+  isBanned: boolean;
 }
 
 interface AuthContextValue {
@@ -41,6 +43,8 @@ function mapProfile(row: any): AuthProfile {
     latitude: row.latitude != null ? Number(row.latitude) : null,
     longitude: row.longitude != null ? Number(row.longitude) : null,
     locationName: row.location_name,
+    isAdmin: row.is_admin ?? false,
+    isBanned: row.is_banned ?? false,
   };
 }
 
@@ -53,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabase) return;
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username, display_name, avatar_url, bio, favorite_game_id, onboarded_at, latitude, longitude, location_name')
+      .select('id, username, display_name, avatar_url, bio, favorite_game_id, onboarded_at, latitude, longitude, location_name, is_admin, is_banned')
       .eq('id', userId)
       .single();
     // On a brand-new sign-up the profile row is created by a DB trigger; if it

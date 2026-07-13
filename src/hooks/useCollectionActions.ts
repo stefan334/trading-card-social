@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
+import { track } from '../services/analytics';
 import { supabase } from '../services/supabase/client';
 import { getProvider } from '../services/tcg-providers';
 import type { Card, CardSet } from '../types/card';
@@ -68,7 +69,10 @@ export function useCollectionActions() {
       });
       if (insertErr) throw insertErr;
     },
-    onSuccess: (_data, vars) => invalidate(vars.card.id),
+    onSuccess: (_data, vars) => {
+      invalidate(vars.card.id);
+      track('card_added', { cardId: vars.card.id, forTrade: vars.isForTrade ?? false });
+    },
   });
 
   const remove = useMutation({
