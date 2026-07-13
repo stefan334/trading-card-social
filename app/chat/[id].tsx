@@ -15,6 +15,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useChatThread } from '../../src/hooks/useChatThread';
@@ -44,6 +45,7 @@ export default function ChatThreadScreen() {
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
 
   // Mark read on open and whenever new messages arrive while the thread is open.
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function ChatThreadScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
       keyboardVerticalOffset={headerHeight}
     >
       <Stack.Screen options={{ title }} />
@@ -100,7 +102,7 @@ export default function ChatThreadScreen() {
         />
       )}
 
-      <View style={styles.inputBar}>
+      <View style={[styles.inputBar, { paddingBottom: 10 + insets.bottom }]}>
         <Pressable style={styles.attach} onPress={attachImage} disabled={sendingImage}>
           {sendingImage ? <ActivityIndicator size="small" /> : <Ionicons name="image" size={24} color="#2563EB" />}
         </Pressable>

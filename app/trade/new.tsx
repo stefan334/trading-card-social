@@ -31,11 +31,15 @@ function SelectableCards({
         const isSel = selected.has(c.userCardId);
         return (
           <Pressable key={c.userCardId} style={styles.tile} onPress={() => onToggle(c.userCardId)}>
+            {/* Keep the Image's own style constant — toggling a border directly on
+                an expo-image can make it blank on re-render (Android). The
+                selection ring is a separate overlay instead. */}
             {c.imageUrlSmall ? (
-              <Image source={{ uri: c.imageUrlSmall }} style={[styles.cardImage, isSel && styles.selected]} />
+              <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} contentFit="cover" recyclingKey={c.userCardId} />
             ) : (
-              <View style={[styles.cardImage, styles.placeholder, isSel && styles.selected]} />
+              <View style={[styles.cardImage, styles.placeholder]} />
             )}
+            {isSel && <View style={styles.selectedRing} pointerEvents="none" />}
             {c.isForTrade && (
               <View style={styles.tradeBadge}>
                 <Text style={styles.tradeBadgeText}>Trade</Text>
@@ -187,7 +191,7 @@ const styles = StyleSheet.create({
   tile: { width: 76 },
   cardImage: { width: 76, height: 106, borderRadius: 6 },
   placeholder: { backgroundColor: '#E5E7EB' },
-  selected: { borderWidth: 3, borderColor: '#2563EB' },
+  selectedRing: { position: 'absolute', top: 0, left: 0, width: 76, height: 106, borderRadius: 6, borderWidth: 3, borderColor: '#2563EB' },
   check: { position: 'absolute', top: 2, right: 2, backgroundColor: 'white', borderRadius: 10 },
   tradeBadge: { position: 'absolute', bottom: 2, left: 2, backgroundColor: '#059669', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 },
   tradeBadgeText: { color: 'white', fontSize: 9, fontWeight: '700' },

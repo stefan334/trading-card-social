@@ -63,6 +63,27 @@ export async function dbGetSets(gameId: string): Promise<CardSet[] | null> {
   }));
 }
 
+/** A single set from the catalog. null = not synced (fall back to the API). */
+export async function dbGetSet(setId: string): Promise<CardSet | null> {
+  if (!isSupabaseConfigured || !supabase) return null;
+  const { data, error } = await supabase
+    .from('card_sets')
+    .select('id, game_id, name, series, release_date, total_cards, image_url')
+    .eq('id', setId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const r: any = data;
+  return {
+    id: r.id,
+    gameId: r.game_id,
+    name: r.name,
+    series: r.series ?? undefined,
+    releaseDate: r.release_date ?? undefined,
+    totalCards: r.total_cards ?? 0,
+    imageUrl: r.image_url ?? undefined,
+  };
+}
+
 /** Fuzzy name search (trigram index). null = no DB rows (fall back to API). */
 export async function dbSearchCards(gameId: string, name: string, limit = 30): Promise<Card[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;

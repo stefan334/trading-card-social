@@ -19,6 +19,7 @@ import { useCardSearch } from '../../src/hooks/useCardSearch';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
 import { useScreenView } from '../../src/services/analytics';
+import { dbGetSet } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
 import type { CardCondition } from '../../src/types/domain';
 
@@ -63,7 +64,8 @@ export default function AddScreen() {
     if (!card) return;
     setBusyId(cardId);
     try {
-      const set = await getProvider(card.gameId).getSet(card.setId);
+      // DB-first (instant once catalog is synced); fall back to the live API.
+      const set = (await dbGetSet(card.setId)) ?? (await getProvider(card.gameId).getSet(card.setId));
       addToCart(card, set);
     } finally {
       setBusyId(null);

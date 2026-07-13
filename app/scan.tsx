@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import { useBatch } from '../src/context/BatchContext';
 import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
+import { dbGetSet } from '../src/services/catalog';
 import { getProvider, listProviders } from '../src/services/tcg-providers';
 import { ocrAvailable, recognizeCard } from '../src/services/ocr';
 import type { Card } from '../src/types/card';
@@ -51,7 +52,7 @@ export default function ScanScreen() {
   const { data: set, isLoading: setLoading } = useQuery({
     queryKey: ['set', selected?.setId],
     enabled: Boolean(selected?.setId),
-    queryFn: () => getProvider(gameId).getSet(selected!.setId),
+    queryFn: async () => (await dbGetSet(selected!.setId)) ?? getProvider(gameId).getSet(selected!.setId),
   });
 
   function reset() {

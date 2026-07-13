@@ -29,6 +29,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -95,19 +96,26 @@ export function AuthForm({ mode }: { mode: Mode }) {
       <TextInput
         style={styles.input}
         placeholder="Email"
+        placeholderTextColor="#9CA3AF"
         autoCapitalize="none"
         autoCorrect={false}
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={styles.passwordRow}>
+        <TextInput
+          style={[styles.input, styles.passwordInput]}
+          placeholder="Password"
+          placeholderTextColor="#9CA3AF"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <Pressable style={styles.eye} onPress={() => setShowPassword((s) => !s)} hitSlop={8}>
+          <Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={20} color="#6B7280" />
+        </Pressable>
+      </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {info ? <Text style={styles.info}>{info}</Text> : null}
@@ -164,7 +172,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
+    color: '#111827',
   },
+  passwordRow: { justifyContent: 'center' },
+  passwordInput: { paddingRight: 46 },
+  eye: { position: 'absolute', right: 12, padding: 4 },
   button: {
     backgroundColor: '#2563EB',
     borderRadius: 10,
