@@ -65,18 +65,29 @@ function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
         </Pressable>
       </View>
       {copy.isForTrade && (
-        <View style={styles.priceRow}>
-          <Text style={styles.euro}>€</Text>
-          <TextInput
-            style={styles.priceInput}
-            placeholder="Asking price"
-            keyboardType="decimal-pad"
-            value={price}
-            onChangeText={setPrice}
-            onBlur={savePrice}
-          />
-          <Text style={styles.priceHint}>{price.trim() ? 'or open to trades' : 'blank = open to card trades'}</Text>
-        </View>
+        <>
+          <View style={styles.priceRow}>
+            <Text style={styles.euro}>€</Text>
+            <TextInput
+              style={styles.priceInput}
+              placeholder="Asking price"
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              value={price}
+              onChangeText={setPrice}
+              onBlur={savePrice}
+              onSubmitEditing={savePrice}
+            />
+            <Pressable style={styles.priceSave} onPress={savePrice} disabled={setSalePrice.isPending}>
+              {setSalePrice.isPending ? (
+                <ActivityIndicator color="white" size="small" />
+              ) : (
+                <Text style={styles.priceSaveText}>Set</Text>
+              )}
+            </Pressable>
+          </View>
+          <Text style={styles.priceHint}>{price.trim() ? `Listed at €${price.trim()}` : 'Leave blank = open to card trades'}</Text>
+        </>
       )}
     </View>
   );
@@ -284,6 +295,8 @@ const styles = StyleSheet.create({
   remove: { color: '#DC2626', fontWeight: '600', marginLeft: 12 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingBottom: 6 },
   euro: { fontSize: 16, fontWeight: '700', color: '#059669' },
-  priceInput: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, width: 100, fontSize: 15 },
-  priceHint: { color: '#9CA3AF', fontSize: 11, flex: 1 },
+  priceInput: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, width: 100, fontSize: 15, color: '#111827' },
+  priceSave: { backgroundColor: '#059669', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, minWidth: 52, alignItems: 'center' },
+  priceSaveText: { color: 'white', fontWeight: '700' },
+  priceHint: { color: '#9CA3AF', fontSize: 11, marginBottom: 4 },
 });

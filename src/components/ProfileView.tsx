@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { ProfileWithStats } from '../hooks/useProfile';
 import { listProviders } from '../services/tcg-providers';
@@ -10,12 +11,18 @@ function gameLabel(gameId: string | null): string | null {
   return listProviders().find((p) => p.gameId === gameId)?.displayName ?? gameId;
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  return (
+function Stat({ value, label, href }: { value: number; label: string; href?: string }) {
+  const inner = (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
+  );
+  if (!href) return inner;
+  return (
+    <Link href={href as any} asChild>
+      <Pressable>{inner}</Pressable>
+    </Link>
   );
 }
 
@@ -34,8 +41,8 @@ export function ProfileView({ profile, action }: { profile: ProfileWithStats; ac
         )}
         <View style={styles.stats}>
           <Stat value={profile.cardCount} label="Cards" />
-          <Stat value={profile.followers} label="Followers" />
-          <Stat value={profile.following} label="Following" />
+          <Stat value={profile.followers} label="Followers" href={`/connections?user=${profile.id}&type=followers`} />
+          <Stat value={profile.following} label="Following" href={`/connections?user=${profile.id}&type=following`} />
         </View>
       </View>
 

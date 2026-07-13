@@ -25,6 +25,11 @@ export function useThreadMessages(threadId: string | undefined) {
   const query = useQuery({
     queryKey: ['thread-messages', threadId],
     enabled: isSupabaseConfigured && Boolean(threadId),
+    // Realtime pushes new messages instantly, but poll as a fallback so an open
+    // chat always stays in sync even if the realtime socket drops. (Pauses when
+    // the app is backgrounded — react-query default.)
+    refetchInterval: 3000,
+    staleTime: 0,
     queryFn: async (): Promise<ChatMessage[]> => {
       const { data, error } = await supabase!
         .from('chat_messages')

@@ -1,7 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { Image } from 'expo-image';
 import { Link, Tabs } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAuth } from '../../src/context/AuthContext';
 import { useUnreadChatTotal } from '../../src/hooks/useChatThreads';
 import { useUnreadNotificationCount } from '../../src/hooks/useNotifications';
 
@@ -94,6 +96,7 @@ const badge = StyleSheet.create({
 
 export default function TabLayout() {
   const unreadChats = useUnreadChatTotal();
+  const { profile } = useAuth();
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: '#2563EB' }}>
       <Tabs.Screen
@@ -142,7 +145,15 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-circle" color={color} size={size} />,
+          tabBarIcon: ({ color, size, focused }) =>
+            profile?.avatarUrl ? (
+              <Image
+                source={{ uri: profile.avatarUrl }}
+                style={{ width: size, height: size, borderRadius: size / 2, borderWidth: focused ? 2 : 0, borderColor: color }}
+              />
+            ) : (
+              <Ionicons name="person-circle" color={color} size={size} />
+            ),
           headerRight: () => (
             <Link href="/settings" asChild>
               <Pressable hitSlop={12} style={{ marginRight: 16 }}>

@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -54,6 +54,14 @@ export default function ChatThreadScreen() {
   }, [id, messages?.length]);
 
   const title = meta?.other?.displayName || meta?.other?.username || 'Chat';
+  const otherId = meta?.other?.id;
+
+  // Jump to the newest message when the thread opens / a message arrives.
+  useEffect(() => {
+    if (messages?.length) {
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: false }));
+    }
+  }, [messages?.length]);
 
   const [sendingImage, setSendingImage] = useState(false);
 
@@ -83,10 +91,32 @@ export default function ChatThreadScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior="padding"
+      // iOS: pad up by the keyboard. Android: let the window resize natively —
+      // KeyboardAvoiding=padding on Android leaves the composer stuck up high
+      // after the keyboard closes.
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={headerHeight}
     >
-      <Stack.Screen options={{ title }} />
+      <Stack.Screen
+        options={{
+          title,
+          headerRight: () =>
+            otherId ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginRight: 12 }}>
+                <Link href={`/trade/new?with=${otherId}`} asChild>
+                  <Pressable hitSlop={8}>
+                    <Ionicons name="swap-horizontal" size={24} color="#2563EB" />
+                  </Pressable>
+                </Link>
+                <Link href={`/user/${otherId}`} asChild>
+                  <Pressable hitSlop={8}>
+                    <Ionicons name="person-circle-outline" size={24} color="#2563EB" />
+                  </Pressable>
+                </Link>
+              </View>
+            ) : undefined,
+        }}
+      />
 
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
@@ -97,7 +127,7 @@ export default function ChatThreadScreen() {
           keyExtractor={(m) => m.id}
           renderItem={({ item }) => <Bubble message={item} mine={item.senderId === user?.id} />}
           contentContainerStyle={styles.list}
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={<Text style={styles.empty}>Say hi 👋</Text>}
         />
       )}

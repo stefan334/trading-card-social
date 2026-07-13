@@ -46,6 +46,7 @@ function RootNavigator() {
       <Stack.Screen name="report" options={{ headerShown: true, title: 'Report', presentation: 'modal' }} />
       <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin' }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
+      <Stack.Screen name="connections" options={{ headerShown: true, title: 'People' }} />
     </Stack>
   );
 }

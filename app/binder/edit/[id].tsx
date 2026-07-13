@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { DraggableGrid } from 'react-native-draggable-grid';
@@ -103,21 +103,17 @@ export default function BinderEditScreen() {
       )}
 
       <Text style={styles.label}>Add from your collection</Text>
+      <Text style={styles.hint}>Tap a card to add it. Cards already in the binder show a ✓.</Text>
       {!owned?.length ? (
         <Text style={styles.muted}>You don't own any cards yet — add some from the Collection tab first.</Text>
       ) : (
-        <FlatList
-          data={owned}
-          keyExtractor={(c) => c.userCardId}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.resultsRow}
-          renderItem={({ item }) => {
+        <View style={styles.collectionGrid}>
+          {owned.map((item) => {
             const already = inBinder.has(item.cardId);
             return (
-              <Pressable style={styles.result} onPress={() => !already && addOwned(item.cardId)} disabled={already}>
+              <Pressable key={item.userCardId} style={styles.result} onPress={() => !already && addOwned(item.cardId)} disabled={already}>
                 {item.imageUrlSmall ? (
-                  <Image source={{ uri: item.imageUrlSmall }} style={[styles.cardImg, already && styles.dim]} />
+                  <Image source={{ uri: item.imageUrlSmall }} style={[styles.cardImg, already && styles.dim]} recyclingKey={item.userCardId} />
                 ) : (
                   <View style={[styles.cardImg, styles.placeholder]} />
                 )}
@@ -125,12 +121,19 @@ export default function BinderEditScreen() {
                   <View style={styles.addOverlay}><ActivityIndicator color="white" /></View>
                 ) : already ? (
                   <View style={styles.addOverlay}><Ionicons name="checkmark-circle" size={22} color="#059669" /></View>
-                ) : null}
+                ) : (
+                  <View style={styles.plusBadge}><Ionicons name="add" size={16} color="white" /></View>
+                )}
               </Pressable>
             );
-          }}
-        />
+          })}
+        </View>
       )}
+
+      <Pressable style={styles.doneBtn} onPress={() => router.replace(`/binder/${binder.id}`)}>
+        <Ionicons name="checkmark" size={18} color="white" />
+        <Text style={styles.doneText}>Done</Text>
+      </Pressable>
 
       <Pressable style={styles.deleteBtn} onPress={deleteBinder} disabled={remove.isPending}>
         <Text style={styles.deleteText}>Delete binder</Text>
@@ -155,9 +158,12 @@ const styles = StyleSheet.create({
   cardImg: { width: 70, height: 98, borderRadius: 6 },
   placeholder: { backgroundColor: '#E5E7EB' },
   dim: { opacity: 0.4 },
-  resultsRow: { paddingHorizontal: 16, gap: 8 },
+  collectionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   result: { width: 70 },
+  plusBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: '#2563EB', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
   addOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
-  deleteBtn: { margin: 16, marginTop: 32, borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  doneBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', marginHorizontal: 16, marginTop: 28, borderRadius: 10, paddingVertical: 14 },
+  doneText: { color: 'white', fontWeight: '800', fontSize: 16 },
+  deleteBtn: { margin: 16, marginTop: 12, borderWidth: 1, borderColor: '#FCA5A5', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
   deleteText: { color: '#DC2626', fontWeight: '700' },
 });
