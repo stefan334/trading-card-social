@@ -23,9 +23,10 @@ const TEST_BANNER = Platform.select({
   ios: 'ca-app-pub-3940256099942544/2934735716',
 })!;
 
-// TODO: paste your real banner ad-unit IDs here (format: ca-app-pub-XXXXXXXX/YYYYYYYY).
+// Real banner ad-unit IDs (format: ca-app-pub-XXXXXXXX/YYYYYYYY). Android is live;
+// add an iOS unit here if/when you ship an iOS build.
 const REAL_BANNER = Platform.select({
-  android: '', // e.g. 'ca-app-pub-1234567890123456/1111111111'
+  android: 'ca-app-pub-4081444945442418/4137440146',
   ios: '',
 });
 
