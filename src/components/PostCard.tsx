@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { Image } from 'expo-image';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { FeedItem } from '../hooks/useFeed';
+import { supabase } from '../services/supabase/client';
 import { formatPrice, formatRelativeTime } from '../utils/time';
 
 /** Headline verb for an activity item. */
@@ -45,6 +48,23 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
     `/trade/new?with=${item.author.id}` +
     (item.cards.length === 1 ? `&card=${encodeURIComponent(item.cards[0].id)}` : '');
 
+  // Follow the author right from the feed (for suggested/non-followed people).
+  const qc = useQueryClient();
+  const [followed, setFollowed] = useState(item.authorFollowed);
+  const follow = useMutation({
+    mutationFn: async () => {
+      if (!supabase || !meId) return;
+      const { error } = await supabase.from('follows').insert({ follower_id: meId, followee_id: item.author.id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setFollowed(true);
+      qc.invalidateQueries({ queryKey: ['isFollowing', meId, item.author.id] });
+      qc.invalidateQueries({ queryKey: ['profile', item.author.id] });
+    },
+  });
+  const showFollow = !!meId && item.author.id !== meId && !followed;
+
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -60,7 +80,20 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
           </Text>
           <Text style={styles.time}>{formatRelativeTime(item.createdAt)}</Text>
         </View>
-        {icon ? <Ionicons name={icon.name} size={18} color={icon.color} /> : null}
+        {showFollow ? (
+          <Pressable style={styles.followBtn} onPress={() => follow.mutate()} disabled={follow.isPending} hitSlop={6}>
+            {follow.isPending ? (
+              <ActivityIndicator size="small" color="#2563EB" />
+            ) : (
+              <>
+                <Ionicons name="person-add" size={13} color="#2563EB" />
+                <Text style={styles.followText}>Follow</Text>
+              </>
+            )}
+          </Pressable>
+        ) : icon ? (
+          <Ionicons name={icon.name} size={18} color={icon.color} />
+        ) : null}
       </View>
 
       {item.body && item.type === 'text' ? <Text style={styles.textBody}>{item.body}</Text> : null}
@@ -107,4 +140,6 @@ const styles = StyleSheet.create({
   placeholder: { backgroundColor: '#E5E7EB' },
   offerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 10, marginTop: 12 },
   offerText: { color: 'white', fontWeight: '700', fontSize: 14 },
+  followBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#2563EB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  followText: { color: '#2563EB', fontWeight: '700', fontSize: 13 },
 });

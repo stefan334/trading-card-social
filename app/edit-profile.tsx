@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -24,7 +25,16 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 export default function EditProfileScreen() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
+  const qc = useQueryClient();
   const games = listProviders();
+
+  // Refresh both the auth-context profile and the react-query profile cache that
+  // the profile screens actually render from (otherwise edits don't show up).
+  async function syncProfile() {
+    await refreshProfile();
+    const pid = profile?.id ?? user?.id;
+    if (pid) qc.invalidateQueries({ queryKey: ['profile', pid] });
+  }
 
   const [username, setUsername] = useState(profile?.username ?? '');
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
@@ -64,7 +74,7 @@ export default function EditProfileScreen() {
         .eq('id', user.id);
       if (upErr) throw upErr;
       setLocationName(city ?? 'Location set');
-      await refreshProfile();
+      await syncProfile();
     } catch (e: any) {
       setError(e?.message ?? 'Could not get your location.');
     } finally {
@@ -89,7 +99,7 @@ export default function EditProfileScreen() {
       const { error: upErr } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
       if (upErr) throw upErr;
       setAvatarUrl(url);
-      await refreshProfile();
+      await syncProfile();
     } catch (e: any) {
       setError(e?.message ?? 'Could not upload photo.');
     } finally {
@@ -125,7 +135,7 @@ export default function EditProfileScreen() {
         }
         throw error;
       }
-      await refreshProfile();
+      await syncProfile();
       router.back();
     } catch (e: any) {
       setError(e?.message ?? 'Could not save changes.');

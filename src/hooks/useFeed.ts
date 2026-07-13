@@ -16,6 +16,7 @@ export interface FeedItem {
   body: string | null;
   createdAt: string;
   author: { id: string; username: string; displayName: string | null; avatarUrl: string | null };
+  authorFollowed: boolean;
   cards: FeedCard[];
 }
 
@@ -100,6 +101,7 @@ export function useFeed(userId: string | undefined, meLocation?: string | null) 
             body: r.body,
             createdAt: r.createdAt,
             author: r.author,
+            authorFollowed: r.author.id === userId || followed.has(r.author.id),
             cards: r.card ? [r.card] : [],
           });
         }
