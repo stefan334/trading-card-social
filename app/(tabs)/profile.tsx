@@ -1,6 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Badges } from '../../src/components/Badges';
 import { BindersRow } from '../../src/components/BindersRow';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { ForTradeShowcase } from '../../src/components/ForTradeShowcase';
@@ -16,7 +16,7 @@ import { isSupabaseConfigured } from '../../src/services/supabase/client';
  * profile + stats, edit/scan/sign-out actions, and their own collection.
  */
 export default function ProfileScreen() {
-  const { user, signOut, profile: me } = useAuth();
+  const { user } = useAuth();
   const { data: profile, isLoading } = useProfile(user?.id);
   const { data: groups, isLoading: collectionLoading } = useCollectionBySet(user?.id);
 
@@ -36,6 +36,7 @@ export default function ProfileScreen() {
     <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
       <ProfileView profile={profile} />
 
+      <Badges userId={profile.id} showEmpty />
       <BindersRow userId={profile.id} isOwner />
       <ForTradeShowcase userId={profile.id} />
 
@@ -48,42 +49,6 @@ export default function ProfileScreen() {
         <Link href="/add" asChild>
           <Pressable style={styles.button}>
             <Text style={styles.buttonText}>Add cards</Text>
-          </Pressable>
-        </Link>
-        <Pressable style={[styles.button, styles.signOut]} onPress={signOut}>
-          <Text style={[styles.buttonText, styles.signOutText]}>Sign out</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.support}>
-        {me?.isAdmin ? (
-          <Link href="/admin" asChild>
-            <Pressable style={styles.supportRow}>
-              <Ionicons name="shield-checkmark" size={20} color="#DC2626" />
-              <Text style={[styles.supportLabel, { color: '#DC2626' }]}>Admin console</Text>
-              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-            </Pressable>
-          </Link>
-        ) : null}
-        <Link href="/feedback" asChild>
-          <Pressable style={styles.supportRow}>
-            <Ionicons name="chatbox-ellipses" size={20} color="#2563EB" />
-            <Text style={styles.supportLabel}>Send feedback</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </Pressable>
-        </Link>
-        <Link href="/contact" asChild>
-          <Pressable style={styles.supportRow}>
-            <Ionicons name="mail" size={20} color="#2563EB" />
-            <Text style={styles.supportLabel}>Contact us</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-          </Pressable>
-        </Link>
-        <Link href="/terms" asChild>
-          <Pressable style={styles.supportRow}>
-            <Ionicons name="document-text" size={20} color="#2563EB" />
-            <Text style={styles.supportLabel}>Terms & Conditions</Text>
-            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
           </Pressable>
         </Link>
       </View>
@@ -106,11 +71,6 @@ const styles = StyleSheet.create({
   actions: { paddingHorizontal: 16, gap: 10, marginTop: 8 },
   button: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
   buttonText: { color: 'white', fontWeight: '600', fontSize: 15 },
-  signOut: { backgroundColor: '#FEE2E2' },
-  signOutText: { color: '#DC2626' },
-  support: { marginTop: 20, marginHorizontal: 16, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#F3F4F6' },
-  supportRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'white', paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  supportLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: '#111827' },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 24, marginBottom: 10 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
 });

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Badges } from '../../src/components/Badges';
 import { BindersRow } from '../../src/components/BindersRow';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { ForTradeShowcase } from '../../src/components/ForTradeShowcase';
@@ -66,6 +67,7 @@ export default function UserProfileScreen() {
     <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
       <ProfileView profile={profile} action={actions} />
 
+      {id ? <Badges userId={id} /> : null}
       {id ? <BindersRow userId={id} isOwner={false} /> : null}
       {id ? <ForTradeShowcase userId={id} /> : null}
       {id ? <WishlistShowcase userId={id} /> : null}
