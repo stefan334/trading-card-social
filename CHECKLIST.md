@@ -186,6 +186,19 @@ decisions.
       instantly; the live API stays a per-card fallback for anything not yet synced.
       **Setup:** add repo secrets `DATABASE_URL` + `POKEMON_TCG_API_KEY`; run `npm run sync:catalog`
       (needs `DATABASE_URL`) or trigger the workflow once to backfill.
+- [x] **Analytics** (`0018`, `src/services/analytics.ts`): self-hosted `analytics_events` + `track()` /
+      `useScreenView()` (no SDK). Query in SQL. Admin-readable only.
+- [x] **Moderation** (`0018`): `reports` table + `/report`; `/admin` console (gated by `profiles.is_admin`)
+      to review reports (ban via `admin_set_banned` RPC / dismiss) and read feedback. Report link on profiles.
+      → **manual step:** grant yourself admin: `update profiles set is_admin=true where id='<your-uid>';`
+- [x] **Feedback / Contact / Terms** screens (`/feedback`, `/contact`, `/terms`) linked from a profile
+      About/Support list. **Terms is a starter template — have a lawyer review before public launch.**
+- [x] **Open feed** (`useFeed`): shows posts from everyone (no more empty feed for new users), ranked
+      you+followed → local (same city) → recent; banned users hidden.
+- [x] **Ads** (`react-native-google-mobile-ads`): banner every 5 feed posts, Google **test** ad IDs.
+      → **manual step for revenue:** create an AdMob account, put real App IDs in `app.json` plugin and
+      real ad-unit IDs in `EXPO_PUBLIC_ADMOB_BANNER_ANDROID/IOS` (EAS secrets), then rebuild. Ads only
+      run in EAS/dev builds, not Expo Go.
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
