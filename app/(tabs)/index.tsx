@@ -1,10 +1,16 @@
+import { useMemo } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { FeedAd } from '../../src/components/FeedAd';
 import { PostCard } from '../../src/components/PostCard';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { useAuth } from '../../src/context/AuthContext';
-import { useFeed } from '../../src/hooks/useFeed';
+import { useFeed, type FeedItem } from '../../src/hooks/useFeed';
 import { useScreenView } from '../../src/services/analytics';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
+
+const AD_EVERY = 5; // one sponsored slot per 5 posts
+
+type FeedRow = { kind: 'post'; item: FeedItem } | { kind: 'ad'; key: string };
 
 /**
  * Home tab = activity feed of what you and the people you follow have been doing:
@@ -12,9 +18,19 @@ import { isSupabaseConfigured } from '../../src/services/supabase/client';
  * DB triggers (no manual posting); a burst of adds is grouped into one item.
  */
 export default function FeedScreen() {
-  const { user, loading: authLoading } = useAuth();
-  const { data: items, isLoading, isRefetching, refetch } = useFeed(user?.id);
+  const { user, profile, loading: authLoading } = useAuth();
+  const { data: items, isLoading, isRefetching, refetch } = useFeed(user?.id, profile?.locationName);
   useScreenView('feed');
+
+  // Interleave a sponsored slot every AD_EVERY posts.
+  const rows = useMemo<FeedRow[]>(() => {
+    const out: FeedRow[] = [];
+    (items ?? []).forEach((item, i) => {
+      out.push({ kind: 'post', item });
+      if ((i + 1) % AD_EVERY === 0) out.push({ kind: 'ad', key: `ad-${item.id}` });
+    });
+    return out;
+  }, [items]);
 
   if (!isSupabaseConfigured) {
     return (
@@ -64,9 +80,9 @@ export default function FeedScreen() {
 
   return (
     <FlatList
-      data={items}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <PostCard item={item} meId={user.id} />}
+      data={rows}
+      keyExtractor={(row) => (row.kind === 'ad' ? row.key : row.item.id)}
+      renderItem={({ item: row }) => (row.kind === 'ad' ? <FeedAd /> : <PostCard item={row.item} meId={user.id} />)}
       contentContainerStyle={{ paddingBottom: 24 }}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     />
