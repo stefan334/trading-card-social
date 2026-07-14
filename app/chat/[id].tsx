@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useHeaderHeight } from '@react-navigation/elements';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
@@ -7,7 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Pressable,
   StyleSheet,
@@ -44,8 +43,25 @@ export default function ChatThreadScreen() {
   const { sendMessage, markRead } = useChatActions();
   const [text, setText] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
-  const headerHeight = useHeaderHeight();
   const insets = useSafeAreaInsets();
+
+  // Manual keyboard handling: KeyboardAvoidingView + edge-to-edge (Expo SDK 54)
+  // leaves the composer behind the keyboard on Android. Track the keyboard height
+  // ourselves and lift the whole conversation by it.
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  useEffect(() => {
+    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvt, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+    });
+    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Mark read on open and whenever new messages arrive while the thread is open.
   useEffect(() => {
@@ -89,14 +105,7 @@ export default function ChatThreadScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      // iOS: pad up by the keyboard. Android: let the window resize natively —
-      // KeyboardAvoiding=padding on Android leaves the composer stuck up high
-      // after the keyboard closes.
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={headerHeight}
-    >
+    <View style={[styles.container, { paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom }]}>
       <Stack.Screen
         options={{
           title,
@@ -132,7 +141,7 @@ export default function ChatThreadScreen() {
         />
       )}
 
-      <View style={[styles.inputBar, { paddingBottom: 10 + insets.bottom }]}>
+      <View style={styles.inputBar}>
         <Pressable style={styles.attach} onPress={attachImage} disabled={sendingImage}>
           {sendingImage ? <ActivityIndicator size="small" /> : <Ionicons name="image" size={24} color="#2563EB" />}
         </Pressable>
@@ -147,7 +156,7 @@ export default function ChatThreadScreen() {
           <Text style={styles.sendText}>Send</Text>
         </Pressable>
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

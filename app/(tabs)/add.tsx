@@ -48,7 +48,7 @@ export default function AddScreen() {
   const router = useRouter();
   const { user } = useAuth();
   useScreenView('add');
-  const { items, add: addToCart, removeAt, clear } = useBatch();
+  const { items, add: addToCart, removeAt, removeOne, clear } = useBatch();
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
 
   const [query, setQuery] = useState('');
@@ -175,27 +175,35 @@ export default function AddScreen() {
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => {
             const count = countByCard.get(item.id) ?? 0;
+            const busy = busyId === item.id;
             return (
-              <Pressable style={styles.cell} onPress={() => addResult(item)} disabled={busyId === item.id}>
+              <View style={styles.cell}>
                 <View>
                   {item.imageUrlSmall ? (
-                    <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImg} />
+                    <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImg} recyclingKey={item.id} />
                   ) : (
                     <View style={[styles.cardImg, styles.placeholder]} />
                   )}
-                  {busyId === item.id ? (
+                  {busy ? (
                     <View style={styles.overlay}><ActivityIndicator color="white" /></View>
                   ) : count > 0 ? (
-                    <View style={styles.countBadge}>
-                      <Ionicons name="checkmark" size={13} color="white" />
-                      {count > 1 && <Text style={styles.countText}>{count}</Text>}
+                    <View style={styles.stepper}>
+                      <Pressable hitSlop={6} style={styles.stepBtn} onPress={() => removeOne(item.id)}>
+                        <Ionicons name="remove" size={16} color="white" />
+                      </Pressable>
+                      <Text style={styles.stepCount}>{count}</Text>
+                      <Pressable hitSlop={6} style={styles.stepBtn} onPress={() => addResult(item)}>
+                        <Ionicons name="add" size={16} color="white" />
+                      </Pressable>
                     </View>
                   ) : (
-                    <View style={styles.plus}><Ionicons name="add" size={16} color="white" /></View>
+                    <Pressable style={styles.plus} onPress={() => addResult(item)}>
+                      <Ionicons name="add" size={16} color="white" />
+                    </Pressable>
                   )}
                 </View>
                 <Text numberOfLines={1} style={styles.cardName}>{item.name}</Text>
-              </Pressable>
+              </View>
             );
           }}
           ListEmptyComponent={<Text style={styles.muted}>No matches — try a different spelling.</Text>}
@@ -371,8 +379,9 @@ const styles = StyleSheet.create({
   cardName: { fontSize: 12, marginTop: 3 },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00000055', borderRadius: 6 },
   plus: { position: 'absolute', bottom: 6, right: 6, backgroundColor: '#2563EB', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
-  countBadge: { position: 'absolute', bottom: 6, right: 6, backgroundColor: '#059669', borderRadius: 11, minWidth: 22, height: 22, paddingHorizontal: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 1 },
-  countText: { color: 'white', fontWeight: '800', fontSize: 12 },
+  stepper: { position: 'absolute', bottom: 6, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', backgroundColor: '#059669', borderRadius: 13, paddingHorizontal: 2 },
+  stepBtn: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
+  stepCount: { color: 'white', fontWeight: '800', fontSize: 13, minWidth: 16, textAlign: 'center' },
 
   cartBar: { position: 'absolute', left: 12, right: 12, bottom: 12, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#111827', borderRadius: 14, paddingVertical: 10, paddingLeft: 12, paddingRight: 10, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6 },
   cartThumbs: { flexDirection: 'row' },

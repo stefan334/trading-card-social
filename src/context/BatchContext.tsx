@@ -11,6 +11,8 @@ interface BatchContextValue {
   items: BatchItem[];
   add: (card: Card, set: CardSet) => void;
   removeAt: (key: string) => void;
+  /** Remove one copy of a card id from the tray (the most recently added). */
+  removeOne: (cardId: string) => void;
   clear: () => void;
 }
 
@@ -27,9 +29,18 @@ export function BatchProvider({ children }: { children: ReactNode }) {
     setItems((prev) => [...prev, { key: `${card.id}-${Date.now()}-${Math.random()}`, card, set }]);
   }, []);
   const removeAt = useCallback((key: string) => setItems((prev) => prev.filter((i) => i.key !== key)), []);
+  const removeOne = useCallback(
+    (cardId: string) =>
+      setItems((prev) => {
+        let lastIdx = -1;
+        for (let i = 0; i < prev.length; i++) if (prev[i].card.id === cardId) lastIdx = i;
+        return lastIdx === -1 ? prev : prev.filter((_, i) => i !== lastIdx);
+      }),
+    []
+  );
   const clear = useCallback(() => setItems([]), []);
 
-  return <BatchContext.Provider value={{ items, add, removeAt, clear }}>{children}</BatchContext.Provider>;
+  return <BatchContext.Provider value={{ items, add, removeAt, removeOne, clear }}>{children}</BatchContext.Provider>;
 }
 
 export function useBatch(): BatchContextValue {
