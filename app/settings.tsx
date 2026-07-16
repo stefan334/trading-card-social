@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { showToast, toastMessage } from '../src/components/Toast';
 import { useAuth } from '../src/context/AuthContext';
+import { supabase } from '../src/services/supabase/client';
 
 function Row({
   icon,
@@ -38,12 +41,46 @@ function Row({
 export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
   const router = useRouter();
+  const [deleting, setDeleting] = useState(false);
 
   function confirmSignOut() {
     Alert.alert('Sign out', 'Sign out of CardLink?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
     ]);
+  }
+
+  async function deleteAccount() {
+    if (!supabase) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.rpc('delete_account');
+      if (error) throw error;
+      await signOut(); // session is gone server-side; clear local state
+    } catch (e) {
+      showToast(toastMessage(e));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  function confirmDeleteAccount() {
+    Alert.alert(
+      'Delete account',
+      'This permanently deletes your account: collection, binders, wishlist, trades, chats, and posts. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () =>
+            Alert.alert('Are you absolutely sure?', 'Last chance — everything will be gone for good.', [
+              { text: 'Keep my account', style: 'cancel' },
+              { text: 'Delete everything', style: 'destructive', onPress: deleteAccount },
+            ]),
+        },
+      ]
+    );
   }
 
   return (
@@ -80,6 +117,13 @@ export default function SettingsScreen() {
       <View style={styles.group}>
         <Row icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
         <Row icon="log-out-outline" label="Sign out" color="#DC2626" onPress={confirmSignOut} />
+        <Row
+          icon="trash-outline"
+          label={deleting ? 'Deleting…' : 'Delete account'}
+          color="#DC2626"
+          onPress={deleting ? undefined : confirmDeleteAccount}
+          right={deleting ? <ActivityIndicator size="small" color="#DC2626" /> : undefined}
+        />
       </View>
 
       <Text style={styles.version}>CardLink · v1.0.0</Text>

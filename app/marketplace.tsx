@@ -60,7 +60,8 @@ export default function MarketplaceScreen() {
   const [query, setQuery] = useState('');
   const [nearMe, setNearMe] = useState(true);
   const debounced = useDebouncedValue(query);
-  const { listings, isLoading, canFilterNear } = useMarketplace(gameId, debounced, nearMe);
+  const { listings, isLoading, canFilterNear, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useMarketplace(gameId, debounced, nearMe);
   const { data: prices } = useCardPrices(listings.map((l) => l.cardId));
 
   if (!isSupabaseConfigured) {
@@ -117,6 +118,9 @@ export default function MarketplaceScreen() {
           data={listings}
           keyExtractor={(l) => l.userCardId}
           renderItem={({ item }) => <ListingRow item={item} marketAvg={prices?.get(item.cardId)?.average} />}
+          onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={{ marginVertical: 14 }} /> : null}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
           ListEmptyComponent={
             <Text style={styles.empty}>

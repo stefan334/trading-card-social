@@ -1,7 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { showToast, toastMessage, ToastHost } from '../src/components/Toast';
 import { AuthProvider } from '../src/context/AuthContext';
 import { BatchProvider } from '../src/context/BatchContext';
 import { useProtectedRoute } from '../src/hooks/useProtectedRoute';
@@ -18,6 +19,12 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
   },
+  // Any failed mutation (add card, send message, propose trade, …) surfaces as a
+  // toast, so errors are never silently swallowed. Screens with their own inline
+  // error UI still work; the toast is the global safety net.
+  mutationCache: new MutationCache({
+    onError: (error) => showToast(toastMessage(error)),
+  }),
 });
 
 function RootNavigator() {
@@ -58,6 +65,7 @@ export default function RootLayout() {
         <AuthProvider>
           <BatchProvider>
             <RootNavigator />
+            <ToastHost />
             <StatusBar style="auto" />
           </BatchProvider>
         </AuthProvider>

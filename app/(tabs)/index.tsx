@@ -19,7 +19,8 @@ type FeedRow = { kind: 'post'; item: FeedItem } | { kind: 'ad'; key: string };
  */
 export default function FeedScreen() {
   const { user, profile, loading: authLoading } = useAuth();
-  const { data: items, isLoading, isRefetching, refetch } = useFeed(user?.id, profile?.locationName);
+  const { data: items, isLoading, isRefetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useFeed(user?.id, profile?.locationName);
   useScreenView('feed');
 
   // Interleave a sponsored slot every AD_EVERY posts.
@@ -83,6 +84,9 @@ export default function FeedScreen() {
       data={rows}
       keyExtractor={(row) => (row.kind === 'ad' ? row.key : row.item.id)}
       renderItem={({ item: row }) => (row.kind === 'ad' ? <FeedAd /> : <PostCard item={row.item} meId={user.id} />)}
+      onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+      onEndReachedThreshold={0.4}
+      ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
       contentContainerStyle={{ paddingBottom: 24 }}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
     />

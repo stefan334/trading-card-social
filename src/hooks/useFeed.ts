@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
 
 export type FeedType = 'text' | 'card_showcase' | 'card_added' | 'card_listed' | 'card_wishlisted' | 'trade_completed';
@@ -21,6 +22,12 @@ export interface FeedItem {
 }
 
 const GROUP_WINDOW_MS = 30 * 60 * 1000; // bundle a burst of adds/listings within 30 min
+const PAGE_SIZE = 60; // raw posts per page; grouping shrinks this on screen
+
+interface FeedPage {
+  rows: any[];
+  followed: string[];
+}
 
 /**
  * Activity feed: what people have been doing — adding cards, listing for trade.
@@ -29,18 +36,21 @@ const GROUP_WINDOW_MS = 30 * 60 * 1000; // bundle a burst of adds/listings withi
  * people you follow first, then local collectors (same city), then everyone
  * else by recency. Banned users are hidden. A burst of the same activity by one
  * user is grouped into a single item (e.g. "added 12 cards").
+ *
+ * Paginated: pages are fetched by recency (infinite scroll); ranking + grouping
+ * run over everything loaded so far.
  */
 export function useFeed(userId: string | undefined, meLocation?: string | null) {
-  return useQuery({
+  const query = useInfiniteQuery({
     queryKey: ['feed', userId, meLocation ?? null],
     enabled: isSupabaseConfigured && Boolean(userId),
-    queryFn: async (): Promise<FeedItem[]> => {
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }): Promise<FeedPage> => {
       const { data: follows, error: followsError } = await supabase!
         .from('follows')
         .select('followee_id')
         .eq('follower_id', userId!);
       if (followsError) throw followsError;
-      const followed = new Set<string>((follows ?? []).map((f: any) => f.followee_id));
 
       const { data, error } = await supabase!
         .from('posts')
@@ -48,65 +58,87 @@ export function useFeed(userId: string | undefined, meLocation?: string | null) 
           'id, type, body, created_at, author:profiles(id, username, display_name, avatar_url, location_name, is_banned), card:cards(id, name, image_url_small)'
         )
         .order('created_at', { ascending: false })
-        .limit(150);
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
       if (error) throw error;
 
-      // Priority: your own + followed (0) → local same-city (1) → everyone else (2).
-      const priority = (author: any): number => {
-        if (author.id === userId || followed.has(author.id)) return 0;
-        if (meLocation && author.location_name && author.location_name === meLocation) return 1;
-        return 2;
-      };
-
-      const rows = (data ?? [])
-        .filter((row: any) => row.author && !row.author.is_banned)
-        .map((row: any) => ({
-          id: row.id as string,
-          type: row.type as FeedType,
-          body: row.body as string | null,
-          createdAt: row.created_at as string,
-          _priority: priority(row.author),
-          author: {
-            id: row.author.id,
-            username: row.author.username,
-            displayName: row.author.display_name,
-            avatarUrl: row.author.avatar_url,
-          },
-          card: row.card
-            ? { id: row.card.id, name: row.card.name, imageUrlSmall: row.card.image_url_small }
-            : null,
-        }))
-        // Stable sort: priority bucket first, then most-recent within each bucket
-        // (keeps a single author's burst adjacent so grouping still works).
-        .sort((a, b) => a._priority - b._priority || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-      // Group consecutive card_added / card_listed by the same author within a window.
-      const items: FeedItem[] = [];
-      for (const r of rows) {
-        const last = items[items.length - 1];
-        const groupable = r.type === 'card_added' || r.type === 'card_listed' || r.type === 'card_wishlisted';
-        const sameBurst =
-          last &&
-          groupable &&
-          last.type === r.type &&
-          last.author.id === r.author.id &&
-          new Date(last.createdAt).getTime() - new Date(r.createdAt).getTime() < GROUP_WINDOW_MS;
-
-        if (sameBurst) {
-          if (r.card) last!.cards.push(r.card);
-        } else {
-          items.push({
-            id: r.id,
-            type: r.type,
-            body: r.body,
-            createdAt: r.createdAt,
-            author: r.author,
-            authorFollowed: r.author.id === userId || followed.has(r.author.id),
-            cards: r.card ? [r.card] : [],
-          });
-        }
-      }
-      return items;
+      return { rows: data ?? [], followed: (follows ?? []).map((f: any) => f.followee_id) };
     },
+    getNextPageParam: (lastPage, _all, lastPageParam) =>
+      lastPage.rows.length === PAGE_SIZE ? lastPageParam + PAGE_SIZE : undefined,
   });
+
+  // Rank + group over all loaded pages.
+  const items = useMemo<FeedItem[] | undefined>(() => {
+    const pages = query.data?.pages;
+    if (!pages) return undefined;
+    const followed = new Set<string>(pages[0]?.followed ?? []);
+
+    // Priority: your own + followed (0) → local same-city (1) → everyone else (2).
+    const priority = (author: any): number => {
+      if (author.id === userId || followed.has(author.id)) return 0;
+      if (meLocation && author.location_name && author.location_name === meLocation) return 1;
+      return 2;
+    };
+
+    const rows = pages
+      .flatMap((p) => p.rows)
+      .filter((row: any) => row.author && !row.author.is_banned)
+      .map((row: any) => ({
+        id: row.id as string,
+        type: row.type as FeedType,
+        body: row.body as string | null,
+        createdAt: row.created_at as string,
+        _priority: priority(row.author),
+        author: {
+          id: row.author.id,
+          username: row.author.username,
+          displayName: row.author.display_name,
+          avatarUrl: row.author.avatar_url,
+        },
+        card: row.card
+          ? { id: row.card.id, name: row.card.name, imageUrlSmall: row.card.image_url_small }
+          : null,
+      }))
+      // Stable sort: priority bucket first, then most-recent within each bucket
+      // (keeps a single author's burst adjacent so grouping still works).
+      .sort((a, b) => a._priority - b._priority || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    // Group consecutive card_added / card_listed by the same author within a window.
+    const out: FeedItem[] = [];
+    for (const r of rows) {
+      const last = out[out.length - 1];
+      const groupable = r.type === 'card_added' || r.type === 'card_listed' || r.type === 'card_wishlisted';
+      const sameBurst =
+        last &&
+        groupable &&
+        last.type === r.type &&
+        last.author.id === r.author.id &&
+        new Date(last.createdAt).getTime() - new Date(r.createdAt).getTime() < GROUP_WINDOW_MS;
+
+      if (sameBurst) {
+        if (r.card) last!.cards.push(r.card);
+      } else {
+        out.push({
+          id: r.id,
+          type: r.type,
+          body: r.body,
+          createdAt: r.createdAt,
+          author: r.author,
+          authorFollowed: r.author.id === userId || followed.has(r.author.id),
+          cards: r.card ? [r.card] : [],
+        });
+      }
+    }
+    return out;
+  }, [query.data, userId, meLocation]);
+
+  return {
+    data: items,
+    isLoading: query.isLoading,
+    isRefetching: query.isRefetching && !query.isFetchingNextPage,
+    refetch: query.refetch,
+    fetchNextPage: query.fetchNextPage,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+  };
 }
