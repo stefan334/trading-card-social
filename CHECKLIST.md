@@ -207,6 +207,13 @@ decisions.
       `npx supabase functions deploy ocr-scan --project-ref iwpwmqgvfhrjipypvhhj`.
       Then delete the EAS secret `EXPO_PUBLIC_GOOGLE_VISION_API_KEY` (if created) so builds stop
       embedding the key, and restrict the key to the Vision API in Google Cloud.
+- [x] **Launch hardening** (`0022`): self-service **account deletion** (delete_account RPC + Settings
+      danger row, double-confirm); **global error toasts** (ToastHost + MutationCache onError — failed
+      mutations always surface); **feed + marketplace infinite pagination** (no more hard caps); banned
+      users' marketplace listings hidden.
+      → **manual step:** re-enable "Confirm email" in Supabase Auth settings before launch (OTP screen
+      already built), and verify a real sending domain in Resend (onboarding@resend.dev only delivers
+      to your own inbox).
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
