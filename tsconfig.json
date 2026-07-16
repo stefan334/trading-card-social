@@ -8,5 +8,8 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+  ],
+  // Edge Functions are Deno code with their own runtime globals — not part of
+  // the React Native app's TS project.
+  "exclude": ["node_modules", "supabase/functions"]
 }

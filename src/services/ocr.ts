@@ -2,17 +2,21 @@
  * Card OCR for the scanner. Reads the printed card name + collector number from a
  * captured photo so the scan can auto-match instead of making the user type.
  *
- * Supports two providers, picked by whichever env key is set:
- *  - Google Cloud Vision  (EXPO_PUBLIC_GOOGLE_VISION_API_KEY) — most accurate
- *  - OCR.space            (EXPO_PUBLIC_OCRSPACE_API_KEY)       — free instant key
- * If neither is set, ocrAvailable() is false and the scanner falls back to manual.
+ * The primary path is our `ocr-scan` Supabase Edge Function: the billable Google
+ * Vision key lives server-side only (Supabase secret), never in the app binary,
+ * and the function requires a signed-in user's JWT. Direct-key providers remain
+ * as a DEV-ONLY fallback (env keys are stripped from production builds):
+ *  - Google Cloud Vision  (EXPO_PUBLIC_GOOGLE_VISION_API_KEY)
+ *  - OCR.space            (EXPO_PUBLIC_OCRSPACE_API_KEY)
  */
+
+import { isSupabaseConfigured, supabase } from './supabase/client';
 
 const GOOGLE_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY;
 const OCRSPACE_KEY = process.env.EXPO_PUBLIC_OCRSPACE_API_KEY;
 
 export function ocrAvailable(): boolean {
-  return Boolean(GOOGLE_KEY || OCRSPACE_KEY);
+  return isSupabaseConfigured || Boolean(GOOGLE_KEY || OCRSPACE_KEY);
 }
 
 export interface CardOcr {
@@ -76,8 +80,25 @@ async function ocrSpace(base64: string): Promise<string> {
   return data?.ParsedResults?.[0]?.ParsedText ?? '';
 }
 
+/** Server-side OCR via our Edge Function (the key never ships in the app). */
+async function edgeOcr(base64: string): Promise<string> {
+  const { data, error } = await supabase!.functions.invoke('ocr-scan', { body: { image: base64 } });
+  if (error) throw error;
+  return (data as { text?: string })?.text ?? '';
+}
+
 /** Run OCR on a base64 JPEG and return the parsed card name/number, or null. */
 export async function recognizeCard(base64: string): Promise<CardOcr | null> {
+  // Edge Function first; if it isn't deployed yet (or errors), fall through to
+  // any dev-only direct keys so local development keeps working.
+  if (isSupabaseConfigured) {
+    try {
+      const raw = await edgeOcr(base64);
+      if (raw) return parseCard(raw);
+    } catch {
+      // fall through to dev keys
+    }
+  }
   try {
     const raw = GOOGLE_KEY ? await googleVision(base64) : OCRSPACE_KEY ? await ocrSpace(base64) : '';
     if (!raw) return null;

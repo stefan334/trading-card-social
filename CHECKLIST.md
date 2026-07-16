@@ -199,6 +199,14 @@ decisions.
       → **manual step for revenue:** create an AdMob account, put real App IDs in `app.json` plugin and
       real ad-unit IDs in `EXPO_PUBLIC_ADMOB_BANNER_ANDROID/IOS` (EAS secrets), then rebuild. Ads only
       run in EAS/dev builds, not Expo Go.
+- [x] **Server-side OCR** (`supabase/functions/ocr-scan`): the billable Google Vision key moves out of
+      the app binary into a Supabase Edge Function (JWT-gated, key in a Supabase secret). Client calls
+      it via `functions.invoke`; direct env keys remain a dev-only fallback.
+      → **deploy (one-time):** `npx supabase login` →
+      `npx supabase secrets set GOOGLE_VISION_API_KEY=<key> --project-ref iwpwmqgvfhrjipypvhhj` →
+      `npx supabase functions deploy ocr-scan --project-ref iwpwmqgvfhrjipypvhhj`.
+      Then delete the EAS secret `EXPO_PUBLIC_GOOGLE_VISION_API_KEY` (if created) so builds stop
+      embedding the key, and restrict the key to the Vision API in Google Cloud.
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
