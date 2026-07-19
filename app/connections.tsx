@@ -3,9 +3,11 @@ import { Image } from 'expo-image';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useConnections, type ConnectionType } from '../src/hooks/useConnections';
+import { useTheme } from '../src/theme';
 
 /** Followers / following list, routed as /connections?user=<id>&type=followers|following. */
 export default function ConnectionsScreen() {
+  const { colors } = useTheme();
   const { user, type } = useLocalSearchParams<{ user: string; type: ConnectionType }>();
   const kind: ConnectionType = type === 'following' ? 'following' : 'followers';
   const { data: users, isLoading } = useConnections(user, kind);
@@ -19,7 +21,7 @@ export default function ConnectionsScreen() {
         <FlatList
           data={users ?? []}
           keyExtractor={(u) => u.id}
-          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />}
           contentContainerStyle={{ paddingVertical: 8 }}
           renderItem={({ item }) => (
             <Link href={`/user/${item.id}`} asChild>
@@ -30,15 +32,15 @@ export default function ConnectionsScreen() {
                   <Ionicons name="person-circle" size={44} color="#9CA3AF" />
                 )}
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>{item.displayName || item.username}</Text>
-                  <Text style={styles.username}>@{item.username}</Text>
+                  <Text style={[styles.name, { color: colors.text }]}>{item.displayName || item.username}</Text>
+                  <Text style={[styles.username, { color: colors.textMuted }]}>@{item.username}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
               </Pressable>
             </Link>
           )}
           ListEmptyComponent={
-            <Text style={styles.empty}>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>
               {kind === 'following' ? 'Not following anyone yet.' : 'No followers yet.'}
             </Text>
           }

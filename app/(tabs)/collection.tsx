@@ -33,8 +33,8 @@ export default function CollectionScreen() {
 
       <Link href="/search?mode=cards" asChild>
         <Pressable style={[styles.searchBar, { backgroundColor: colors.surface }]}>
-          <Ionicons name="search" size={18} color="#9CA3AF" />
-          <Text style={styles.searchText}>Search cards by name</Text>
+          <Ionicons name="search" size={17} color={colors.textFaint} />
+          <Text style={[styles.searchText, { color: colors.textFaint }]}>Search cards by name</Text>
         </Pressable>
       </Link>
 
@@ -95,14 +95,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    height: 44,
     marginHorizontal: 16,
-    marginBottom: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
+    marginTop: 2,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
   },
-  searchText: { color: '#9CA3AF', fontSize: 15 },
+  searchText: { fontSize: 15, lineHeight: 20 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16 },
   chip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 6 },
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },

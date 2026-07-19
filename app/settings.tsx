@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { showToast, toastMessage } from '../src/components/Toast';
@@ -7,39 +7,48 @@ import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
 import { useThemeMode, type ThemeMode } from '../src/theme';
 
+/**
+ * One settings row, iOS-style: a fixed-size tinted icon tile (keeps labels
+ * optically aligned across different glyphs), label, chevron/right accessory,
+ * pressed feedback, and a hairline separator inset to the label (none on the
+ * last row, so the rounded group edge stays clean).
+ */
 function Row({
   icon,
   label,
-  color,
-  href,
+  tint,
+  labelColor,
   onPress,
   right,
+  last,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
-  color?: string;
-  href?: string;
+  tint?: string;
+  labelColor?: string;
   onPress?: () => void;
   right?: React.ReactNode;
+  last?: boolean;
 }) {
   const { theme } = useThemeMode();
-  const c = color ?? theme.colors.text;
-  const content = (
+  const iconColor = tint ?? theme.colors.primary;
+  return (
     <Pressable
-      style={[styles.row, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.borderLight }]}
       onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [
+        styles.row,
+        { backgroundColor: pressed && onPress ? theme.colors.surface : theme.colors.card },
+      ]}
     >
-      <Ionicons name={icon} size={20} color={c} />
-      <Text style={[styles.rowLabel, { color: c }]}>{label}</Text>
-      {right ?? (href || onPress ? <Ionicons name="chevron-forward" size={18} color={theme.colors.textFaint} /> : null)}
+      <View style={[styles.iconTile, { backgroundColor: theme.colors.surface }]}>
+        <Ionicons name={icon} size={17} color={iconColor} />
+      </View>
+      <View style={[styles.rowBody, !last && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: theme.colors.border }]}>
+        <Text style={[styles.rowLabel, { color: labelColor ?? theme.colors.text }]}>{label}</Text>
+        {right ?? (onPress ? <Ionicons name="chevron-forward" size={17} color={theme.colors.textFaint} /> : null)}
+      </View>
     </Pressable>
-  );
-  return href ? (
-    <Link href={href as any} asChild>
-      {content}
-    </Link>
-  ) : (
-    content
   );
 }
 
@@ -49,7 +58,7 @@ const THEME_MODES: { key: ThemeMode; label: string; icon: keyof typeof Ionicons.
   { key: 'dark', label: 'Dark', icon: 'moon-outline' },
 ];
 
-/** Settings: preferences, support, admin, and the (now tucked-away) sign out. */
+/** Settings: preferences, support, admin, and account actions. */
 export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
   const router = useRouter();
@@ -96,13 +105,17 @@ export default function SettingsScreen() {
     );
   }
 
+  const groupStyle = [styles.group, { backgroundColor: theme.colors.card, borderColor: theme.colors.borderLight }];
+
   return (
-    <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40 }}>
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Preferences</Text>
-      <View style={[styles.group, { borderColor: theme.colors.borderLight }]}>
-        <View style={[styles.appearanceBlock, { backgroundColor: theme.colors.card }]}>
+      <View style={groupStyle}>
+        <View style={styles.appearanceBlock}>
           <View style={styles.appearanceHead}>
-            <Ionicons name="moon" size={20} color={theme.colors.text} />
+            <View style={[styles.iconTile, { backgroundColor: theme.colors.surface }]}>
+              <Ionicons name="moon" size={17} color={theme.colors.primary} />
+            </View>
             <Text style={[styles.rowLabel, { color: theme.colors.text }]}>Appearance</Text>
           </View>
           <View style={[styles.segment, { backgroundColor: theme.colors.surface }]}>
@@ -124,31 +137,33 @@ export default function SettingsScreen() {
       </View>
 
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Support</Text>
-      <View style={[styles.group, { borderColor: theme.colors.borderLight }]}>
-        <Row icon="chatbox-ellipses" label="Send feedback" href="/feedback" />
-        <Row icon="mail" label="Contact us" href="/contact" />
-        <Row icon="document-text" label="Terms & Conditions" href="/terms" />
+      <View style={groupStyle}>
+        <Row icon="chatbox-ellipses" label="Send feedback" onPress={() => router.push('/feedback')} />
+        <Row icon="mail" label="Contact us" onPress={() => router.push('/contact')} />
+        <Row icon="document-text" label="Terms & Conditions" onPress={() => router.push('/terms')} last />
       </View>
 
       {profile?.isAdmin ? (
         <>
           <Text style={[styles.section, { color: theme.colors.textMuted }]}>Admin</Text>
-          <View style={[styles.group, { borderColor: theme.colors.borderLight }]}>
-            <Row icon="shield-checkmark" label="Admin console" color={theme.colors.danger} href="/admin" />
+          <View style={groupStyle}>
+            <Row icon="shield-checkmark" label="Admin console" tint={theme.colors.danger} onPress={() => router.push('/admin')} last />
           </View>
         </>
       ) : null}
 
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Account</Text>
-      <View style={[styles.group, { borderColor: theme.colors.borderLight }]}>
+      <View style={groupStyle}>
         <Row icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
-        <Row icon="log-out-outline" label="Sign out" color="#DC2626" onPress={confirmSignOut} />
+        <Row icon="log-out-outline" label="Sign out" tint={theme.colors.danger} labelColor={theme.colors.danger} onPress={confirmSignOut} />
         <Row
           icon="trash-outline"
           label={deleting ? 'Deleting…' : 'Delete account'}
-          color={theme.colors.danger}
+          tint={theme.colors.danger}
+          labelColor={theme.colors.danger}
           onPress={deleting ? undefined : confirmDeleteAccount}
           right={deleting ? <ActivityIndicator size="small" color={theme.colors.danger} /> : undefined}
+          last
         />
       </View>
 
@@ -158,14 +173,16 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  section: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginHorizontal: 16, marginTop: 18, marginBottom: 6 },
-  group: { marginHorizontal: 16, borderRadius: 12, overflow: 'hidden', borderWidth: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 1 },
+  section: { fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 20, marginBottom: 8 },
+  group: { marginHorizontal: 16, borderRadius: 14, overflow: 'hidden', borderWidth: 1 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 14 },
+  iconTile: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  rowBody: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingRight: 14 },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
   appearanceBlock: { paddingHorizontal: 14, paddingVertical: 14, gap: 12 },
   appearanceHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   segment: { flexDirection: 'row', borderRadius: 10, padding: 3, gap: 3 },
   segmentBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 8, paddingVertical: 8 },
   segmentText: { fontSize: 13, fontWeight: '700' },
-  version: { textAlign: 'center', marginTop: 24, fontSize: 13 },
+  version: { textAlign: 'center', marginTop: 28, fontSize: 13 },
 });

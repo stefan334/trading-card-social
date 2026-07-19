@@ -43,11 +43,6 @@ export default function ProfileScreen() {
       <ForTradeShowcase userId={profile.id} />
 
       <View style={styles.actions}>
-        <Link href="/edit-profile" asChild>
-          <Pressable style={[styles.button, styles.secondaryBtn, { borderColor: colors.border }]}>
-            <Text style={[styles.buttonText, { color: colors.text }]}>Edit profile</Text>
-          </Pressable>
-        </Link>
         <Link href="/add" asChild>
           <Pressable style={styles.button}>
             <Text style={styles.buttonText}>Add cards</Text>
@@ -73,7 +68,6 @@ const styles = StyleSheet.create({
   center: { flex: 1, marginTop: 40 },
   actions: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginTop: 18 },
   button: { flex: 1, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  secondaryBtn: { backgroundColor: 'transparent', borderWidth: 1 },
   buttonText: { color: 'white', fontWeight: '600', fontSize: 15 },
   dividerLine: { borderTopWidth: 1, marginTop: 18 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 14, marginBottom: 10 },
