@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
+import { useTheme } from '../src/theme';
 import { track } from '../src/services/analytics';
 import { supabase } from '../src/services/supabase/client';
 
@@ -16,6 +17,7 @@ const KINDS = [
 /** Let users send feedback / bug reports / ideas — stored in the feedback table (admin-readable). */
 export default function FeedbackScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const router = useRouter();
   const [kind, setKind] = useState<(typeof KINDS)[number]['key']>('feedback');
   const [message, setMessage] = useState('');
@@ -47,8 +49,8 @@ export default function FeedbackScreen() {
     return (
       <View style={styles.doneWrap}>
         <Ionicons name="checkmark-circle" size={56} color="#059669" />
-        <Text style={styles.doneTitle}>Thanks for the feedback!</Text>
-        <Text style={styles.doneText}>We read every message — it really helps shape the app.</Text>
+        <Text style={[styles.doneTitle, { color: colors.text }]}>Thanks for the feedback!</Text>
+        <Text style={[styles.doneText, { color: colors.textMuted }]}>We read every message — it really helps shape the app.</Text>
         <Pressable style={styles.primary} onPress={() => router.back()}>
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
@@ -58,19 +60,20 @@ export default function FeedbackScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.label}>What's this about?</Text>
+      <Text style={[styles.label, { color: colors.text }]}>What's this about?</Text>
       <View style={styles.chips}>
         {KINDS.map((k) => (
-          <Pressable key={k.key} style={[styles.chip, kind === k.key && styles.chipOn]} onPress={() => setKind(k.key)}>
-            <Text style={[styles.chipText, kind === k.key && styles.chipTextOn]}>{k.label}</Text>
+          <Pressable key={k.key} style={[styles.chip, { borderColor: colors.border }, kind === k.key && styles.chipOn]} onPress={() => setKind(k.key)}>
+            <Text style={[styles.chipText, { color: colors.textMuted }, kind === k.key && styles.chipTextOn]}>{k.label}</Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>Your message</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Your message</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         placeholder="Tell us what you think, what broke, or what you'd love to see…"
+        placeholderTextColor={colors.textFaint}
         value={message}
         onChangeText={setMessage}
         multiline

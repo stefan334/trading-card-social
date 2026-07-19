@@ -4,6 +4,7 @@ import { ActivityIndicator, Dimensions, FlatList, Pressable, StyleSheet, Text, V
 import { Image } from 'expo-image';
 import { useAuth } from '../../src/context/AuthContext';
 import { useBinder, type BinderCard } from '../../src/hooks/useBinder';
+import { useTheme } from '../../src/theme';
 
 const { width } = Dimensions.get('window');
 const PER_PAGE_OPTIONS = [4, 6, 9] as const;
@@ -20,6 +21,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
  * adjustable (2×2, 3×2, 3×3). Owner gets an Edit action in the header.
  */
 export default function BinderViewerScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const { data: binder, isLoading, error } = useBinder(id);
@@ -39,7 +41,7 @@ export default function BinderViewerScreen() {
   const isOwner = user?.id === binder.ownerId;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
           title: binder.name,
@@ -55,7 +57,7 @@ export default function BinderViewerScreen() {
 
       {binder.cards.length === 0 ? (
         <View style={styles.center}>
-          <Text style={styles.muted}>This binder is empty.</Text>
+          <Text style={[styles.muted, { color: colors.textMuted }]}>This binder is empty.</Text>
           {isOwner ? (
             <Link href={`/binder/edit/${binder.id}`} style={styles.editLink}>
               Add some cards
@@ -65,10 +67,10 @@ export default function BinderViewerScreen() {
       ) : (
         <>
           <View style={styles.perPageBar}>
-            <Text style={styles.perPageLabel}>Per page</Text>
+            <Text style={[styles.perPageLabel, { color: colors.textMuted }]}>Per page</Text>
             {PER_PAGE_OPTIONS.map((n) => (
-              <Pressable key={n} style={[styles.perChip, perPage === n && styles.perChipOn]} onPress={() => setPerPage(n)}>
-                <Text style={[styles.perChipText, perPage === n && styles.perChipTextOn]}>{n}</Text>
+              <Pressable key={n} style={[styles.perChip, { borderColor: colors.border }, perPage === n && { backgroundColor: colors.primary, borderColor: colors.primary }]} onPress={() => setPerPage(n)}>
+                <Text style={[styles.perChipText, { color: perPage === n ? 'white' : colors.textMuted }]}>{n}</Text>
               </Pressable>
             ))}
           </View>
@@ -93,13 +95,13 @@ export default function BinderViewerScreen() {
                             recyclingKey={c.binderCardId}
                           />
                         ) : (
-                          <View style={[{ width: cardW, height: cardH, borderRadius: 8 }, styles.placeholder]} />
+                          <View style={[{ width: cardW, height: cardH, borderRadius: 8 }, { backgroundColor: colors.surface }]} />
                         )}
                       </Pressable>
                     </Link>
                   ))}
                 </View>
-                <Text style={styles.pos}>Page {pageIndex + 1} / {pages.length}</Text>
+                <Text style={[styles.pos, { color: colors.textFaint }]}>Page {pageIndex + 1} / {pages.length}</Text>
               </View>
             )}
           />

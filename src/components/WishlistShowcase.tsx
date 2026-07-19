@@ -23,7 +23,7 @@ export function WishlistShowcase({ userId }: { userId: string }) {
   const canOffer = !!user && user.id !== userId;
 
   return (
-    <View>
+    <View style={[styles.section, { borderTopColor: colors.borderLight }]}>
       <View style={styles.titleRow}>
         <Ionicons name="star" size={16} color="#F59E0B" />
         <Text style={[styles.title, { color: colors.text }]}>Wishlist ({cards.length})</Text>
@@ -60,7 +60,8 @@ export function WishlistShowcase({ userId }: { userId: string }) {
 }
 
 const styles = StyleSheet.create({
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 16, marginBottom: 4 },
+  section: { marginTop: 18, borderTopWidth: 1, paddingTop: 14 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginBottom: 4 },
   title: { fontSize: 18, fontWeight: '700' },
   row: { paddingHorizontal: 16, gap: 10, paddingVertical: 4 },
   tile: { width: 84 },

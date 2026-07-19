@@ -11,11 +11,13 @@ import { useChatActions } from '../../src/hooks/useChatActions';
 import { useCollectionBySet } from '../../src/hooks/useCollectionBySet';
 import { useFollow } from '../../src/hooks/useFollow';
 import { useProfile } from '../../src/hooks/useProfile';
+import { useTheme } from '../../src/theme';
 
 /** Another user's public profile, routed as /user/[id]. Read-only + follow/unfollow + their collection. */
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
   const { data: profile, isLoading, error } = useProfile(id);
   const { canFollow, isFollowing, toggling, toggle } = useFollow(id);
   const { data: groups, isLoading: collectionLoading } = useCollectionBySet(id);
@@ -72,11 +74,12 @@ export default function UserProfileScreen() {
       {id ? <ForTradeShowcase userId={id} /> : null}
       {id ? <WishlistShowcase userId={id} /> : null}
 
-      <Text style={styles.sectionTitle}>Collection</Text>
+      <View style={[styles.divider, { borderTopColor: colors.borderLight }]} />
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Collection</Text>
       {collectionLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
       ) : !groups?.length ? (
-        <Text style={styles.muted}>No cards in their collection yet.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>No cards in their collection yet.</Text>
       ) : (
         <View style={{ marginTop: 4 }}>
           <CollectionBySet groups={groups} />
@@ -117,7 +120,8 @@ const styles = StyleSheet.create({
   messageText: { color: '#2563EB' },
   reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },
   reportText: { color: '#9CA3AF', fontSize: 13, fontWeight: '600' },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 4 },
+  divider: { borderTopWidth: 1, marginTop: 18 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 14, marginBottom: 4 },
   muted: { color: '#6B7280', marginHorizontal: 16, marginTop: 8 },
 });
 

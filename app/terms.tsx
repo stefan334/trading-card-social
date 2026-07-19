@@ -1,4 +1,5 @@
 import { StyleSheet, Text, ScrollView } from 'react-native';
+import { useTheme } from '../src/theme';
 
 /**
  * Terms & Conditions. This is a plain-language starter template — have it
@@ -45,15 +46,16 @@ const SECTIONS: { h: string; b: string }[] = [
 ];
 
 export default function TermsScreen() {
+  const { colors } = useTheme();
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Terms & Conditions</Text>
-      <Text style={styles.updated}>Last updated: this is a starter template — review before launch.</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Terms & Conditions</Text>
+      <Text style={[styles.updated, { color: colors.textFaint }]}>Last updated: this is a starter template — review before launch.</Text>
       {SECTIONS.map((s) => (
         <Text key={s.h} style={styles.block}>
-          <Text style={styles.h}>{s.h}</Text>
+          <Text style={[styles.h, { color: colors.text }]}>{s.h}</Text>
           {'\n'}
-          <Text style={styles.body}>{s.b}</Text>
+          <Text style={[styles.body, { color: colors.textMuted }]}>{s.b}</Text>
         </Text>
       ))}
     </ScrollView>

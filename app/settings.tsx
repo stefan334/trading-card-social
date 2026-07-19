@@ -100,24 +100,22 @@ export default function SettingsScreen() {
     <ScrollView contentContainerStyle={{ paddingVertical: 12 }}>
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Preferences</Text>
       <View style={[styles.group, { borderColor: theme.colors.borderLight }]}>
-        <View style={[styles.row, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.borderLight }]}>
-          <Ionicons name="moon" size={20} color={theme.colors.text} />
-          <Text style={[styles.rowLabel, { color: theme.colors.text }]}>Appearance</Text>
-          <View style={styles.modeChips}>
+        <View style={[styles.appearanceBlock, { backgroundColor: theme.colors.card }]}>
+          <View style={styles.appearanceHead}>
+            <Ionicons name="moon" size={20} color={theme.colors.text} />
+            <Text style={[styles.rowLabel, { color: theme.colors.text }]}>Appearance</Text>
+          </View>
+          <View style={[styles.segment, { backgroundColor: theme.colors.surface }]}>
             {THEME_MODES.map((m) => {
               const on = mode === m.key;
               return (
                 <Pressable
                   key={m.key}
-                  style={[
-                    styles.modeChip,
-                    { borderColor: on ? theme.colors.primary : theme.colors.border },
-                    on && { backgroundColor: theme.colors.primary },
-                  ]}
+                  style={[styles.segmentBtn, on && { backgroundColor: theme.colors.primary }]}
                   onPress={() => setMode(m.key)}
                 >
-                  <Ionicons name={m.icon} size={14} color={on ? 'white' : theme.colors.textMuted} />
-                  <Text style={[styles.modeChipText, { color: on ? 'white' : theme.colors.textMuted }]}>{m.label}</Text>
+                  <Ionicons name={m.icon} size={15} color={on ? 'white' : theme.colors.textMuted} />
+                  <Text style={[styles.segmentText, { color: on ? 'white' : theme.colors.textMuted }]}>{m.label}</Text>
                 </Pressable>
               );
             })}
@@ -164,8 +162,10 @@ const styles = StyleSheet.create({
   group: { marginHorizontal: 16, borderRadius: 12, overflow: 'hidden', borderWidth: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 14, borderBottomWidth: 1 },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
-  modeChips: { flexDirection: 'row', gap: 6 },
-  modeChip: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5 },
-  modeChipText: { fontSize: 12, fontWeight: '700' },
+  appearanceBlock: { paddingHorizontal: 14, paddingVertical: 14, gap: 12 },
+  appearanceHead: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  segment: { flexDirection: 'row', borderRadius: 10, padding: 3, gap: 3 },
+  segmentBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 8, paddingVertical: 8 },
+  segmentText: { fontSize: 13, fontWeight: '700' },
   version: { textAlign: 'center', marginTop: 24, fontSize: 13 },
 });

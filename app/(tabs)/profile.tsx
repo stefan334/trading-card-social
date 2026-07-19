@@ -44,8 +44,8 @@ export default function ProfileScreen() {
 
       <View style={styles.actions}>
         <Link href="/edit-profile" asChild>
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Edit profile</Text>
+          <Pressable style={[styles.button, styles.secondaryBtn, { borderColor: colors.border }]}>
+            <Text style={[styles.buttonText, { color: colors.text }]}>Edit profile</Text>
           </Pressable>
         </Link>
         <Link href="/add" asChild>
@@ -55,6 +55,7 @@ export default function ProfileScreen() {
         </Link>
       </View>
 
+      <View style={[styles.dividerLine, { borderTopColor: colors.borderLight }]} />
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Collection</Text>
       {collectionLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
@@ -70,9 +71,11 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 12 },
   center: { flex: 1, marginTop: 40 },
-  actions: { paddingHorizontal: 16, gap: 10, marginTop: 8 },
-  button: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  actions: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginTop: 18 },
+  button: { flex: 1, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
+  secondaryBtn: { backgroundColor: 'transparent', borderWidth: 1 },
   buttonText: { color: 'white', fontWeight: '600', fontSize: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 24, marginBottom: 10 },
+  dividerLine: { borderTopWidth: 1, marginTop: 18 },
+  sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 14, marginBottom: 10 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
 });

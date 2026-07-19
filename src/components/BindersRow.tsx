@@ -4,12 +4,15 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useBinderActions } from '../hooks/useBinderActions';
 import { useBinders } from '../hooks/useBinders';
+import { useTheme } from '../theme';
 
 /**
- * Instagram-highlights-style row of binder covers on a profile. Owners get a
- * leading "+ New" that creates a binder and jumps into the editor.
+ * Instagram-highlights-style row of binder covers on a profile, presented as its
+ * own titled section. Owners get a leading "+ New" that creates a binder and
+ * jumps into the editor.
  */
 export function BindersRow({ userId, isOwner }: { userId: string; isOwner: boolean }) {
+  const { colors } = useTheme();
   const { data: binders } = useBinders(userId);
   const { create } = useBinderActions();
   const router = useRouter();
@@ -23,40 +26,48 @@ export function BindersRow({ userId, isOwner }: { userId: string; isOwner: boole
   }
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
-      {isOwner && (
-        <Pressable style={styles.item} onPress={newBinder} disabled={create.isPending}>
-          <View style={[styles.cover, styles.newCover]}>
-            <Ionicons name="add" size={28} color="#2563EB" />
-          </View>
-          <Text style={styles.label}>New</Text>
-        </Pressable>
-      )}
-
-      {binders?.map((b) => (
-        <Link key={b.id} href={`/binder/${b.id}`} asChild>
-          <Pressable style={styles.item}>
-            {b.coverImageUrl ? (
-              <Image source={{ uri: b.coverImageUrl }} style={styles.cover} />
-            ) : (
-              <View style={[styles.cover, styles.emptyCover]}>
-                <Ionicons name="albums-outline" size={24} color="#9CA3AF" />
-              </View>
-            )}
-            <Text style={styles.label} numberOfLines={1}>{b.name}</Text>
+    <View style={[styles.section, { borderTopColor: colors.borderLight }]}>
+      <View style={styles.titleRow}>
+        <Ionicons name="book-outline" size={16} color={colors.primary} />
+        <Text style={[styles.title, { color: colors.text }]}>Binders</Text>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+        {isOwner && (
+          <Pressable style={styles.item} onPress={newBinder} disabled={create.isPending}>
+            <View style={[styles.cover, styles.newCover, { borderColor: colors.primary }]}>
+              <Ionicons name="add" size={28} color={colors.primary} />
+            </View>
+            <Text style={[styles.label, { color: colors.textMuted }]}>New</Text>
           </Pressable>
-        </Link>
-      ))}
-    </ScrollView>
+        )}
+
+        {binders?.map((b) => (
+          <Link key={b.id} href={`/binder/${b.id}`} asChild>
+            <Pressable style={styles.item}>
+              {b.coverImageUrl ? (
+                <Image source={{ uri: b.coverImageUrl }} style={[styles.cover, { borderColor: colors.primary }]} />
+              ) : (
+                <View style={[styles.cover, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Ionicons name="albums-outline" size={24} color={colors.textFaint} />
+                </View>
+              )}
+              <Text style={[styles.label, { color: colors.text }]} numberOfLines={1}>{b.name}</Text>
+            </Pressable>
+          </Link>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const SIZE = 68;
 const styles = StyleSheet.create({
-  row: { paddingHorizontal: 16, paddingVertical: 12, gap: 14 },
+  section: { marginTop: 18, borderTopWidth: 1, paddingTop: 14 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginBottom: 2 },
+  title: { fontSize: 18, fontWeight: '700' },
+  row: { paddingHorizontal: 16, paddingVertical: 10, gap: 14 },
   item: { alignItems: 'center', width: SIZE },
-  cover: { width: SIZE, height: SIZE, borderRadius: SIZE / 2, borderWidth: 2, borderColor: '#2563EB' },
-  newCover: { alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed' },
-  emptyCover: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' },
+  cover: { width: SIZE, height: SIZE, borderRadius: SIZE / 2, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
+  newCover: { borderStyle: 'dashed' },
   label: { fontSize: 12, marginTop: 4, maxWidth: SIZE, textAlign: 'center' },
 });

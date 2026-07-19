@@ -65,9 +65,9 @@ function RootNavigator() {
       <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade', ...pinLight }} />
       <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade', ...pinLight }} />
       <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal', ...pinLight }} />
-      <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Feedback', ...pinLight }} />
-      <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact us', ...pinLight }} />
-      <Stack.Screen name="terms" options={{ headerShown: true, title: 'Terms & Conditions', ...pinLight }} />
+      <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Feedback' }} />
+      <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact us' }} />
+      <Stack.Screen name="terms" options={{ headerShown: true, title: 'Terms & Conditions' }} />
       <Stack.Screen name="report" options={{ headerShown: true, title: 'Report', presentation: 'modal', ...pinLight }} />
       <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin', ...pinLight }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />

@@ -24,8 +24,11 @@ export function ForTradeShowcase({ userId }: { userId: string }) {
   const canOffer = !!user && user.id !== userId;
 
   return (
-    <View>
-      <Text style={[styles.title, { color: colors.text }]}>For Trade ({cards.length})</Text>
+    <View style={[styles.section, { borderTopColor: colors.borderLight }]}>
+      <View style={styles.titleRow}>
+        <Ionicons name="swap-horizontal" size={16} color="#059669" />
+        <Text style={[styles.title, { color: colors.text }]}>For Trade ({cards.length})</Text>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {cards.map((c) => (
           <View key={c.userCardId} style={styles.tile}>
@@ -65,7 +68,9 @@ export function ForTradeShowcase({ userId }: { userId: string }) {
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 16, marginBottom: 4 },
+  section: { marginTop: 18, borderTopWidth: 1, paddingTop: 14 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginBottom: 4 },
+  title: { fontSize: 18, fontWeight: '700' },
   row: { paddingHorizontal: 16, gap: 10, paddingVertical: 4 },
   tile: { width: 88 },
   img: { width: 88, height: 123, borderRadius: 6 },
