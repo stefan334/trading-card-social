@@ -10,6 +10,7 @@ import { useCollectionBySet } from '../../src/hooks/useCollectionBySet';
 import { useSets } from '../../src/hooks/useSets';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
 import { listProviders } from '../../src/services/tcg-providers';
+import { useTheme } from '../../src/theme';
 
 /**
  * Collection tab:
@@ -19,6 +20,7 @@ import { listProviders } from '../../src/services/tcg-providers';
  */
 export default function CollectionScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const games = listProviders();
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
 
@@ -30,7 +32,7 @@ export default function CollectionScreen() {
       {!isSupabaseConfigured && <SupabaseSetupNotice />}
 
       <Link href="/search?mode=cards" asChild>
-        <Pressable style={styles.searchBar}>
+        <Pressable style={[styles.searchBar, { backgroundColor: colors.surface }]}>
           <Ionicons name="search" size={18} color="#9CA3AF" />
           <Text style={styles.searchText}>Search cards by name</Text>
         </Pressable>
@@ -53,18 +55,18 @@ export default function CollectionScreen() {
         </View>
       )}
 
-      <Text style={styles.sectionTitle}>Your Collection</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Collection</Text>
       {!user ? (
-        <Text style={styles.muted}>Sign in to track your collection.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Sign in to track your collection.</Text>
       ) : isLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
       ) : !groups?.length ? (
-        <Text style={styles.muted}>No cards yet — browse a set below and add your first card.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>No cards yet — browse a set below and add your first card.</Text>
       ) : (
         <CollectionBySet groups={groups} />
       )}
 
-      <Text style={styles.sectionTitle}>Browse Sets</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Browse Sets</Text>
       {setsLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
       ) : (
@@ -73,8 +75,8 @@ export default function CollectionScreen() {
             <Pressable style={styles.setRow}>
               {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.setLogo} contentFit="contain" />}
               <View style={{ flex: 1 }}>
-                <Text style={styles.setName}>{item.name}</Text>
-                <Text style={styles.muted}>
+                <Text style={[styles.setName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.muted, { color: colors.textMuted }]}>
                   {item.series} · {item.totalCards} cards
                 </Text>
               </View>

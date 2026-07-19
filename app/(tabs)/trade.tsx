@@ -6,6 +6,7 @@ import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { useAuth } from '../../src/context/AuthContext';
 import { useInbox, type InboxItem } from '../../src/hooks/useInbox';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
+import { useTheme } from '../../src/theme';
 import type { TradeStatus } from '../../src/types/domain';
 import { formatRelativeTime } from '../../src/utils/time';
 
@@ -15,6 +16,7 @@ const STATUS_COLOR: Record<TradeStatus, string> = {
 };
 
 function Row({ item }: { item: InboxItem }) {
+  const { colors } = useTheme();
   return (
     <Link href={item.href as any} asChild>
       <Pressable style={styles.row}>
@@ -30,14 +32,14 @@ function Row({ item }: { item: InboxItem }) {
               size={14}
               color="#9CA3AF"
             />
-            <Text style={styles.name}>{item.title}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>{item.title}</Text>
           </View>
-          <Text style={[styles.sub, item.unread > 0 && styles.subUnread]} numberOfLines={1}>
+          <Text style={[styles.sub, { color: item.unread > 0 ? colors.text : colors.textMuted }]} numberOfLines={1}>
             {item.subtitle}
           </Text>
         </View>
         <View style={styles.meta}>
-          {item.timestamp ? <Text style={styles.time}>{formatRelativeTime(item.timestamp)}</Text> : null}
+          {item.timestamp ? <Text style={[styles.time, { color: colors.textFaint }]}>{formatRelativeTime(item.timestamp)}</Text> : null}
           {item.kind === 'trade' && item.status ? (
             <Text style={[styles.status, { color: STATUS_COLOR[item.status] }]}>{item.status}</Text>
           ) : null}
@@ -56,6 +58,7 @@ function Row({ item }: { item: InboxItem }) {
 /** Inbox tab: trades + direct messages in one place (see useInbox). */
 export default function InboxScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { items, isLoading } = useInbox();
 
   if (!isSupabaseConfigured) {
@@ -65,14 +68,14 @@ export default function InboxScreen() {
       </View>
     );
   }
-  if (!user) return <Text style={styles.muted}>Sign in to see your trades and messages.</Text>;
+  if (!user) return <Text style={[styles.muted, { color: colors.textMuted }]}>Sign in to see your trades and messages.</Text>;
   if (isLoading) return <ActivityIndicator style={{ marginTop: 24 }} />;
 
   if (!items.length) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>Nothing here yet</Text>
-        <Text style={styles.muted}>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>Nothing here yet</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>
           Open a collector's profile to propose a trade or send a message — they'll show up here.
         </Text>
         <Link href="/search?mode=users" asChild>
@@ -89,7 +92,7 @@ export default function InboxScreen() {
       data={items}
       keyExtractor={(i) => i.key}
       renderItem={({ item }) => <Row item={item} />}
-      ItemSeparatorComponent={() => <View style={styles.sep} />}
+      ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />}
     />
   );
 }

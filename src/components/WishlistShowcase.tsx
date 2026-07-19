@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCardPrices } from '../hooks/useCardPrices';
 import { useWishlist } from '../hooks/useWishlist';
+import { useTheme } from '../theme';
 import { formatPrice } from '../utils/time';
 
 /**
@@ -13,6 +14,7 @@ import { formatPrice } from '../utils/time';
  * builder with them (you might own something they want).
  */
 export function WishlistShowcase({ userId }: { userId: string }) {
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { data: cards } = useWishlist(userId);
   const { data: prices } = useCardPrices((cards ?? []).map((c) => c.cardId));
@@ -24,7 +26,7 @@ export function WishlistShowcase({ userId }: { userId: string }) {
     <View>
       <View style={styles.titleRow}>
         <Ionicons name="star" size={16} color="#F59E0B" />
-        <Text style={styles.title}>Wishlist ({cards.length})</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Wishlist ({cards.length})</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {cards.map((c) => (
@@ -36,7 +38,7 @@ export function WishlistShowcase({ userId }: { userId: string }) {
                 ) : (
                   <View style={[styles.img, styles.placeholder]} />
                 )}
-                <Text numberOfLines={1} style={styles.name}>{c.name}</Text>
+                <Text numberOfLines={1} style={[styles.name, { color: colors.text }]}>{c.name}</Text>
                 {prices?.get(c.cardId)?.average != null ? (
                   <Text style={styles.mkt} numberOfLines={1}>{formatPrice(prices.get(c.cardId)!.average!, 'EUR')}</Text>
                 ) : null}

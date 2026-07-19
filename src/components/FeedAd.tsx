@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { BANNER_UNIT_ID } from '../config/ads';
+import { useTheme } from '../theme';
 
 // AdMob is a native module — it isn't present in Expo Go, so require it
 // defensively. In Expo Go (or if the module fails to load) FeedAd renders null
@@ -18,9 +19,10 @@ try {
 
 /** A sponsored slot rendered between feed posts. Renders nothing if ads are unavailable. */
 export function FeedAd() {
+  const { colors } = useTheme();
   if (!BannerAd || !BANNER_UNIT_ID) return null;
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { backgroundColor: colors.card }]}>
       <BannerAd unitId={BANNER_UNIT_ID} size={BannerAdSize.MEDIUM_RECTANGLE} />
     </View>
   );

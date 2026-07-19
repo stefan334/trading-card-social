@@ -20,15 +20,17 @@ import { useChatActions } from '../../src/hooks/useChatActions';
 import { useChatThread } from '../../src/hooks/useChatThread';
 import { useThreadMessages, type ChatMessage } from '../../src/hooks/useThreadMessages';
 import { uploadImage } from '../../src/services/supabase/storage';
+import { useTheme } from '../../src/theme';
 
 function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
+  const { colors } = useTheme();
   return (
     <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
-      <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
+      <View style={[styles.bubble, mine ? styles.mine : { backgroundColor: colors.surface, borderBottomLeftRadius: 4 }]}>
         {message.imageUrl ? (
           <Image source={{ uri: message.imageUrl }} style={styles.image} contentFit="cover" />
         ) : null}
-        {message.body ? <Text style={mine ? styles.mineText : styles.theirsText}>{message.body}</Text> : null}
+        {message.body ? <Text style={mine ? styles.mineText : { color: colors.text, fontSize: 15 }}>{message.body}</Text> : null}
       </View>
     </View>
   );
@@ -38,6 +40,7 @@ function Bubble({ message, mine }: { message: ChatMessage; mine: boolean }) {
 export default function ChatThreadScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { data: meta } = useChatThread(id);
   const { data: messages, isLoading } = useThreadMessages(id);
   const { sendMessage, markRead } = useChatActions();
@@ -105,7 +108,7 @@ export default function ChatThreadScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom }]}>
       <Stack.Screen
         options={{
           title,
@@ -141,13 +144,14 @@ export default function ChatThreadScreen() {
         />
       )}
 
-      <View style={styles.inputBar}>
+      <View style={[styles.inputBar, { borderTopColor: colors.borderLight }]}>
         <Pressable style={styles.attach} onPress={attachImage} disabled={sendingImage}>
           {sendingImage ? <ActivityIndicator size="small" /> : <Ionicons name="image" size={24} color="#2563EB" />}
         </Pressable>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { borderColor: colors.border, color: colors.text }]}
           placeholder="Message…"
+          placeholderTextColor={colors.textFaint}
           value={text}
           onChangeText={setText}
           multiline

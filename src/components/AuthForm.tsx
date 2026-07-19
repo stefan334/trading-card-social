@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SupabaseSetupNotice } from './SupabaseSetupNotice';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
 import { signInWithProvider } from '../services/supabase/oauth';
+import { useTheme } from '../theme';
 
 type Mode = 'sign-in' | 'sign-up';
 
@@ -25,6 +26,7 @@ type Mode = 'sign-in' | 'sign-up';
  * client IDs configured in the Supabase dashboard (CHECKLIST Phase 2).
  */
 export function AuthForm({ mode }: { mode: Mode }) {
+  const { colors } = useTheme();
   const isSignUp = mode === 'sign-up';
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -91,10 +93,10 @@ export function AuthForm({ mode }: { mode: Mode }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <Text style={styles.brand}>CardLink</Text>
-      <Text style={styles.title}>{isSignUp ? 'Create your account' : 'Welcome back'}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{isSignUp ? 'Create your account' : 'Welcome back'}</Text>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         placeholder="Email"
         placeholderTextColor="#9CA3AF"
         autoCapitalize="none"
@@ -105,7 +107,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
       />
       <View style={styles.passwordRow}>
         <TextInput
-          style={[styles.input, styles.passwordInput]}
+          style={[styles.input, styles.passwordInput, { borderColor: colors.border, color: colors.text }]}
           placeholder="Password"
           placeholderTextColor="#9CA3AF"
           secureTextEntry={!showPassword}
@@ -133,25 +135,25 @@ export function AuthForm({ mode }: { mode: Mode }) {
       </Pressable>
 
       <View style={styles.switchRow}>
-        <Text style={styles.muted}>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</Text>
         <Link href={isSignUp ? '/(auth)/sign-in' : '/(auth)/sign-up'} style={styles.link}>
           {isSignUp ? 'Sign in' : 'Sign up'}
         </Link>
       </View>
 
       <View style={styles.divider}>
-        <View style={styles.line} />
+        <View style={[styles.line, { backgroundColor: colors.borderLight }]} />
         <Text style={styles.dividerText}>or</Text>
-        <View style={styles.line} />
+        <View style={[styles.line, { backgroundColor: colors.borderLight }]} />
       </View>
 
-      <Pressable style={styles.googleButton} onPress={handleGoogle} disabled={googleLoading || submitting}>
+      <Pressable style={[styles.googleButton, { borderColor: colors.border }]} onPress={handleGoogle} disabled={googleLoading || submitting}>
         {googleLoading ? (
           <ActivityIndicator color="#374151" />
         ) : (
           <>
             <Ionicons name="logo-google" size={18} color="#374151" />
-            <Text style={styles.googleText}>Continue with Google</Text>
+            <Text style={[styles.googleText, { color: colors.text }]}>Continue with Google</Text>
           </>
         )}
       </Pressable>

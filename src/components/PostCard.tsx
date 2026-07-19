@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { FeedItem } from '../hooks/useFeed';
 import { supabase } from '../services/supabase/client';
+import { useTheme } from '../theme';
 import { formatPrice, formatRelativeTime } from '../utils/time';
 
 /** Headline verb for an activity item. */
@@ -38,6 +39,7 @@ const ICON: Partial<Record<FeedItem['type'], { name: keyof typeof Ionicons.glyph
 
 /** A feed activity item: who did what, with the involved card(s). */
 export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
+  const { colors } = useTheme();
   const name = item.author.displayName || item.author.username;
   const verb = headline(item);
   const icon = ICON[item.type];
@@ -66,7 +68,7 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
   const showFollow = !!meId && item.author.id !== meId && !followed;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.card }]}>
       <View style={styles.header}>
         {item.author.avatarUrl ? (
           <Image source={{ uri: item.author.avatarUrl }} style={styles.avatar} />
@@ -75,19 +77,24 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
         )}
         <View style={{ flex: 1 }}>
           <Text style={styles.name}>
-            <Link href={`/user/${item.author.id}`} style={styles.nameLink}>{name}</Link>
-            {verb ? <Text style={styles.verb}> {verb}</Text> : null}
+            <Link href={`/user/${item.author.id}`} style={[styles.nameLink, { color: colors.text }]}>{name}</Link>
+            {verb ? <Text style={[styles.verb, { color: colors.textMuted }]}> {verb}</Text> : null}
           </Text>
-          <Text style={styles.time}>{formatRelativeTime(item.createdAt)}</Text>
+          <Text style={[styles.time, { color: colors.textFaint }]}>{formatRelativeTime(item.createdAt)}</Text>
         </View>
         {showFollow ? (
-          <Pressable style={styles.followBtn} onPress={() => follow.mutate()} disabled={follow.isPending} hitSlop={6}>
+          <Pressable
+            style={[styles.followBtn, { borderColor: colors.primary }]}
+            onPress={() => follow.mutate()}
+            disabled={follow.isPending}
+            hitSlop={6}
+          >
             {follow.isPending ? (
-              <ActivityIndicator size="small" color="#2563EB" />
+              <ActivityIndicator size="small" color={colors.primary} />
             ) : (
               <>
-                <Ionicons name="person-add" size={13} color="#2563EB" />
-                <Text style={styles.followText}>Follow</Text>
+                <Ionicons name="person-add" size={13} color={colors.primary} />
+                <Text style={[styles.followText, { color: colors.primary }]}>Follow</Text>
               </>
             )}
           </Pressable>
@@ -96,7 +103,9 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
         ) : null}
       </View>
 
-      {item.body && item.type === 'text' ? <Text style={styles.textBody}>{item.body}</Text> : null}
+      {item.body && item.type === 'text' ? (
+        <Text style={[styles.textBody, { color: colors.text }]}>{item.body}</Text>
+      ) : null}
 
       {item.cards.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>

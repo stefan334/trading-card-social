@@ -4,9 +4,11 @@ import { Image } from 'expo-image';
 import type { CardMarketPrice } from '../types/card';
 import { useCardPrices } from '../hooks/useCardPrices';
 import type { CollectionSetGroup } from '../hooks/useCollectionBySet';
+import { useTheme } from '../theme';
 import { formatPrice } from '../utils/time';
 
 function SetGroup({ group, prices }: { group: CollectionSetGroup; prices?: Map<string, CardMarketPrice> }) {
+  const { colors } = useTheme();
   const pct = group.totalCards > 0 ? Math.round((group.ownedDistinct / group.totalCards) * 100) : 0;
 
   return (
@@ -14,8 +16,8 @@ function SetGroup({ group, prices }: { group: CollectionSetGroup; prices?: Map<s
       <Link href={`/set/${encodeURIComponent(group.setId)}`} asChild>
         <Pressable style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.setName}>{group.setName}</Text>
-            {group.series ? <Text style={styles.series}>{group.series}</Text> : null}
+            <Text style={[styles.setName, { color: colors.text }]}>{group.setName}</Text>
+            {group.series ? <Text style={[styles.series, { color: colors.textMuted }]}>{group.series}</Text> : null}
           </View>
           <Text style={styles.count}>
             {group.ownedDistinct}/{group.totalCards || '?'}
@@ -23,7 +25,7 @@ function SetGroup({ group, prices }: { group: CollectionSetGroup; prices?: Map<s
         </Pressable>
       </Link>
 
-      <View style={styles.progressTrack}>
+      <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
         <View style={[styles.progressFill, { width: `${pct}%` }]} />
       </View>
 

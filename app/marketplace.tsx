@@ -10,9 +10,11 @@ import { useMarketplace, type MarketListing } from '../src/hooks/useMarketplace'
 import { useScreenView } from '../src/services/analytics';
 import { isSupabaseConfigured } from '../src/services/supabase/client';
 import { listProviders } from '../src/services/tcg-providers';
+import { useTheme } from '../src/theme';
 import { formatPrice } from '../src/utils/time';
 
 function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: number }) {
+  const { colors } = useTheme();
   const ownerName = item.owner?.displayName || item.owner?.username || 'Someone';
   return (
     <View style={styles.row}>
@@ -24,8 +26,8 @@ function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: numb
             <View style={[styles.thumb, styles.placeholder]} />
           )}
           <View style={{ flex: 1 }}>
-            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-            <Text style={styles.sub}>
+            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+            <Text style={[styles.sub, { color: colors.textMuted }]}>
               #{item.number}
               {item.grade ? ` · ${item.grade}` : item.condition ? ` · ${item.condition.replace('_', ' ')}` : ''}
             </Text>
@@ -55,6 +57,7 @@ function ListingRow({ item, marketAvg }: { item: MarketListing; marketAvg?: numb
 /** Global marketplace: browse every card listed for trade, opened from the Feed header. */
 export default function MarketplaceScreen() {
   const games = listProviders();
+  const { colors } = useTheme();
   useScreenView('marketplace');
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
   const [query, setQuery] = useState('');
@@ -74,11 +77,12 @@ export default function MarketplaceScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchBar}>
+      <View style={[styles.searchBar, { borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: colors.text }]}
           placeholder="Search listings by card name"
+          placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           value={query}
           onChangeText={setQuery}
@@ -88,7 +92,7 @@ export default function MarketplaceScreen() {
       <View style={styles.nearRow}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Ionicons name="location" size={16} color={nearMe && canFilterNear ? '#2563EB' : '#9CA3AF'} />
-          <Text style={styles.nearLabel}>Near me only</Text>
+          <Text style={[styles.nearLabel, { color: colors.text }]}>Near me only</Text>
         </View>
         <Switch value={nearMe} onValueChange={setNearMe} />
       </View>
@@ -121,9 +125,9 @@ export default function MarketplaceScreen() {
           onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
           onEndReachedThreshold={0.4}
           ListFooterComponent={isFetchingNextPage ? <ActivityIndicator style={{ marginVertical: 14 }} /> : null}
-          ItemSeparatorComponent={() => <View style={styles.sep} />}
+          ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />}
           ListEmptyComponent={
-            <Text style={styles.empty}>
+            <Text style={[styles.empty, { color: colors.textMuted }]}>
               {query ? 'No listings match your search.' : 'No cards are listed for trade yet. List some from your collection!'}
             </Text>
           }

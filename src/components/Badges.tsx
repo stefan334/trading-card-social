@@ -1,34 +1,36 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 import { useAchievements } from '../hooks/useAchievements';
+import { useTheme } from '../theme';
 
 /**
  * Achievement badges on a profile — earned from trades, collection size, and
  * followers. Pass showEmpty on your own profile to nudge you toward earning some.
  */
 export function Badges({ userId, showEmpty }: { userId: string; showEmpty?: boolean }) {
+  const { colors } = useTheme();
   const { data: badges } = useAchievements(userId);
 
   if (!badges?.length) {
     if (!showEmpty) return null;
     return (
       <View>
-        <Text style={styles.title}>Achievements</Text>
-        <Text style={styles.hint}>Complete trades and grow your collection to earn badges.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Achievements</Text>
+        <Text style={[styles.hint, { color: colors.textMuted }]}>Complete trades and grow your collection to earn badges.</Text>
       </View>
     );
   }
 
   return (
     <View>
-      <Text style={styles.title}>Achievements</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Achievements</Text>
       <View style={styles.row}>
         {badges.map((b) => (
-          <View key={b.key} style={[styles.badge, { borderColor: b.color }]}>
+          <View key={b.key} style={[styles.badge, { borderColor: b.color, backgroundColor: colors.card }]}>
             <Ionicons name={b.icon} size={16} color={b.color} />
             <View>
               <Text style={[styles.badgeLabel, { color: b.color }]}>{b.label}</Text>
-              <Text style={styles.badgeDetail}>{b.detail}</Text>
+              <Text style={[styles.badgeDetail, { color: colors.textFaint }]}>{b.detail}</Text>
             </View>
           </View>
         ))}

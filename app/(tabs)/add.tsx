@@ -24,6 +24,7 @@ import { dbGetSet, dbGetSetCards, dbGetSets } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
 import type { Card } from '../../src/types/card';
 import type { CardCondition } from '../../src/types/domain';
+import { useTheme } from '../../src/theme';
 
 const CONDITIONS: CardCondition[] = ['mint', 'near_mint', 'excellent', 'good', 'played', 'poor'];
 const LABEL: Record<CardCondition, string> = {
@@ -47,6 +48,7 @@ type Finish = (typeof FINISHES)[number]['key'];
 export default function AddScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
   useScreenView('add');
   const { items, add: addToCart, removeAt, removeOne, clear } = useBatch();
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
@@ -116,10 +118,10 @@ export default function AddScreen() {
     <View style={styles.container}>
       {/* Search + scan */}
       <View style={styles.searchRow}>
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, { backgroundColor: colors.surface }]}>
           <Ionicons name="search" size={18} color="#9CA3AF" />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Search cards by name"
             placeholderTextColor="#9CA3AF"
             autoCapitalize="none"
@@ -158,8 +160,8 @@ export default function AddScreen() {
       {!showGrid ? (
         <View style={styles.hintWrap}>
           <Ionicons name="albums-outline" size={40} color="#C7CBD1" />
-          <Text style={styles.hintTitle}>Build your pack</Text>
-          <Text style={styles.hint}>
+          <Text style={[styles.hintTitle, { color: colors.text }]}>Build your pack</Text>
+          <Text style={[styles.hint, { color: colors.textMuted }]}>
             Search by name, tap <Text style={{ fontWeight: '700' }}>Sets</Text> to browse a whole set, or
             scan. Everything you pick drops into the tray below — add them all at once.
           </Text>
@@ -202,11 +204,11 @@ export default function AddScreen() {
                     </Pressable>
                   )}
                 </View>
-                <Text numberOfLines={1} style={styles.cardName}>{item.name}</Text>
+                <Text numberOfLines={1} style={[styles.cardName, { color: colors.text }]}>{item.name}</Text>
               </View>
             );
           }}
-          ListEmptyComponent={<Text style={styles.muted}>No matches — try a different spelling.</Text>}
+          ListEmptyComponent={<Text style={[styles.muted, { color: colors.textMuted }]}>No matches — try a different spelling.</Text>}
         />
       )}
 
@@ -235,10 +237,10 @@ export default function AddScreen() {
       {/* Review sheet */}
       <Modal visible={reviewOpen} transparent animationType="slide" onRequestClose={() => setReviewOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setReviewOpen(false)} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
+        <View style={[styles.sheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Your pack · {items.length}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>Your pack · {items.length}</Text>
             {items.length > 0 && (
               <Pressable hitSlop={8} onPress={clear}>
                 <Text style={styles.clearLink}>Clear</Text>
@@ -247,7 +249,7 @@ export default function AddScreen() {
           </View>
 
           {items.length === 0 ? (
-            <Text style={styles.muted}>Nothing queued yet.</Text>
+            <Text style={[styles.muted, { color: colors.textMuted }]}>Nothing queued yet.</Text>
           ) : (
             <ScrollView style={{ maxHeight: 220 }} contentContainerStyle={styles.sheetGrid}>
               {items.map((it) => (
@@ -265,7 +267,7 @@ export default function AddScreen() {
             </ScrollView>
           )}
 
-          <Text style={styles.label}>Condition (applies to all)</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Condition (applies to all)</Text>
           <View style={styles.chips}>
             {CONDITIONS.map((c) => (
               <Pressable key={c} style={[styles.chip, c === condition && styles.chipOn]} onPress={() => setCondition(c)}>
@@ -274,7 +276,7 @@ export default function AddScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Finish</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Finish</Text>
           <View style={styles.chips}>
             {FINISHES.map((f) => (
               <Pressable key={f.key} style={[styles.chip, f.key === finish && styles.chipOn]} onPress={() => setFinish(f.key)}>
@@ -299,16 +301,17 @@ export default function AddScreen() {
 
       {/* Set picker */}
       <Modal visible={setPickerOpen} animationType="slide" onRequestClose={() => setSetPickerOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={styles.pickerHeader}>
-          <Text style={styles.pickerTitle}>Browse a set</Text>
+          <Text style={[styles.pickerTitle, { color: colors.text }]}>Browse a set</Text>
           <Pressable hitSlop={8} onPress={() => setSetPickerOpen(false)}>
-            <Ionicons name="close" size={26} color="#111827" />
+            <Ionicons name="close" size={26} color={colors.text} />
           </Pressable>
         </View>
-        <View style={styles.pickerSearch}>
+        <View style={[styles.pickerSearch, { backgroundColor: colors.surface }]}>
           <Ionicons name="search" size={18} color="#9CA3AF" />
           <TextInput
-            style={styles.input}
+            style={[styles.input, { color: colors.text }]}
             placeholder="Find a set"
             placeholderTextColor="#9CA3AF"
             value={setSearch}
@@ -335,14 +338,15 @@ export default function AddScreen() {
                 <View style={styles.setLogo} />
               )}
               <View style={{ flex: 1 }}>
-                <Text style={styles.setName}>{item.name}</Text>
-                <Text style={styles.setMeta}>{item.series ? `${item.series} · ` : ''}{item.totalCards} cards</Text>
+                <Text style={[styles.setName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.setMeta, { color: colors.textMuted }]}>{item.series ? `${item.series} · ` : ''}{item.totalCards} cards</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
             </Pressable>
           )}
-          ListEmptyComponent={<Text style={styles.muted}>No sets found.</Text>}
+          ListEmptyComponent={<Text style={[styles.muted, { color: colors.textMuted }]}>No sets found.</Text>}
         />
+        </View>
       </Modal>
     </View>
   );

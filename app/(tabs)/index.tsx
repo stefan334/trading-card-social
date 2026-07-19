@@ -7,6 +7,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useFeed, type FeedItem } from '../../src/hooks/useFeed';
 import { useScreenView } from '../../src/services/analytics';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
+import { useTheme } from '../../src/theme';
 
 const AD_EVERY = 5; // one sponsored slot per 5 posts
 
@@ -19,6 +20,7 @@ type FeedRow = { kind: 'post'; item: FeedItem } | { kind: 'ad'; key: string };
  */
 export default function FeedScreen() {
   const { user, profile, loading: authLoading } = useAuth();
+  const { colors } = useTheme();
   const { data: items, isLoading, isRefetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useFeed(user?.id, profile?.locationName);
   useScreenView('feed');
@@ -37,7 +39,7 @@ export default function FeedScreen() {
     return (
       <View style={styles.container}>
         <SupabaseSetupNotice />
-        <Text style={styles.muted}>Connect Supabase to see your friends' feed.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Connect Supabase to see your friends' feed.</Text>
       </View>
     );
   }
@@ -49,8 +51,8 @@ export default function FeedScreen() {
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.emptyTitle}>Welcome to CardLink</Text>
-        <Text style={styles.muted}>Sign in to see what the collectors you follow are up to.</Text>
+        <Text style={[styles.emptyTitle, { color: colors.text }]}>Welcome to CardLink</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Sign in to see what the collectors you follow are up to.</Text>
       </View>
     );
   }
@@ -68,8 +70,8 @@ export default function FeedScreen() {
         contentContainerStyle={styles.emptyWrap}
         ListEmptyComponent={
           <View style={styles.container}>
-            <Text style={styles.emptyTitle}>Your feed is quiet</Text>
-            <Text style={styles.muted}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>Your feed is quiet</Text>
+            <Text style={[styles.muted, { color: colors.textMuted }]}>
               Follow other collectors and you'll see it here whenever they add cards or list something
               for trade. Add cards to your own collection and your feed fills up too.
             </Text>

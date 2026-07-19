@@ -4,17 +4,19 @@ import { Image } from 'expo-image';
 import { Link, Tabs } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
+import { useTheme } from '../../src/theme';
 import { useAutoLocation } from '../../src/hooks/useAutoLocation';
 import { useUnreadChatTotal } from '../../src/hooks/useChatThreads';
 import { useUnreadNotificationCount } from '../../src/hooks/useNotifications';
 
 /** Raised, prominent center "+" that opens the Add tab from anywhere. */
 function AddTabButton({ onPress }: BottomTabBarButtonProps) {
+  const { colors } = useTheme();
   return (
     <View style={addBtn.wrap} pointerEvents="box-none">
       <Pressable
         onPress={onPress}
-        style={addBtn.btn}
+        style={[addBtn.btn, { borderColor: colors.card, backgroundColor: colors.primary }]}
         android_ripple={{ color: '#1e40af', borderless: true }}
         accessibilityLabel="Add cards"
       >

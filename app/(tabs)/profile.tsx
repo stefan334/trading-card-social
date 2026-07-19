@@ -10,6 +10,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useCollectionBySet } from '../../src/hooks/useCollectionBySet';
 import { useProfile } from '../../src/hooks/useProfile';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
+import { useTheme } from '../../src/theme';
 
 /**
  * The current user's own profile — opened via the Feed's top-right avatar. Shows
@@ -17,6 +18,7 @@ import { isSupabaseConfigured } from '../../src/services/supabase/client';
  */
 export default function ProfileScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { data: profile, isLoading } = useProfile(user?.id);
   const { data: groups, isLoading: collectionLoading } = useCollectionBySet(user?.id);
 
@@ -53,11 +55,11 @@ export default function ProfileScreen() {
         </Link>
       </View>
 
-      <Text style={styles.sectionTitle}>Your Collection</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Collection</Text>
       {collectionLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
       ) : !groups?.length ? (
-        <Text style={styles.muted}>No cards yet — add some from the Collection tab.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>No cards yet — add some from the Collection tab.</Text>
       ) : (
         <CollectionBySet groups={groups} />
       )}

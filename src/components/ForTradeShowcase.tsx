@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCardPrices } from '../hooks/useCardPrices';
 import { useForTradeCards } from '../hooks/useForTradeCards';
+import { useTheme } from '../theme';
 import { formatPrice } from '../utils/time';
 
 /**
@@ -14,6 +15,7 @@ import { formatPrice } from '../utils/time';
  * builder pre-selecting that card.
  */
 export function ForTradeShowcase({ userId }: { userId: string }) {
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { data: cards } = useForTradeCards(userId);
   const { data: prices } = useCardPrices((cards ?? []).map((c) => c.cardId));
@@ -23,7 +25,7 @@ export function ForTradeShowcase({ userId }: { userId: string }) {
 
   return (
     <View>
-      <Text style={styles.title}>For Trade ({cards.length})</Text>
+      <Text style={[styles.title, { color: colors.text }]}>For Trade ({cards.length})</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {cards.map((c) => (
           <View key={c.userCardId} style={styles.tile}>

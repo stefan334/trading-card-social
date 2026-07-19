@@ -8,6 +8,7 @@ import { useCardPrices } from '../../src/hooks/useCardPrices';
 import { useWishlist } from '../../src/hooks/useWishlist';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
 import { listProviders } from '../../src/services/tcg-providers';
+import { useTheme } from '../../src/theme';
 import { formatPrice } from '../../src/utils/time';
 
 /**
@@ -17,6 +18,7 @@ import { formatPrice } from '../../src/utils/time';
  */
 export default function WishlistScreen() {
   const { user } = useAuth();
+  const { colors } = useTheme();
   const games = listProviders();
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
   const { data: cards, isLoading } = useWishlist(user?.id, gameId);
@@ -50,11 +52,11 @@ export default function WishlistScreen() {
       )}
 
       {!user ? (
-        <Text style={styles.muted}>Sign in to build your wishlist.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Sign in to build your wishlist.</Text>
       ) : isLoading ? (
         <ActivityIndicator style={{ marginTop: 20 }} />
       ) : !cards?.length ? (
-        <Text style={styles.muted}>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>
           Your wishlist is empty. Open any card and tap “Add to wishlist” — you’ll be notified when
           someone you follow lists it.
         </Text>
@@ -75,7 +77,7 @@ export default function WishlistScreen() {
                   ) : (
                     <View style={[styles.cardImage, styles.placeholder]} />
                   )}
-                  <Text numberOfLines={1} style={styles.cardName}>
+                  <Text numberOfLines={1} style={[styles.cardName, { color: colors.text }]}>
                     {item.name}
                   </Text>
                   {price?.average != null ? (
