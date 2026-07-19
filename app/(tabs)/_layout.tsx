@@ -8,6 +8,7 @@ import { useTheme } from '../../src/theme';
 import { useAutoLocation } from '../../src/hooks/useAutoLocation';
 import { useUnreadChatTotal } from '../../src/hooks/useChatThreads';
 import { useUnreadNotificationCount } from '../../src/hooks/useNotifications';
+import { usePushNotifications } from '../../src/hooks/usePushNotifications';
 
 /** Raised, prominent center "+" that opens the Add tab from anywhere. */
 function AddTabButton({ onPress }: BottomTabBarButtonProps) {
@@ -101,6 +102,7 @@ export default function TabLayout() {
   const unreadChats = useUnreadChatTotal();
   const { profile } = useAuth();
   useAutoLocation(); // ask once on entry, then keep location current automatically
+  usePushNotifications(); // register this device's push token
   return (
     <Tabs screenOptions={{ tabBarActiveTintColor: '#2563EB' }}>
       <Tabs.Screen
