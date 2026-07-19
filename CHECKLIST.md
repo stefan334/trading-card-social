@@ -214,6 +214,17 @@ decisions.
       → **manual step:** re-enable "Confirm email" in Supabase Auth settings before launch (OTP screen
       already built), and verify a real sending domain in Resend (onboarding@resend.dev only delivers
       to your own inbox).
+- [x] **Dark mode**: theme system (`src/theme`) with System/Light/Dark picker in Settings (persisted),
+      themed nav/tab bar/status bar + all main surfaces; unconverted detail screens pinned light so
+      nothing is unreadable — convert them incrementally.
+- [x] **Push notifications** (`0023`): push_tokens + pg_net triggers send Expo pushes straight from
+      Postgres for follows / wishlist matches / trade updates / chat messages; expo-notifications
+      registration in-app. → **manual step for Android delivery:** create a Firebase project, add
+      `google-services.json` via app.json `android.googleServicesFile`, and upload FCM V1 service-account
+      credentials with `eas credentials` (Android → Push Notifications), then rebuild.
+- [ ] **Backlog (next)**: collection set-name search + set filter in card search; card search by
+      name+number (Cardmarket-style); dedicated Cardmarket price sync for accuracy/coverage;
+      feed + general UI/UX polish pass; iOS build (needs Apple dev account).
 - [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
