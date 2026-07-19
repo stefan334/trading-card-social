@@ -225,7 +225,20 @@ decisions.
 - [ ] **Backlog (next)**: collection set-name search + set filter in card search; card search by
       name+number (Cardmarket-style); dedicated Cardmarket price sync for accuracy/coverage;
       feed + general UI/UX polish pass; iOS build (needs Apple dev account).
-- [ ] In-app payments (Stripe) — deliberately out of scope; pricing is informational only
+- [ ] **Future phase — Vinted-style in-app transactions** (decided direction, not started; local/manual
+      trades stay free forever alongside it):
+      - Payments via a marketplace provider (Stripe Connect Express or MangoPay) — provider holds funds,
+        does KYC/AML/chargebacks; we orchestrate. Never hold money ourselves.
+      - New `orders` state machine SEPARATE from `trades`, transitions driven only by provider webhooks →
+        Edge Functions (never client writes). Buyer pays → funds held → seller ships (v1: upload tracking;
+        later: prepaid labels / Sameday easybox) → buyer confirms or auto-release ~3 days after delivery.
+      - Buyer protection funded by a buyer-paid fee (~5% + fixed): not-received / not-as-described /
+        counterfeit disputes with photo evidence in a claim window, adjudicated in the existing admin
+        console, refunds from held funds. Later: authentication tier for cards above a value threshold.
+      - Signature end-state: escrowed card-for-card swaps with cash top-up (no competitor does this).
+      - Non-code prerequisites: legal entity, provider onboarding, Terms rewrite (current draft disclaims
+        payment involvement), VAT on fees, EU DAC7 seller-earnings reporting, dispute-ops capacity.
+- [ ] In-app payments (Stripe) — superseded by the phase above; pricing stays informational until then
 - [ ] True in-place **counter** (edit the offer) — for now, decline + propose a new trade
 - [ ] Trade only 1 of N copies (currently transfers the whole `user_cards` row)
 
