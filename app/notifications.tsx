@@ -20,12 +20,12 @@ const TRADE_VERB: Record<string, string> = {
   cancelled: 'cancelled a trade',
 };
 
-// Leading icon + accent colour per notification type.
-const ICON: Record<string, { name: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
-  wishlist_match: { name: 'star', color: '#B45309', bg: '#FEF3C7' },
-  wishlist_listed: { name: 'pricetag', color: '#6D28D9', bg: '#EDE9FE' },
-  new_follower: { name: 'person-add', color: '#2563EB', bg: '#DBEAFE' },
-  trade_update: { name: 'swap-horizontal', color: '#059669', bg: '#D1FAE5' },
+// Leading icon + accent colour per notification type (tile bg = accent @ 15%).
+const ICON: Record<string, { name: keyof typeof Ionicons.glyphMap; color: string }> = {
+  wishlist_match: { name: 'star', color: '#F59E0B' },
+  wishlist_listed: { name: 'pricetag', color: '#8B5CF6' },
+  new_follower: { name: 'person-add', color: '#3B82F6' },
+  trade_update: { name: 'swap-horizontal', color: '#10B981' },
 };
 
 function NotificationRow({ item }: { item: NotificationItem }) {
@@ -50,20 +50,20 @@ function NotificationRow({ item }: { item: NotificationItem }) {
           ? `/user/${item.actor.id}`
           : '/notifications';
 
-  const icon = ICON[item.type] ?? { name: 'notifications', color: '#6B7280', bg: '#F3F4F6' };
+  const icon = ICON[item.type] ?? { name: 'notifications' as const, color: '#6B7280' };
   const unread = !item.readAt;
 
   return (
     <Link href={href as any} asChild>
+      {/* NOTE: style must be a plain array here — Link asChild array-wraps the
+          child's style, and a function style inside an array silently breaks
+          the whole row layout. */}
       <Pressable
-        style={({ pressed }) => [
-          styles.row,
-          unread && { backgroundColor: colors.primary + '0D' },
-          pressed && { backgroundColor: colors.surface },
-        ]}
+        style={[styles.row, unread && { backgroundColor: colors.primary + '0D' }]}
+        android_ripple={{ color: colors.border }}
       >
-        {/* Type-tinted icon tile, same visual language as the Settings rows. */}
-        <View style={[styles.iconTile, { backgroundColor: icon.bg }]}>
+        {/* Type-tinted icon tile (accent at low alpha — works in both themes). */}
+        <View style={[styles.iconTile, { backgroundColor: icon.color + '26' }]}>
           <Ionicons name={icon.name} size={17} color={icon.color} />
         </View>
         <View style={styles.middle}>

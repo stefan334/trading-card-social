@@ -50,7 +50,8 @@ const queryClient = new QueryClient({
 function RootNavigator() {
   useProtectedRoute();
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    // headerBackTitle: iOS otherwise shows the previous route's name — "(tabs)".
+    <Stack screenOptions={{ headerShown: false, headerBackTitle: 'Back' }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" />
