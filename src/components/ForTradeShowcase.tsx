@@ -32,7 +32,8 @@ export function ForTradeShowcase({ userId }: { userId: string }) {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {cards.map((c) => (
           <View key={c.userCardId} style={styles.tile}>
-            <Link href={`/card/${encodeURIComponent(c.cardId)}`} asChild>
+            {/* A for-trade card is an offer — open its listing, not the card page. */}
+            <Link href={`/listing/${c.userCardId}` as any} asChild>
               <Pressable>
                 {c.imageUrlSmall ? (
                   <Image source={{ uri: c.imageUrlSmall }} style={styles.img} />

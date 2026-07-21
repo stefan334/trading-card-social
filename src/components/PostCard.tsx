@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -40,9 +40,32 @@ const ICON: Partial<Record<FeedItem['type'], { name: keyof typeof Ionicons.glyph
 /** A feed activity item: who did what, with the involved card(s). */
 export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
   const { colors } = useTheme();
+  const router = useRouter();
   const name = item.author.displayName || item.author.username;
   const verb = headline(item);
   const icon = ICON[item.type];
+
+  // Card taps on a "listed for trade" post open the LISTING when it's still
+  // live (posts only store author+card, so resolve the user_cards row at tap
+  // time); anything else — or an unlisted-since card — opens the card page.
+  async function openCard(cardId: string) {
+    if (item.type === 'card_listed' && supabase) {
+      const { data } = await supabase
+        .from('user_cards')
+        .select('id')
+        .eq('owner_id', item.author.id)
+        .eq('card_id', cardId)
+        .eq('is_for_trade', true)
+        .order('listed_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      if (data?.id) {
+        router.push(`/listing/${data.id}` as any);
+        return;
+      }
+    }
+    router.push(`/card/${encodeURIComponent(cardId)}` as any);
+  }
   // A card someone else listed for trade is actionable — offer them a trade,
   // pre-filling the very card they listed when it's a single-card post.
   const [expanded, setExpanded] = useState(false);
@@ -110,33 +133,29 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
 
       {item.cards.length === 1 ? (
         // Single card: a bigger hero image + name — the card is the story.
-        <Link href={`/card/${encodeURIComponent(item.cards[0].id)}`} asChild>
-          <Pressable style={styles.heroWrap}>
-            {item.cards[0].imageUrlSmall ? (
-              <Image source={{ uri: item.cards[0].imageUrlSmall }} style={styles.heroImage} />
-            ) : (
-              <View style={[styles.heroImage, styles.placeholder]} />
-            )}
-            <Text style={[styles.heroName, { color: colors.textMuted }]} numberOfLines={1}>
-              {item.cards[0].name}
-            </Text>
-          </Pressable>
-        </Link>
+        <Pressable style={styles.heroWrap} onPress={() => openCard(item.cards[0].id)}>
+          {item.cards[0].imageUrlSmall ? (
+            <Image source={{ uri: item.cards[0].imageUrlSmall }} style={styles.heroImage} />
+          ) : (
+            <View style={[styles.heroImage, styles.placeholder]} />
+          )}
+          <Text style={[styles.heroName, { color: colors.textMuted }]} numberOfLines={1}>
+            {item.cards[0].name}
+          </Text>
+        </Pressable>
       ) : item.cards.length > 0 ? (
         expanded ? (
           // Full burst, laid out as a wrapping grid — every card tappable.
           <>
             <View style={styles.cardWrapGrid}>
               {item.cards.map((c, i) => (
-                <Link key={`${c.id}-${i}`} href={`/card/${encodeURIComponent(c.id)}`} asChild>
-                  <Pressable>
-                    {c.imageUrlSmall ? (
-                      <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
-                    ) : (
-                      <View style={[styles.cardImage, styles.placeholder]} />
-                    )}
-                  </Pressable>
-                </Link>
+                <Pressable key={`${c.id}-${i}`} onPress={() => openCard(c.id)}>
+                  {c.imageUrlSmall ? (
+                    <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
+                  ) : (
+                    <View style={[styles.cardImage, styles.placeholder]} />
+                  )}
+                </Pressable>
               ))}
             </View>
             <Pressable onPress={() => setExpanded(false)} style={styles.showToggle} hitSlop={6}>
@@ -147,15 +166,13 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
             {item.cards.slice(0, 8).map((c, i) => (
-              <Link key={`${c.id}-${i}`} href={`/card/${encodeURIComponent(c.id)}`} asChild>
-                <Pressable>
-                  {c.imageUrlSmall ? (
-                    <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
-                  ) : (
-                    <View style={[styles.cardImage, styles.placeholder]} />
-                  )}
-                </Pressable>
-              </Link>
+              <Pressable key={`${c.id}-${i}`} onPress={() => openCard(c.id)}>
+                {c.imageUrlSmall ? (
+                  <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
+                ) : (
+                  <View style={[styles.cardImage, styles.placeholder]} />
+                )}
+              </Pressable>
             ))}
             {item.cards.length > 8 ? (
               <Pressable
