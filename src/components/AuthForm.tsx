@@ -119,6 +119,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
         </Pressable>
       </View>
 
+      {!isSignUp && (
+        <Pressable onPress={() => router.push('/(auth)/forgot-password' as any)} hitSlop={6} style={styles.forgotWrap}>
+          <Text style={[styles.link, { color: colors.primary }]}>Forgot password?</Text>
+        </Pressable>
+      )}
+
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {info ? <Text style={styles.info}>{info}</Text> : null}
 
@@ -191,6 +197,7 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 8 },
   muted: { color: '#6B7280' },
   link: { color: '#2563EB', fontWeight: '600' },
+  forgotWrap: { alignSelf: 'flex-end', marginTop: -4 },
   error: { color: '#DC2626' },
   info: { color: '#059669' },
   divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },

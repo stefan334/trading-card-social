@@ -52,14 +52,14 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" options={{ ...pinLight }} />
-      <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications', ...pinLight }} />
+      <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
       <Stack.Screen name="search" options={{ headerShown: true, title: 'Search', ...pinLight }} />
       <Stack.Screen name="marketplace" options={{ headerShown: true, title: 'Marketplace' }} />
       <Stack.Screen name="chat/[id]" options={{ headerShown: true, title: 'Chat' }} />
-      <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit Profile', presentation: 'modal', ...pinLight }} />
+      <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit Profile', presentation: 'modal' }} />
       <Stack.Screen name="user/[id]" options={{ headerShown: true, title: 'Profile' }} />
-      <Stack.Screen name="card/[id]" options={{ headerShown: true, title: 'Card', ...pinLight }} />
-      <Stack.Screen name="set/[id]" options={{ headerShown: true, title: 'Set', ...pinLight }} />
+      <Stack.Screen name="card/[id]" options={{ headerShown: true, title: 'Card' }} />
+      <Stack.Screen name="set/[id]" options={{ headerShown: true, title: 'Set' }} />
       <Stack.Screen name="binder/[id]" options={{ headerShown: true, title: 'Binder' }} />
       <Stack.Screen name="binder/edit/[id]" options={{ headerShown: true, title: 'Edit Binder', ...pinLight }} />
       <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade', ...pinLight }} />

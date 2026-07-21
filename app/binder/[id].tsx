@@ -47,8 +47,10 @@ export default function BinderViewerScreen() {
           title: binder.name,
           headerRight: isOwner
             ? () => (
-                <Link href={`/binder/edit/${binder.id}`} style={styles.edit}>
-                  Edit
+                <Link href={`/binder/edit/${binder.id}`} asChild>
+                  <Pressable hitSlop={10} style={styles.editBtn}>
+                    <Text style={[styles.edit, { color: colors.primary }]}>Edit</Text>
+                  </Pressable>
                 </Link>
               )
             : undefined,
@@ -115,7 +117,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#111827' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 },
   muted: { color: '#9CA3AF' },
-  edit: { color: '#2563EB', fontWeight: '700', marginRight: 16 },
+  editBtn: { marginRight: 16, justifyContent: 'center', alignItems: 'center', paddingVertical: 4 },
+  edit: { fontWeight: '700', fontSize: 16 },
   editLink: { color: '#60A5FA', fontWeight: '700' },
   perPageBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10 },
   perPageLabel: { color: '#9CA3AF', fontWeight: '600', marginRight: 2 },

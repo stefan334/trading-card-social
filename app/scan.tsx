@@ -103,7 +103,11 @@ export default function ScanScreen() {
     return (
       <View style={styles.container}>
         <CameraView ref={cameraRef} style={styles.camera} facing="back" zoom={zoom} />
-        <Text style={styles.hint}>Line the card up and tap to capture.</Text>
+        {/* Card-shaped framing guide (real TCG aspect ratio) for better OCR crops. */}
+        <View style={styles.frameWrap} pointerEvents="none">
+          <View style={styles.frame} />
+        </View>
+        <Text style={styles.hint}>Fit the card inside the frame, then tap to capture.</Text>
         <Pressable style={styles.done} onPress={() => router.back()}>
           <Text style={styles.doneText}>Done{cart.length ? ` · ${cart.length} in cart` : ''}</Text>
         </Pressable>
@@ -197,6 +201,18 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 14 },
   camera: { flex: 1 },
   hint: { position: 'absolute', top: 16, alignSelf: 'center', color: 'white', backgroundColor: '#00000088', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  frameWrap: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  frame: {
+    width: '74%',
+    aspectRatio: 0.716, // standard TCG card (63×88mm)
+    borderWidth: 2.5,
+    borderColor: '#FFFFFFCC',
+    borderRadius: 14,
+    marginBottom: 60, // keep clear of the shutter/zoom controls
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+  },
   shutter: { position: 'absolute', bottom: 32, alignSelf: 'center', width: 72, height: 72, borderRadius: 36, backgroundColor: 'white', borderWidth: 4, borderColor: '#2563EB' },
   zoomBar: { position: 'absolute', bottom: 120, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: '#00000088', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 },
   zoomBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#ffffff33', alignItems: 'center', justifyContent: 'center' },

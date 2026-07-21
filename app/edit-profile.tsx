@@ -18,6 +18,7 @@ import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
 import { uploadImage } from '../src/services/supabase/storage';
 import { listProviders } from '../src/services/tcg-providers';
+import { useTheme } from '../src/theme';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
@@ -26,6 +27,7 @@ export default function EditProfileScreen() {
   const { user, profile, refreshProfile } = useAuth();
   const router = useRouter();
   const qc = useQueryClient();
+  const { colors } = useTheme();
   const games = listProviders();
 
   // Refresh both the auth-context profile and the react-query profile cache that
@@ -150,7 +152,7 @@ export default function EditProfileScreen() {
         {avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />
         ) : (
-          <View style={[styles.avatar, styles.avatarEmpty]}>
+          <View style={[styles.avatar, styles.avatarEmpty, { backgroundColor: colors.surface }]}>
             <Ionicons name="person" size={40} color="#9CA3AF" />
           </View>
         )}
@@ -158,23 +160,24 @@ export default function EditProfileScreen() {
           {uploading ? <ActivityIndicator color="white" size="small" /> : <Ionicons name="camera" size={16} color="white" />}
         </View>
       </Pressable>
-      <Text style={styles.avatarHint}>Tap to change photo</Text>
+      <Text style={[styles.avatarHint, { color: colors.textMuted }]}>Tap to change photo</Text>
 
-      <Text style={styles.label}>Username</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Username</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         autoCapitalize="none"
         autoCorrect={false}
         value={username}
         onChangeText={setUsername}
       />
 
-      <Text style={styles.label}>Display name</Text>
-      <TextInput style={styles.input} value={displayName} onChangeText={setDisplayName} />
+      <Text style={[styles.label, { color: colors.text }]}>Display name</Text>
+      <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text }]} value={displayName} onChangeText={setDisplayName} />
 
-      <Text style={styles.label}>Bio</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Bio</Text>
       <TextInput
-        style={[styles.input, styles.multiline]}
+        style={[styles.input, styles.multiline, { borderColor: colors.border, color: colors.text }]}
+        placeholderTextColor={colors.textFaint}
         value={bio}
         onChangeText={setBio}
         multiline
@@ -182,28 +185,28 @@ export default function EditProfileScreen() {
         placeholder="Tell collectors what you're after"
       />
 
-      <Text style={styles.label}>Location</Text>
-      <Pressable style={styles.locationBtn} onPress={setLocation} disabled={locating}>
+      <Text style={[styles.label, { color: colors.text }]}>Location</Text>
+      <Pressable style={[styles.locationBtn, { borderColor: colors.border }]} onPress={setLocation} disabled={locating}>
         <Ionicons name="location" size={18} color="#2563EB" />
         {locating ? (
           <ActivityIndicator />
         ) : (
-          <Text style={styles.locationText}>{locationName ?? 'Set my location'}</Text>
+          <Text style={[styles.locationText, { color: colors.text }]}>{locationName ?? 'Set my location'}</Text>
         )}
       </Pressable>
-      <Text style={styles.locationHint}>Used to find local traders. Stored roughly (~1km) and shown as your area.</Text>
+      <Text style={[styles.locationHint, { color: colors.textFaint }]}>Used to find local traders. Stored roughly (~1km) and shown as your area.</Text>
 
-      <Text style={styles.label}>Favorite TCG</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Favorite TCG</Text>
       <View style={styles.chips}>
         {games.map((g) => {
           const selected = g.gameId === favoriteGameId;
           return (
             <Pressable
               key={g.gameId}
-              style={[styles.chip, selected && styles.chipSelected]}
+              style={[styles.chip, { borderColor: colors.border }, selected && styles.chipSelected]}
               onPress={() => setFavoriteGameId(g.gameId)}
             >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{g.displayName}</Text>
+              <Text style={[styles.chipText, { color: colors.textMuted }, selected && styles.chipTextSelected]}>{g.displayName}</Text>
             </Pressable>
           );
         })}

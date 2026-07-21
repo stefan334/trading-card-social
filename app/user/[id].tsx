@@ -42,18 +42,28 @@ export default function UserProfileScreen() {
       </Link>
       <View style={styles.actionRow}>
         <Pressable
-          style={[styles.button, styles.flex, isFollowing ? styles.following : styles.followBtn]}
+          style={[
+            styles.button,
+            styles.flex,
+            isFollowing
+              ? { backgroundColor: colors.surface, borderColor: colors.border }
+              : { backgroundColor: colors.primary, borderColor: colors.primary },
+          ]}
           onPress={toggle}
           disabled={toggling}
         >
-          <Ionicons name={isFollowing ? 'checkmark' : 'person-add'} size={16} color={isFollowing ? '#374151' : 'white'} />
-          <Text style={[styles.buttonText, isFollowing && styles.followingText]}>
+          <Ionicons name={isFollowing ? 'checkmark' : 'person-add'} size={16} color={isFollowing ? colors.text : 'white'} />
+          <Text style={[styles.buttonText, isFollowing && { color: colors.text }]}>
             {isFollowing ? 'Following' : 'Follow'}
           </Text>
         </Pressable>
-        <Pressable style={[styles.button, styles.flex, styles.messageButton]} onPress={message} disabled={startThread.isPending}>
-          <Ionicons name="chatbubble-ellipses" size={16} color="#2563EB" />
-          <Text style={[styles.buttonText, styles.messageText]}>Message</Text>
+        <Pressable
+          style={[styles.button, styles.flex, { backgroundColor: 'transparent', borderColor: colors.primary }]}
+          onPress={message}
+          disabled={startThread.isPending}
+        >
+          <Ionicons name="chatbubble-ellipses" size={16} color={colors.primary} />
+          <Text style={[styles.buttonText, { color: colors.primary }]}>Message</Text>
         </Pressable>
       </View>
       <Link href={`/report?profile=${id}&name=${encodeURIComponent(profile.username)}` as any} asChild>

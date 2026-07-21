@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { useOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { dbGetSetCards } from '../../src/services/catalog';
 import { getProvider } from '../../src/services/tcg-providers';
+import { useTheme } from '../../src/theme';
 import { formatPrice } from '../../src/utils/time';
 
 /**
@@ -14,6 +15,7 @@ import { formatPrice } from '../../src/utils/time';
  * owned/total progress bar — the "what do I still need for this set" view.
  */
 export default function SetDetailScreen() {
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const gameId = id?.split(':')[0];
 
@@ -53,16 +55,16 @@ export default function SetDetailScreen() {
       ListHeaderComponent={
         <View style={styles.header}>
           {set?.imageUrl && <Image source={{ uri: set.imageUrl }} style={styles.logo} contentFit="contain" />}
-          <Text style={styles.setName}>{set?.name ?? 'Set'}</Text>
-          {set?.series ? <Text style={styles.series}>{set.series}</Text> : null}
+          <Text style={[styles.setName, { color: colors.text }]}>{set?.name ?? 'Set'}</Text>
+          {set?.series ? <Text style={[styles.series, { color: colors.textMuted }]}>{set.series}</Text> : null}
           <Text style={styles.count}>
             {ownedCount}/{total} collected · {pct}%
           </Text>
-          <View style={styles.progressTrack}>
+          <View style={[styles.progressTrack, { backgroundColor: colors.surface }]}>
             <View style={[styles.progressFill, { width: `${pct}%` }]} />
           </View>
           <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>Show missing only</Text>
+            <Text style={[styles.toggleLabel, { color: colors.text }]}>Show missing only</Text>
             <Switch value={missingOnly} onValueChange={setMissingOnly} />
           </View>
         </View>
@@ -76,9 +78,9 @@ export default function SetDetailScreen() {
               {item.imageUrlSmall ? (
                 <Image source={{ uri: item.imageUrlSmall }} style={[styles.cardImage, !owned && styles.dimmed]} />
               ) : (
-                <View style={[styles.cardImage, styles.placeholder]} />
+                <View style={[styles.cardImage, { backgroundColor: colors.surface }]} />
               )}
-              <Text style={styles.cardNumber}>#{item.number}</Text>
+              <Text style={[styles.cardNumber, { color: colors.textMuted }]}>#{item.number}</Text>
               {item.market?.average != null ? (
                 <Text style={styles.cardPrice}>{formatPrice(item.market.average, item.market.currency)}</Text>
               ) : null}

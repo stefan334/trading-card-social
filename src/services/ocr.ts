@@ -26,8 +26,10 @@ export interface CardOcr {
 }
 
 // Lines that are clearly NOT the card name (game text, stats, flavour, credits).
+// Includes every Trainer/Energy type banner (Supporter, Item, Stadium, Tool…) —
+// on those cards the type label sits above the actual name and OCR reads it first.
 const NOT_NAME =
-  /(\d\s*\/\s*\d|\d+\s*hp\b|^(stage\s*\d|basic|evolves|put\b|length|weight|illus|©|\(c\)|trainer|energy|weakness|resistance|retreat|ability|pok[eé]mon\s*power|edition))/i;
+  /(\d\s*\/\s*\d|\d+\s*hp\b|^(stage\s*\d|basic|evolves|put\b|length|weight|illus|©|\(c\)|trainer|supporter|item\b|stadium|tool\b|technical\s*machine|special\s*energy|basic\s*energy|energy|weakness|resistance|retreat|ability|pok[eé]mon\s*(power|tool)|edition))/i;
 
 /**
  * Pull a card name + collector number out of a raw OCR text blob (heuristic).

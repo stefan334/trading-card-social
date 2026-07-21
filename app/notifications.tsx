@@ -8,6 +8,7 @@ import {
   useNotifications,
   type NotificationItem,
 } from '../src/hooks/useNotifications';
+import { useTheme } from '../src/theme';
 import { formatRelativeTime } from '../src/utils/time';
 
 const TRADE_VERB: Record<string, string> = {
@@ -27,6 +28,7 @@ const ICON: Record<string, { name: keyof typeof Ionicons.glyphMap; color: string
 };
 
 function NotificationRow({ item }: { item: NotificationItem }) {
+  const { colors } = useTheme();
   const name = item.actor?.displayName || item.actor?.username || 'Someone';
 
   const label =
@@ -51,16 +53,16 @@ function NotificationRow({ item }: { item: NotificationItem }) {
 
   return (
     <Link href={href as any} asChild>
-      <Pressable style={[styles.row, !item.readAt && styles.unread]}>
+      <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }, !item.readAt && { backgroundColor: colors.surface, borderColor: colors.primary }]}>
         <View style={[styles.iconCircle, { backgroundColor: icon.bg }]}>
           <Ionicons name={icon.name} size={18} color={icon.color} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.body}>
-            <Text style={styles.name}>{name}</Text>
+          <Text style={[styles.body, { color: colors.text }]}>
+            <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
             {item.type === 'wishlist_match' ? ` added ${label}${suffix}` : ` ${label}`}
           </Text>
-          <Text style={styles.time}>{formatRelativeTime(item.createdAt)}</Text>
+          <Text style={[styles.time, { color: colors.textFaint }]}>{formatRelativeTime(item.createdAt)}</Text>
         </View>
         {item.card?.imageUrlSmall ? (
           <Image source={{ uri: item.card.imageUrlSmall }} style={styles.cardThumb} />
@@ -74,6 +76,7 @@ function NotificationRow({ item }: { item: NotificationItem }) {
 
 /** Notifications list (opened from the Feed's header bell). Marks everything read on open. */
 export default function NotificationsScreen() {
+  const { colors } = useTheme();
   const { data: items, isLoading } = useNotifications();
   const markRead = useMarkNotificationsRead();
 
@@ -88,8 +91,11 @@ export default function NotificationsScreen() {
   if (!items?.length) {
     return (
       <View style={styles.center}>
-        <Text style={styles.empty}>No notifications yet.</Text>
-        <Text style={styles.emptyMuted}>
+        <View style={[styles.emptyBell, { backgroundColor: colors.surface }]}>
+          <Ionicons name="notifications-outline" size={30} color={colors.textFaint} />
+        </View>
+        <Text style={[styles.empty, { color: colors.text }]}>No notifications yet</Text>
+        <Text style={[styles.emptyMuted, { color: colors.textMuted }]}>
           Follow collectors and wishlist cards — you’ll hear about it when they list one.
         </Text>
       </View>
@@ -109,6 +115,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   empty: { fontSize: 16, fontWeight: '700' },
+  emptyBell: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   emptyMuted: { color: '#6B7280', textAlign: 'center', marginTop: 6, lineHeight: 20 },
   listContent: { padding: 12, gap: 10 },
   // Each notification is its own card, with breathing room from the screen edges.
