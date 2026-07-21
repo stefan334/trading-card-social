@@ -10,6 +10,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -21,6 +22,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useCardSearch } from '../../src/hooks/useCardSearch';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useScreenView } from '../../src/services/analytics';
 import { dbGetSet, dbGetSetCards } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
@@ -71,8 +73,11 @@ export default function AddScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [condition, setCondition] = useState<CardCondition>('near_mint');
+  const [forTrade, setForTrade] = useState(false);
+  const [priceText, setPriceText] = useState('');
   const [adding, setAdding] = useState(false);
   const { add } = useCollectionActions();
+  const keyboardHeight = useKeyboardHeight(); // price input lives in the sheet
 
   // Which finish the whole pack shares, or null once per-card overrides diverge —
   // drives the highlight state of the bulk "set all" chips.
@@ -101,12 +106,24 @@ export default function AddScreen() {
 
   async function addAll() {
     if (!items.length || !user) return;
+    // "12,50" and "12.50" both parse; anything else means "no asking price".
+    const parsed = parseFloat(priceText.replace(',', '.'));
+    const salePrice = forTrade && Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : null;
     setAdding(true);
     try {
       for (const it of items) {
-        await add.mutateAsync({ card: it.card, set: it.set, condition, finish: it.finish === 'normal' ? null : it.finish });
+        await add.mutateAsync({
+          card: it.card,
+          set: it.set,
+          condition,
+          finish: it.finish === 'normal' ? null : it.finish,
+          isForTrade: forTrade,
+          salePrice,
+        });
       }
       clear();
+      setForTrade(false);
+      setPriceText('');
       setReviewOpen(false);
       router.push('/collection');
     } finally {
@@ -237,7 +254,12 @@ export default function AddScreen() {
       {/* Review sheet */}
       <Modal visible={reviewOpen} transparent animationType="slide" onRequestClose={() => setReviewOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setReviewOpen(false)} />
-        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: 16 + insets.bottom }]}>
+        <View
+          style={[
+            styles.sheet,
+            { backgroundColor: colors.card, paddingBottom: 16 + Math.max(insets.bottom, keyboardHeight) },
+          ]}
+        >
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>Your pack · {items.length}</Text>
@@ -301,6 +323,38 @@ export default function AddScreen() {
             ))}
           </View>
 
+          {/* Optional: list the whole pack for trade right away (marketplace +
+              For Trade showcase read is_for_trade directly, so it's live at once). */}
+          <View style={styles.tradeRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.tradeLabel, { color: colors.text }]}>List for trade</Text>
+              <Text style={[styles.tradeHint, { color: colors.textFaint }]}>
+                Shows in the marketplace and on your profile
+              </Text>
+            </View>
+            <Switch
+              value={forTrade}
+              onValueChange={setForTrade}
+              trackColor={{ true: '#2563EB' }}
+              thumbColor="white"
+            />
+          </View>
+          {forTrade ? (
+            <>
+              <TextInput
+                style={[styles.priceInput, { borderColor: colors.border, color: colors.text }]}
+                placeholder="Asking price € (optional, per card)"
+                placeholderTextColor={colors.textFaint}
+                keyboardType="decimal-pad"
+                value={priceText}
+                onChangeText={setPriceText}
+              />
+              <Text style={[styles.tradeHint, { color: colors.textFaint, marginTop: 4 }]}>
+                Same price for every card here — fine-tune any card from its page later.
+              </Text>
+            </>
+          ) : null}
+
           <Pressable
             style={[styles.addAll, (!items.length || adding) && styles.disabled]}
             onPress={addAll}
@@ -309,7 +363,9 @@ export default function AddScreen() {
             {adding ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Text style={styles.addAllText}>Add {items.length} to collection</Text>
+              <Text style={styles.addAllText}>
+                {forTrade ? `Add & list ${items.length} for trade` : `Add ${items.length} to collection`}
+              </Text>
             )}
           </Pressable>
         </View>
@@ -389,6 +445,11 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
   chipText: { color: '#374151', fontWeight: '600', fontSize: 13 },
   chipTextOn: { color: 'white' },
+
+  tradeRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 18 },
+  tradeLabel: { fontWeight: '700', fontSize: 15 },
+  tradeHint: { fontSize: 12, marginTop: 1 },
+  priceInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginTop: 10 },
 
   addAll: { backgroundColor: '#059669', borderRadius: 12, paddingVertical: 15, alignItems: 'center', marginTop: 18 },
   disabled: { opacity: 0.5 },
