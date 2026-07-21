@@ -1,5 +1,4 @@
-import { Link } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badges } from '../../src/components/Badges';
 import { BindersRow } from '../../src/components/BindersRow';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
@@ -42,20 +41,12 @@ export default function ProfileScreen() {
       <BindersRow userId={profile.id} isOwner />
       <ForTradeShowcase userId={profile.id} />
 
-      <View style={styles.actions}>
-        <Link href="/add" asChild>
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Add cards</Text>
-          </Pressable>
-        </Link>
-      </View>
-
       <View style={[styles.dividerLine, { borderTopColor: colors.borderLight }]} />
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Collection</Text>
       {collectionLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
       ) : !groups?.length ? (
-        <Text style={[styles.muted, { color: colors.textMuted }]}>No cards yet — add some from the Collection tab.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>No cards yet — tap the + button to add some.</Text>
       ) : (
         <CollectionBySet groups={groups} />
       )}
@@ -66,9 +57,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 12 },
   center: { flex: 1, marginTop: 40 },
-  actions: { flexDirection: 'row', paddingHorizontal: 16, gap: 10, marginTop: 18 },
-  button: { flex: 1, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 13, alignItems: 'center' },
-  buttonText: { color: 'white', fontWeight: '600', fontSize: 15 },
   dividerLine: { borderTopWidth: 1, marginTop: 18 },
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 14, marginBottom: 10 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
