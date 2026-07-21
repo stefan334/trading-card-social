@@ -107,9 +107,23 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
         <Text style={[styles.textBody, { color: colors.text }]}>{item.body}</Text>
       ) : null}
 
-      {item.cards.length > 0 ? (
+      {item.cards.length === 1 ? (
+        // Single card: a bigger hero image + name — the card is the story.
+        <Link href={`/card/${encodeURIComponent(item.cards[0].id)}`} asChild>
+          <Pressable style={styles.heroWrap}>
+            {item.cards[0].imageUrlSmall ? (
+              <Image source={{ uri: item.cards[0].imageUrlSmall }} style={styles.heroImage} />
+            ) : (
+              <View style={[styles.heroImage, styles.placeholder]} />
+            )}
+            <Text style={[styles.heroName, { color: colors.textMuted }]} numberOfLines={1}>
+              {item.cards[0].name}
+            </Text>
+          </Pressable>
+        </Link>
+      ) : item.cards.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
-          {item.cards.map((c, i) => (
+          {item.cards.slice(0, 8).map((c, i) => (
             <Link key={`${c.id}-${i}`} href={`/card/${encodeURIComponent(c.id)}`} asChild>
               <Pressable>
                 {c.imageUrlSmall ? (
@@ -120,6 +134,11 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
               </Pressable>
             </Link>
           ))}
+          {item.cards.length > 8 ? (
+            <View style={[styles.cardImage, styles.moreTile, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.moreText, { color: colors.textMuted }]}>+{item.cards.length - 8}</Text>
+            </View>
+          ) : null}
         </ScrollView>
       ) : null}
 
@@ -146,6 +165,11 @@ const styles = StyleSheet.create({
   textBody: { marginTop: 10, lineHeight: 20 },
   cardRow: { gap: 8, paddingTop: 12 },
   cardImage: { width: 74, height: 103, borderRadius: 6 },
+  heroWrap: { alignSelf: 'flex-start', paddingTop: 12 },
+  heroImage: { width: 148, height: 206, borderRadius: 10 },
+  heroName: { fontSize: 12, fontWeight: '600', marginTop: 5, maxWidth: 148 },
+  moreTile: { alignItems: 'center', justifyContent: 'center' },
+  moreText: { fontWeight: '800', fontSize: 15 },
   placeholder: { backgroundColor: '#E5E7EB' },
   offerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 10, marginTop: 12 },
   offerText: { color: 'white', fontWeight: '700', fontSize: 14 },
