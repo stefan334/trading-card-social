@@ -10,6 +10,7 @@ export interface MarketListing {
   number: string;
   imageUrlSmall: string | null;
   gameId: string;
+  setId: string | null;
   condition: string | null;
   grade: string | null;
   salePrice: number | null; // asking cash price (EUR); null = open to card trades
@@ -39,7 +40,7 @@ const PAGE_SIZE = 100;
  * everywhere. Paginated by listing recency (infinite scroll); search/near
  * filters apply to everything loaded so far.
  */
-export function useMarketplace(gameId: string, search: string, nearMe: boolean) {
+export function useMarketplace(gameId: string, search: string, nearMe: boolean, setId?: string | null) {
   const { user, profile } = useAuth();
   const meId = user?.id;
   const q = search.trim().toLowerCase();
@@ -54,7 +55,7 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean) 
       const { data, error } = await supabase!
         .from('user_cards')
         .select(
-          'id, condition, grade, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, is_banned)'
+          'id, condition, grade, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id, set_id), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, is_banned)'
         )
         .eq('is_for_trade', true)
         .order('acquired_at', { ascending: false })
@@ -80,6 +81,7 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean) 
           number: r.card.number,
           imageUrlSmall: r.card.image_url_small,
           gameId: r.card.game_id,
+          setId: r.card.set_id ?? null,
           condition: r.condition,
           grade: r.grade,
           salePrice: r.sale_price != null ? Number(r.sale_price) : null,
@@ -93,7 +95,9 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.data, meId, profile?.latitude, profile?.longitude]);
 
-  let listings = all.filter((l) => l.gameId === gameId && (!q || l.name.toLowerCase().includes(q)));
+  let listings = all.filter(
+    (l) => l.gameId === gameId && (!q || l.name.toLowerCase().includes(q)) && (!setId || l.setId === setId)
+  );
 
   const canFilterNear = Boolean(myCoords);
   if (nearMe && canFilterNear) {

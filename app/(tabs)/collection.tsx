@@ -109,9 +109,9 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
   searchBar: {
+    // Left-aligned like every other search field in the app.
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
     height: 44,
     marginHorizontal: 16,

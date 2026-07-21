@@ -50,25 +50,42 @@ function NotificationRow({ item }: { item: NotificationItem }) {
           : '/notifications';
 
   const icon = ICON[item.type] ?? { name: 'notifications', color: '#6B7280', bg: '#F3F4F6' };
+  const unread = !item.readAt;
 
   return (
     <Link href={href as any} asChild>
-      <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }, !item.readAt && { backgroundColor: colors.surface, borderColor: colors.primary }]}>
-        <View style={[styles.iconCircle, { backgroundColor: icon.bg }]}>
-          <Ionicons name={icon.name} size={18} color={icon.color} />
+      <Pressable
+        style={({ pressed }) => [
+          styles.row,
+          unread && { backgroundColor: colors.primary + '0D' },
+          pressed && { backgroundColor: colors.surface },
+        ]}
+      >
+        {/* Type-tinted icon tile, same visual language as the Settings rows. */}
+        <View style={[styles.iconTile, { backgroundColor: icon.bg }]}>
+          <Ionicons name={icon.name} size={17} color={icon.color} />
         </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.body, { color: colors.text }]}>
+        <View style={styles.middle}>
+          <Text style={[styles.body, { color: colors.textMuted }]} numberOfLines={2}>
             <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
-            {item.type === 'wishlist_match' ? ` added ${label}${suffix}` : ` ${label}`}
+            {item.type === 'wishlist_match' ? ` added ` : ` ${label}`}
+            {item.type === 'wishlist_match' ? (
+              <>
+                <Text style={[styles.name, { color: colors.text }]}>{label}</Text>
+                {suffix}
+              </>
+            ) : null}
           </Text>
-          <Text style={[styles.time, { color: colors.textFaint }]}>{formatRelativeTime(item.createdAt)}</Text>
+          <View style={styles.metaRow}>
+            {unread ? <View style={styles.unreadDot} /> : null}
+            <Text style={[styles.time, { color: colors.textFaint }]}>{formatRelativeTime(item.createdAt)}</Text>
+          </View>
         </View>
         {item.card?.imageUrlSmall ? (
-          <Image source={{ uri: item.card.imageUrlSmall }} style={styles.cardThumb} />
-        ) : !item.readAt ? (
-          <View style={styles.unreadDot} />
-        ) : null}
+          <Image source={{ uri: item.card.imageUrlSmall }} style={[styles.cardThumb, { borderColor: colors.borderLight }]} />
+        ) : (
+          <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+        )}
       </Pressable>
     </Link>
   );
@@ -108,6 +125,7 @@ export default function NotificationsScreen() {
       keyExtractor={(n) => n.id}
       renderItem={({ item }) => <NotificationRow item={item} />}
       contentContainerStyle={styles.listContent}
+      ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />}
     />
   );
 }
@@ -117,29 +135,22 @@ const styles = StyleSheet.create({
   empty: { fontSize: 16, fontWeight: '700' },
   emptyBell: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   emptyMuted: { color: '#6B7280', textAlign: 'center', marginTop: 6, lineHeight: 20 },
-  listContent: { padding: 12, gap: 10 },
-  // Each notification is its own card, with breathing room from the screen edges.
+  listContent: { paddingVertical: 4 },
+  // Flat rows with hairline separators — same visual language as Settings/Inbox.
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: 'white',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
   },
-  unread: { borderColor: '#BFDBFE', backgroundColor: '#F5F9FF' },
-  iconCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  body: { fontSize: 15, lineHeight: 21, color: '#374151' },
-  name: { fontWeight: '700', color: '#111827' },
-  time: { color: '#9CA3AF', fontSize: 12, marginTop: 3 },
-  cardThumb: { width: 40, height: 56, borderRadius: 5 },
-  unreadDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: '#2563EB' },
+  iconTile: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  middle: { flex: 1, gap: 3 },
+  body: { fontSize: 15, lineHeight: 20 },
+  name: { fontWeight: '700' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  time: { fontSize: 12 },
+  cardThumb: { width: 42, height: 59, borderRadius: 5, borderWidth: StyleSheet.hairlineWidth },
+  unreadDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#2563EB' },
+  sep: { height: StyleSheet.hairlineWidth, marginLeft: 66 },
 });
