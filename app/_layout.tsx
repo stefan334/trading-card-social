@@ -35,25 +35,13 @@ const queryClient = new QueryClient({
 
 function RootNavigator() {
   useProtectedRoute();
-  const theme = useTheme();
-
-  // Screens not yet converted to theme tokens stay light even in dark mode, so
-  // nothing renders unreadable (dark-mode coverage grows screen by screen).
-  const pinLight = theme.dark
-    ? {
-        headerStyle: { backgroundColor: '#FFFFFF' },
-        headerTintColor: '#111827',
-        contentStyle: { backgroundColor: '#FFFFFF' },
-      }
-    : {};
-
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
-      <Stack.Screen name="onboarding" options={{ ...pinLight }} />
+      <Stack.Screen name="onboarding" />
       <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notifications' }} />
-      <Stack.Screen name="search" options={{ headerShown: true, title: 'Search', ...pinLight }} />
+      <Stack.Screen name="search" options={{ headerShown: true, title: 'Search' }} />
       <Stack.Screen name="marketplace" options={{ headerShown: true, title: 'Marketplace' }} />
       <Stack.Screen name="chat/[id]" options={{ headerShown: true, title: 'Chat' }} />
       <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit Profile', presentation: 'modal' }} />
@@ -61,15 +49,15 @@ function RootNavigator() {
       <Stack.Screen name="card/[id]" options={{ headerShown: true, title: 'Card' }} />
       <Stack.Screen name="set/[id]" options={{ headerShown: true, title: 'Set' }} />
       <Stack.Screen name="binder/[id]" options={{ headerShown: true, title: 'Binder' }} />
-      <Stack.Screen name="binder/edit/[id]" options={{ headerShown: true, title: 'Edit Binder', ...pinLight }} />
+      <Stack.Screen name="binder/edit/[id]" options={{ headerShown: true, title: 'Edit Binder' }} />
       <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade' }} />
       <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade' }} />
-      <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal', ...pinLight }} />
+      <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal' }} />
       <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Feedback' }} />
       <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact us' }} />
       <Stack.Screen name="terms" options={{ headerShown: true, title: 'Terms & Conditions' }} />
-      <Stack.Screen name="report" options={{ headerShown: true, title: 'Report', presentation: 'modal', ...pinLight }} />
-      <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin', ...pinLight }} />
+      <Stack.Screen name="report" options={{ headerShown: true, title: 'Report', presentation: 'modal' }} />
+      <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin' }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
       <Stack.Screen name="connections" options={{ headerShown: true, title: 'People' }} />
     </Stack>

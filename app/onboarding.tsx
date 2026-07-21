@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
 import { listProviders } from '../src/services/tcg-providers';
+import { useTheme } from '../src/theme';
 
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
 
@@ -22,6 +23,7 @@ const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/;
  */
 export default function OnboardingScreen() {
   const { user, refreshProfile } = useAuth();
+  const { colors } = useTheme();
   const games = listProviders();
 
   const [username, setUsername] = useState('');
@@ -69,38 +71,40 @@ export default function OnboardingScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Set up your profile</Text>
-      <Text style={styles.subtitle}>This is how other collectors will find and recognize you.</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Set up your profile</Text>
+      <Text style={[styles.subtitle, { color: colors.textMuted }]}>This is how other collectors will find and recognize you.</Text>
 
-      <Text style={styles.label}>Username</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Username</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         placeholder="e.g. charizard_fan"
+        placeholderTextColor={colors.textFaint}
         autoCapitalize="none"
         autoCorrect={false}
         value={username}
         onChangeText={setUsername}
       />
 
-      <Text style={styles.label}>Display name (optional)</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Display name (optional)</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         placeholder="e.g. Alex R."
+        placeholderTextColor={colors.textFaint}
         value={displayName}
         onChangeText={setDisplayName}
       />
 
-      <Text style={styles.label}>Favorite TCG</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Favorite TCG</Text>
       <View style={styles.chips}>
         {games.map((g) => {
           const selected = g.gameId === favoriteGameId;
           return (
             <Pressable
               key={g.gameId}
-              style={[styles.chip, selected && styles.chipSelected]}
+              style={[styles.chip, { borderColor: colors.border }, selected && styles.chipSelected]}
               onPress={() => setFavoriteGameId(g.gameId)}
             >
-              <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{g.displayName}</Text>
+              <Text style={[styles.chipText, { color: colors.textMuted }, selected && styles.chipTextSelected]}>{g.displayName}</Text>
             </Pressable>
           );
         })}

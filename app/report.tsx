@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
 import { track } from '../src/services/analytics';
+import { useTheme } from '../src/theme';
 import { supabase } from '../src/services/supabase/client';
 
 const REASONS = ['Spam', 'Scam or fraud', 'Harassment', 'Inappropriate content', 'Counterfeit cards', 'Other'];
@@ -13,6 +14,7 @@ export default function ReportScreen() {
   const { profile: reportedId, name } = useLocalSearchParams<{ profile: string; name?: string }>();
   const { user } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
@@ -44,8 +46,8 @@ export default function ReportScreen() {
     return (
       <View style={styles.doneWrap}>
         <Ionicons name="shield-checkmark" size={56} color="#059669" />
-        <Text style={styles.doneTitle}>Report sent</Text>
-        <Text style={styles.doneText}>Thanks — our team will review it. You won't hear back on every report, but we look at all of them.</Text>
+        <Text style={[styles.doneTitle, { color: colors.text }]}>Report sent</Text>
+        <Text style={[styles.doneText, { color: colors.textMuted }]}>Thanks — our team will review it. You won't hear back on every report, but we look at all of them.</Text>
         <Pressable style={styles.primary} onPress={() => router.back()}>
           <Text style={styles.primaryText}>Done</Text>
         </Pressable>
@@ -55,22 +57,23 @@ export default function ReportScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Report {name ? `@${name}` : 'this profile'}</Text>
-      <Text style={styles.sub}>Tell us what's wrong. Reports are confidential.</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Report {name ? `@${name}` : 'this profile'}</Text>
+      <Text style={[styles.sub, { color: colors.textMuted }]}>Tell us what's wrong. Reports are confidential.</Text>
 
-      <Text style={styles.label}>Reason</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Reason</Text>
       <View style={styles.chips}>
         {REASONS.map((r) => (
-          <Pressable key={r} style={[styles.chip, reason === r && styles.chipOn]} onPress={() => setReason(r)}>
-            <Text style={[styles.chipText, reason === r && styles.chipTextOn]}>{r}</Text>
+          <Pressable key={r} style={[styles.chip, { borderColor: colors.border }, reason === r && styles.chipOn]} onPress={() => setReason(r)}>
+            <Text style={[styles.chipText, { color: colors.textMuted }, reason === r && styles.chipTextOn]}>{r}</Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>Details (optional)</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Details (optional)</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         placeholder="Anything that helps us understand…"
+        placeholderTextColor={colors.textFaint}
         value={details}
         onChangeText={setDetails}
         multiline

@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
+import { useTheme } from '../src/theme';
 import { formatRelativeTime } from '../src/utils/time';
 
 function useOpenReports(enabled: boolean) {
@@ -45,6 +46,7 @@ function useRecentFeedback(enabled: boolean) {
 export default function AdminScreen() {
   const { profile } = useAuth();
   const isAdmin = !!profile?.isAdmin;
+  const { colors } = useTheme();
   const qc = useQueryClient();
   const { data: reports, isLoading: reportsLoading } = useOpenReports(isAdmin);
   const { data: feedback } = useRecentFeedback(isAdmin);
@@ -54,7 +56,7 @@ export default function AdminScreen() {
     return (
       <View style={styles.denied}>
         <Ionicons name="lock-closed" size={40} color="#9CA3AF" />
-        <Text style={styles.deniedText}>This area is for admins only.</Text>
+        <Text style={[styles.deniedText, { color: colors.textMuted }]}>This area is for admins only.</Text>
       </View>
     );
   }
@@ -88,30 +90,30 @@ export default function AdminScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
-      <Text style={styles.h}>Open reports {reports?.length ? `(${reports.length})` : ''}</Text>
+      <Text style={[styles.h, { color: colors.text }]}>Open reports {reports?.length ? `(${reports.length})` : ''}</Text>
       {reportsLoading ? (
         <ActivityIndicator style={{ marginTop: 12 }} />
       ) : !reports?.length ? (
-        <Text style={styles.muted}>Nothing to review — the queue is clear. 🎉</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Nothing to review — the queue is clear. 🎉</Text>
       ) : (
         reports.map((r) => (
-          <View key={r.id} style={styles.card}>
+          <View key={r.id} style={[styles.card, { backgroundColor: colors.card }]}>
             <View style={styles.cardHead}>
               <Text style={styles.reason}>{r.reason}</Text>
               <Text style={styles.time}>{formatRelativeTime(r.created_at)}</Text>
             </View>
-            <Text style={styles.line}>
+            <Text style={[styles.line, { color: colors.text }]}>
               Reported:{' '}
               <Link href={`/user/${r.reported?.id}`} style={styles.link}>
                 @{r.reported?.username}
               </Link>
               {r.reported?.is_banned ? '  · already banned' : ''}
             </Text>
-            <Text style={styles.line}>By: @{r.reporter?.username}</Text>
-            {r.details ? <Text style={styles.details}>“{r.details}”</Text> : null}
+            <Text style={[styles.line, { color: colors.text }]}>By: @{r.reporter?.username}</Text>
+            {r.details ? <Text style={[styles.details, { color: colors.textMuted }]}>“{r.details}”</Text> : null}
             <View style={styles.actions}>
-              <Pressable style={[styles.btn, styles.dismiss]} onPress={() => setStatus(r.id, 'dismissed')} disabled={busy === r.id}>
-                <Text style={styles.dismissText}>Dismiss</Text>
+              <Pressable style={[styles.btn, { backgroundColor: colors.surface }]} onPress={() => setStatus(r.id, 'dismissed')} disabled={busy === r.id}>
+                <Text style={[styles.dismissText, { color: colors.text }]}>Dismiss</Text>
               </Pressable>
               <Pressable
                 style={[styles.btn, styles.banBtn]}
@@ -125,17 +127,17 @@ export default function AdminScreen() {
         ))
       )}
 
-      <Text style={[styles.h, { marginTop: 28 }]}>Recent feedback</Text>
+      <Text style={[styles.h, { marginTop: 28, color: colors.text }]}>Recent feedback</Text>
       {!feedback?.length ? (
-        <Text style={styles.muted}>No feedback yet.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>No feedback yet.</Text>
       ) : (
         feedback.map((f) => (
-          <View key={f.id} style={styles.fbCard}>
+          <View key={f.id} style={[styles.fbCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
             <View style={styles.cardHead}>
               <Text style={styles.kind}>{f.kind}</Text>
               <Text style={styles.time}>{formatRelativeTime(f.created_at)}</Text>
             </View>
-            <Text style={styles.fbMsg}>{f.message}</Text>
+            <Text style={[styles.fbMsg, { color: colors.text }]}>{f.message}</Text>
             <Text style={styles.fbBy}>{f.user?.username ? `@${f.user.username}` : 'anonymous'}</Text>
           </View>
         ))

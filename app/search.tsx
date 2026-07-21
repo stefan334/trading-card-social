@@ -7,6 +7,7 @@ import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { useUserSearch } from '../src/hooks/useUserSearch';
 import { listProviders } from '../src/services/tcg-providers';
+import { useTheme } from '../src/theme';
 import { formatPrice } from '../src/utils/time';
 
 type Mode = 'cards' | 'users';
@@ -17,6 +18,7 @@ type Mode = 'cards' | 'users';
  * the initial tab.
  */
 export default function SearchScreen() {
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const [mode, setMode] = useState<Mode>(params.mode === 'users' ? 'users' : 'cards');
   const [query, setQuery] = useState('');
@@ -35,21 +37,22 @@ export default function SearchScreen() {
         {(['cards', 'users'] as Mode[]).map((m) => (
           <Pressable
             key={m}
-            style={[styles.toggleBtn, mode === m && styles.toggleActive]}
+            style={[styles.toggleBtn, { backgroundColor: colors.surface }, mode === m && styles.toggleActive]}
             onPress={() => setMode(m)}
           >
-            <Text style={[styles.toggleText, mode === m && styles.toggleTextActive]}>
+            <Text style={[styles.toggleText, { color: colors.textMuted }, mode === m && styles.toggleTextActive]}>
               {m === 'cards' ? 'Cards' : 'Users'}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <View style={styles.searchBar}>
+      <View style={[styles.searchBar, { borderColor: colors.border }]}>
         <Ionicons name="search" size={18} color="#9CA3AF" />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: colors.text }]}
           placeholder={mode === 'cards' ? 'Search cards by name' : 'Search by username'}
+          placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
           autoFocus
@@ -61,7 +64,7 @@ export default function SearchScreen() {
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : showHint ? (
-        <Text style={styles.hint}>Type at least 2 characters.</Text>
+        <Text style={[styles.hint, { color: colors.textFaint }]}>Type at least 2 characters.</Text>
       ) : mode === 'cards' ? (
         <FlatList
           key="cards-grid"
@@ -70,16 +73,16 @@ export default function SearchScreen() {
           numColumns={3}
           columnWrapperStyle={styles.row}
           contentContainerStyle={{ padding: 12 }}
-          ListEmptyComponent={<Text style={styles.hint}>No cards found.</Text>}
+          ListEmptyComponent={<Text style={[styles.hint, { color: colors.textFaint }]}>No cards found.</Text>}
           renderItem={({ item }) => (
             <Link href={`/card/${encodeURIComponent(item.id)}`} asChild>
               <Pressable style={styles.cell}>
                 {item.imageUrlSmall ? (
                   <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImage} />
                 ) : (
-                  <View style={[styles.cardImage, styles.placeholder]} />
+                  <View style={[styles.cardImage, { backgroundColor: colors.surface }]} />
                 )}
-                <Text numberOfLines={1} style={styles.cardName}>
+                <Text numberOfLines={1} style={[styles.cardName, { color: colors.text }]}>
                   {item.name}
                 </Text>
                 {item.market?.average != null ? (
@@ -94,7 +97,7 @@ export default function SearchScreen() {
           key="users-list"
           data={userResults.data ?? []}
           keyExtractor={(u) => u.id}
-          ListEmptyComponent={<Text style={styles.hint}>No users found.</Text>}
+          ListEmptyComponent={<Text style={[styles.hint, { color: colors.textFaint }]}>No users found.</Text>}
           renderItem={({ item }) => (
             <Link href={`/user/${item.id}`} asChild>
               <Pressable style={styles.userRow}>
@@ -104,8 +107,8 @@ export default function SearchScreen() {
                   <Ionicons name="person-circle" size={44} color="#9CA3AF" />
                 )}
                 <View>
-                  <Text style={styles.userName}>{item.displayName || item.username}</Text>
-                  <Text style={styles.userHandle}>@{item.username}</Text>
+                  <Text style={[styles.userName, { color: colors.text }]}>{item.displayName || item.username}</Text>
+                  <Text style={[styles.userHandle, { color: colors.textMuted }]}>@{item.username}</Text>
                 </View>
               </Pressable>
             </Link>

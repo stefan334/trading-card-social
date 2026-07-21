@@ -215,8 +215,7 @@ decisions.
       already built), and verify a real sending domain in Resend (onboarding@resend.dev only delivers
       to your own inbox).
 - [x] **Dark mode**: theme system (`src/theme`) with System/Light/Dark picker in Settings (persisted),
-      themed nav/tab bar/status bar + all main surfaces; unconverted detail screens pinned light so
-      nothing is unreadable — convert them incrementally.
+      themed nav/tab bar/status bar. **Every screen is converted** — the pin-light fallback is retired.
 - [x] **Push notifications** (`0023`): push_tokens + pg_net triggers send Expo pushes straight from
       Postgres for follows / wishlist matches / trade updates / chat messages; expo-notifications
       registration in-app. → **manual step for Android delivery:** create a Firebase project, add

@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { supabase } from '../../src/services/supabase/client';
+import { useTheme } from '../../src/theme';
 
 /**
  * Email confirmation via 6-digit OTP code (mobile-friendly, no deep link needed —
@@ -21,6 +22,7 @@ import { supabase } from '../../src/services/supabase/client';
  * arrive in the email.
  */
 export default function VerifyOtpScreen() {
+  const { colors } = useTheme();
   const { email } = useLocalSearchParams<{ email: string }>();
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -66,14 +68,15 @@ export default function VerifyOtpScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Check your email</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, { color: colors.text }]}>Check your email</Text>
+      <Text style={[styles.subtitle, { color: colors.textMuted }]}>
         We sent a 6-digit code to {email ?? 'your email'}. Enter it below to confirm your account.
       </Text>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         placeholder="123456"
+        placeholderTextColor={colors.textFaint}
         keyboardType="number-pad"
         maxLength={6}
         value={code}

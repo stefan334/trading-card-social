@@ -9,6 +9,7 @@ import { useBatch } from '../src/context/BatchContext';
 import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { dbGetSet } from '../src/services/catalog';
+import { useTheme } from '../src/theme';
 import { getProvider, listProviders } from '../src/services/tcg-providers';
 import { ocrAvailable, recognizeCard } from '../src/services/ocr';
 import type { Card } from '../src/types/card';
@@ -26,6 +27,7 @@ interface Captured {
  */
 export default function ScanScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { items: cart, add: addToCart } = useBatch();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -90,7 +92,7 @@ export default function ScanScreen() {
   if (!permission.granted) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.muted}>Camera access is needed to scan cards.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Camera access is needed to scan cards.</Text>
         <Pressable style={styles.primary} onPress={requestPermission}>
           <Text style={styles.primaryText}>Grant permission</Text>
         </Pressable>
@@ -133,8 +135,8 @@ export default function ScanScreen() {
           <Image source={{ uri: photo.uri }} style={styles.confirmImg} />
           {selected.imageUrlSmall && <Image source={{ uri: selected.imageUrlSmall }} style={styles.confirmImg} />}
         </View>
-        <Text style={styles.confirmName}>{selected.name}</Text>
-        <Text style={styles.muted}>#{selected.number}{set ? ` · ${set.name}` : ''}</Text>
+        <Text style={[styles.confirmName, { color: colors.text }]}>{selected.name}</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>#{selected.number}{set ? ` · ${set.name}` : ''}</Text>
 
         <Pressable style={[styles.primary, setLoading && styles.disabled]} onPress={addToCartAndContinue} disabled={setLoading}>
           {setLoading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>Add to cart &amp; scan next</Text>}
@@ -152,12 +154,13 @@ export default function ScanScreen() {
       <View style={styles.matchHeader}>
         <Image source={{ uri: photo.uri }} style={styles.thumb} />
         <View style={{ flex: 1 }}>
-          <Text style={styles.matchTitle}>
+          <Text style={[styles.matchTitle, { color: colors.text }]}>
             {detecting ? 'Reading the card…' : ocrAvailable() ? 'Is this it? (edit if wrong)' : 'What card is this?'}
           </Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text }]}
             placeholder="Type the card name"
+            placeholderTextColor={colors.textFaint}
             autoFocus={!ocrAvailable()}
             autoCapitalize="none"
             value={query}
@@ -182,13 +185,13 @@ export default function ScanScreen() {
               {item.imageUrlSmall ? (
                 <Image source={{ uri: item.imageUrlSmall }} style={styles.cardImg} />
               ) : (
-                <View style={[styles.cardImg, styles.placeholder]} />
+                <View style={[styles.cardImg, { backgroundColor: colors.surface }]} />
               )}
-              <Text numberOfLines={1} style={styles.cardName}>{item.name}</Text>
+              <Text numberOfLines={1} style={[styles.cardName, { color: colors.text }]}>{item.name}</Text>
             </Pressable>
           )}
           ListEmptyComponent={
-            debounced.trim().length >= 2 ? <Text style={styles.muted}>No matches — try a different spelling.</Text> : null
+            debounced.trim().length >= 2 ? <Text style={[styles.muted, { color: colors.textMuted }]}>No matches — try a different spelling.</Text> : null
           }
         />
       )}

@@ -8,6 +8,7 @@ import { useAuth } from '../../../src/context/AuthContext';
 import { useBinder } from '../../../src/hooks/useBinder';
 import { useBinderActions } from '../../../src/hooks/useBinderActions';
 import { useOwnedCards } from '../../../src/hooks/useOwnedCards';
+import { useTheme } from '../../../src/theme';
 
 /** Binder editor, routed as /binder/edit/[id]: rename, add cards you own, reorder, remove, delete. */
 export default function BinderEditScreen() {
@@ -17,6 +18,7 @@ export default function BinderEditScreen() {
   const { data: binder, isLoading } = useBinder(id);
   const { data: owned } = useOwnedCards(user?.id);
   const { rename, remove, addOwnedCard, removeCard, reorder, setCover } = useBinderActions();
+  const { colors } = useTheme();
 
   const [name, setName] = useState('');
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -51,18 +53,18 @@ export default function BinderEditScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
-      <Text style={styles.label}>Binder name</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Binder name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.border, color: colors.text }]}
         value={name}
         onChangeText={setName}
         onBlur={() => name.trim() && name !== binder.name && rename.mutate({ binderId: binder.id, name })}
       />
 
-      <Text style={styles.label}>Cards in this binder ({binder.cards.length})</Text>
-      <Text style={styles.hint}>Hold and drag to reorder · ★ sets the cover</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Cards in this binder ({binder.cards.length})</Text>
+      <Text style={[styles.hint, { color: colors.textFaint }]}>Hold and drag to reorder · ★ sets the cover</Text>
       {binder.cards.length === 0 ? (
-        <Text style={styles.muted}>Search below to add cards from any set.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>Search below to add cards from any set.</Text>
       ) : (
         <View style={styles.gridWrap}>
           <DraggableGrid
@@ -79,7 +81,7 @@ export default function BinderEditScreen() {
                   {item.imageUrlSmall ? (
                     <Image source={{ uri: item.imageUrlSmall }} style={styles.tileImg} />
                   ) : (
-                    <View style={[styles.tileImg, styles.placeholder]} />
+                    <View style={[styles.tileImg, { backgroundColor: colors.surface }]} />
                   )}
                   <Pressable
                     style={styles.coverBadge}
@@ -102,10 +104,10 @@ export default function BinderEditScreen() {
         </View>
       )}
 
-      <Text style={styles.label}>Add from your collection</Text>
-      <Text style={styles.hint}>Tap a card to add it. Cards already in the binder show a ✓.</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Add from your collection</Text>
+      <Text style={[styles.hint, { color: colors.textFaint }]}>Tap a card to add it. Cards already in the binder show a ✓.</Text>
       {!owned?.length ? (
-        <Text style={styles.muted}>You don't own any cards yet — add some from the Collection tab first.</Text>
+        <Text style={[styles.muted, { color: colors.textMuted }]}>You don't own any cards yet — add some from the Collection tab first.</Text>
       ) : (
         <View style={styles.collectionGrid}>
           {owned.map((item) => {
@@ -115,7 +117,7 @@ export default function BinderEditScreen() {
                 {item.imageUrlSmall ? (
                   <Image source={{ uri: item.imageUrlSmall }} style={[styles.cardImg, already && styles.dim]} recyclingKey={item.userCardId} />
                 ) : (
-                  <View style={[styles.cardImg, styles.placeholder]} />
+                  <View style={[styles.cardImg, { backgroundColor: colors.surface }]} />
                 )}
                 {addingId === item.cardId ? (
                   <View style={styles.addOverlay}><ActivityIndicator color="white" /></View>
