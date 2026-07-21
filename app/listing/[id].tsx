@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCardPrices } from '../../src/hooks/useCardPrices';
@@ -29,6 +30,9 @@ export default function ListingScreen() {
   const { data: prices } = useCardPrices(listing ? [listing.cardId] : []);
   const { data: ratings } = useTraderRatings(listing?.owner ? [listing.owner.id] : []);
   const { data: more } = useSellerListings(listing?.owner?.id, listing?.userCardId);
+  const { width } = useWindowDimensions();
+  const pageW = width - 32; // screen minus the ScrollView's 16px side padding
+  const [photoIndex, setPhotoIndex] = useState(0);
 
   if (isLoading) return <ActivityIndicator style={styles.center} />;
   if (!listing) return <Text style={[styles.center, { color: colors.textMuted }]}>This listing is gone.</Text>;
@@ -52,20 +56,57 @@ export default function ListingScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 24 + insets.bottom }}>
-      {/* Hero — tapping the card goes to the card page (the "abstract" view). */}
-      <Link href={`/card/${encodeURIComponent(listing.cardId)}`} asChild>
-        <Pressable style={styles.heroWrap}>
-          {listing.imageUrlLarge || listing.imageUrlSmall ? (
-            <Image
-              source={{ uri: listing.imageUrlLarge ?? listing.imageUrlSmall! }}
-              style={styles.hero}
-              contentFit="contain"
-            />
-          ) : (
-            <View style={[styles.hero, { backgroundColor: colors.surface }]} />
-          )}
-        </Pressable>
-      </Link>
+      {/* Hero — seller's photos of the ACTUAL card first (paged), catalog art as
+          the last reference slide. Tapping any slide goes to the card page. */}
+      {listing.listingPhotos.length > 0 ? (
+        <View style={styles.heroWrap}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={(e) => setPhotoIndex(Math.round(e.nativeEvent.contentOffset.x / pageW))}
+          >
+            {listing.listingPhotos.map((url) => (
+              <Link key={url} href={`/card/${encodeURIComponent(listing.cardId)}`} asChild>
+                <Pressable>
+                  <Image source={{ uri: url }} style={[styles.heroPhoto, { width: pageW }]} contentFit="cover" />
+                </Pressable>
+              </Link>
+            ))}
+            <Link href={`/card/${encodeURIComponent(listing.cardId)}`} asChild>
+              <Pressable style={{ width: pageW }}>
+                <Image
+                  source={{ uri: listing.imageUrlLarge ?? listing.imageUrlSmall ?? undefined }}
+                  style={[styles.heroPhoto, { width: pageW }]}
+                  contentFit="contain"
+                />
+                <View style={styles.refBadge}>
+                  <Text style={styles.refBadgeText}>Catalog art</Text>
+                </View>
+              </Pressable>
+            </Link>
+          </ScrollView>
+          <View style={styles.dots}>
+            {[...listing.listingPhotos, 'ref'].map((k, i) => (
+              <View key={k} style={[styles.dot, i === photoIndex && styles.dotOn]} />
+            ))}
+          </View>
+        </View>
+      ) : (
+        <Link href={`/card/${encodeURIComponent(listing.cardId)}`} asChild>
+          <Pressable style={styles.heroWrap}>
+            {listing.imageUrlLarge || listing.imageUrlSmall ? (
+              <Image
+                source={{ uri: listing.imageUrlLarge ?? listing.imageUrlSmall! }}
+                style={styles.hero}
+                contentFit="contain"
+              />
+            ) : (
+              <View style={[styles.hero, { backgroundColor: colors.surface }]} />
+            )}
+          </Pressable>
+        </Link>
+      )}
 
       <Text style={[styles.name, { color: colors.text }]}>{listing.name}</Text>
       <Text style={[styles.meta, { color: colors.textMuted }]}>
@@ -194,6 +235,15 @@ const styles = StyleSheet.create({
   center: { flex: 1, marginTop: 40, textAlign: 'center' },
   heroWrap: { alignItems: 'center' },
   hero: { width: 230, height: 322, borderRadius: 12 },
+  heroPhoto: { height: 322, borderRadius: 12, backgroundColor: '#0002' },
+  refBadge: {
+    position: 'absolute', bottom: 10, alignSelf: 'center', backgroundColor: '#111827CC',
+    borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3,
+  },
+  refBadgeText: { color: 'white', fontSize: 11, fontWeight: '600' },
+  dots: { flexDirection: 'row', gap: 5, marginTop: 8 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#9CA3AF66' },
+  dotOn: { backgroundColor: '#2563EB' },
   name: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginTop: 12 },
   meta: { textAlign: 'center', marginTop: 2 },
   offerBox: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 14, marginTop: 14 },

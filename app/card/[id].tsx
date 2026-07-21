@@ -5,9 +5,11 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, Tex
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCardOwnership, type OwnedCopy } from '../../src/hooks/useCardOwnership';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
+import { uploadImage } from '../../src/services/supabase/storage';
 import { useIsWishlisted, useWishlistActions } from '../../src/hooks/useWishlistActions';
 import { getProvider } from '../../src/services/tcg-providers';
 import { useTheme } from '../../src/theme';
@@ -26,11 +28,49 @@ const CONDITION_LABEL: Record<CardCondition, string> = {
 const GRADERS = ['PSA', 'BGS', 'CGC', 'SGC'];
 const GRADE_VALUES = ['10', '9.5', '9', '8.5', '8', '7', '6'];
 
-/** One owned copy: condition + for-trade toggle + (when listed) an asking price. */
+/** One owned copy: condition + for-trade toggle + (when listed) an asking price + photos. */
 function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
   const { colors } = useTheme();
-  const { remove, toggleForTrade, setSalePrice } = useCollectionActions();
+  const { user } = useAuth();
+  const { remove, toggleForTrade, setSalePrice, setListingPhotos } = useCollectionActions();
   const [price, setPrice] = useState(copy.salePrice != null ? String(copy.salePrice) : '');
+  const [uploading, setUploading] = useState(false);
+
+  // Photos of the physical card: required (>=1) before the copy can be BOUGHT;
+  // trade-only listings work without them.
+  async function addPhotos() {
+    if (!user || uploading) return;
+    const remaining = 5 - copy.listingPhotos.length;
+    if (remaining <= 0) return;
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      quality: 0.6,
+      base64: true,
+    });
+    if (res.canceled) return;
+    setUploading(true);
+    try {
+      const urls: string[] = [];
+      for (const a of res.assets) {
+        if (a.base64) urls.push(await uploadImage(a.base64, user.id, 'listing'));
+      }
+      if (urls.length) {
+        setListingPhotos.mutate({ userCardId: copy.id, photos: [...copy.listingPhotos, ...urls], cardId });
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removePhoto(url: string) {
+    setListingPhotos.mutate({
+      userCardId: copy.id,
+      photos: copy.listingPhotos.filter((p) => p !== url),
+      cardId,
+    });
+  }
 
   function savePrice() {
     const trimmed = price.trim().replace(',', '.');
@@ -91,6 +131,37 @@ function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
             </Pressable>
           </View>
           <Text style={styles.priceHint}>{price.trim() ? `Listed at €${price.trim()}` : 'Leave blank = open to card trades'}</Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoStrip}>
+            {copy.listingPhotos.map((url) => (
+              <View key={url} style={styles.photoWrap}>
+                <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
+                <Pressable style={styles.photoRemove} hitSlop={6} onPress={() => removePhoto(url)}>
+                  <Ionicons name="close" size={12} color="white" />
+                </Pressable>
+              </View>
+            ))}
+            {copy.listingPhotos.length < 5 ? (
+              <Pressable
+                style={[styles.photoAdd, { borderColor: colors.border }]}
+                onPress={addPhotos}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <ActivityIndicator size="small" />
+                ) : (
+                  <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
+                )}
+              </Pressable>
+            ) : null}
+          </ScrollView>
+          <Text style={styles.priceHint}>
+            {copy.listingPhotos.length === 0
+              ? price.trim()
+                ? 'Add photos of your actual card — required before buyers can purchase'
+                : 'Add photos of your actual card (required if you want to sell)'
+              : `${copy.listingPhotos.length}/5 photos — buyers see these first`}
+          </Text>
         </>
       )}
     </View>
@@ -305,4 +376,15 @@ const styles = StyleSheet.create({
   priceSave: { backgroundColor: '#059669', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, minWidth: 52, alignItems: 'center' },
   priceSaveText: { color: 'white', fontWeight: '700' },
   priceHint: { color: '#9CA3AF', fontSize: 11, marginBottom: 4 },
+  photoStrip: { gap: 8, paddingVertical: 6 },
+  photoWrap: { position: 'relative' },
+  photo: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#0002' },
+  photoRemove: {
+    position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#111827CC', alignItems: 'center', justifyContent: 'center',
+  },
+  photoAdd: {
+    width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

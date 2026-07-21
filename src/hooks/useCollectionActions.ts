@@ -108,5 +108,17 @@ export function useCollectionActions() {
     onSuccess: (_data, vars) => invalidate(vars.cardId),
   });
 
-  return { add, remove, toggleForTrade, setSalePrice };
+  const setListingPhotos = useMutation({
+    mutationFn: async ({ userCardId, photos }: { userCardId: string; photos: string[]; cardId?: string }) => {
+      if (!supabase) throw new Error('Not signed in.');
+      const { error } = await supabase
+        .from('user_cards')
+        .update({ listing_photos: photos.slice(0, 5) })
+        .eq('id', userCardId);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => invalidate(vars.cardId),
+  });
+
+  return { add, remove, toggleForTrade, setSalePrice, setListingPhotos };
 }

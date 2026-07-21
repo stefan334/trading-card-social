@@ -58,7 +58,7 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean, 
       const { data, error } = await supabase!
         .from('user_cards')
         .select(
-          'id, condition, grade, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id, set_id), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, is_banned, trades_completed)'
+          'id, condition, grade, sale_price, listing_photos, owner_id, card:cards(id, name, number, image_url_small, game_id, set_id), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, is_banned, trades_completed)'
         )
         .eq('is_for_trade', true)
         .order('acquired_at', { ascending: false })
@@ -82,7 +82,8 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean, 
           cardId: r.card.id,
           name: r.card.name,
           number: r.card.number,
-          imageUrlSmall: r.card.image_url_small,
+          // Real photo of the copy for sale beats catalog art in browse.
+          imageUrlSmall: r.listing_photos?.[0] ?? r.card.image_url_small,
           gameId: r.card.game_id,
           setId: r.card.set_id ?? null,
           condition: r.condition,
