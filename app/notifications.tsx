@@ -55,11 +55,10 @@ function NotificationRow({ item }: { item: NotificationItem }) {
 
   return (
     <Link href={href as any} asChild>
-      {/* NOTE: style must be a plain array here — Link asChild array-wraps the
-          child's style, and a function style inside an array silently breaks
-          the whole row layout. */}
+      {/* NOTE: Link asChild silently drops ARRAY (and function) styles on the
+          child — only a single flat object survives the prop merge. Flatten. */}
       <Pressable
-        style={[styles.row, unread && { backgroundColor: colors.primary + '0D' }]}
+        style={StyleSheet.flatten([styles.row, unread && { backgroundColor: colors.primary + '0D' }])}
         android_ripple={{ color: colors.border }}
       >
         {/* Type-tinted icon tile (accent at low alpha — works in both themes). */}

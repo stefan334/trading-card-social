@@ -25,7 +25,7 @@ export default function ContactScreen() {
       </Pressable>
 
       <Link href="/feedback" asChild>
-        <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <Pressable style={StyleSheet.flatten([styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }])}>
           <Ionicons name="chatbox-ellipses" size={22} color={colors.primary} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.rowTitle, { color: colors.text }]}>Send in-app feedback</Text>
@@ -36,7 +36,7 @@ export default function ContactScreen() {
       </Link>
 
       <Link href={'/privacy' as any} asChild>
-        <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <Pressable style={StyleSheet.flatten([styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }])}>
           <Ionicons name="lock-closed" size={22} color={colors.primary} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.rowTitle, { color: colors.text }]}>Privacy Policy</Text>
@@ -47,7 +47,7 @@ export default function ContactScreen() {
       </Link>
 
       <Link href="/terms" asChild>
-        <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+        <Pressable style={StyleSheet.flatten([styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }])}>
           <Ionicons name="document-text" size={22} color={colors.primary} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.rowTitle, { color: colors.text }]}>Terms & Conditions</Text>

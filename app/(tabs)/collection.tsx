@@ -36,7 +36,8 @@ export default function CollectionScreen() {
       {!isSupabaseConfigured && <SupabaseSetupNotice />}
 
       <Link href="/search?mode=cards" asChild>
-        <Pressable style={[styles.searchBar, { backgroundColor: colors.surface }]}>
+        {/* Link asChild drops array styles — must be a single flat object. */}
+        <Pressable style={StyleSheet.flatten([styles.searchBar, { backgroundColor: colors.surface }])}>
           <Ionicons name="search" size={17} color={colors.textFaint} />
           <Text style={[styles.searchText, { color: colors.textFaint }]}>Search cards by name</Text>
           {/* Invisible counterweight to the icon so the text sits dead-center. */}
