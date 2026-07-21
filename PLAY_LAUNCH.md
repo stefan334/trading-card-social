@@ -77,12 +77,42 @@ Signup confirmation and password reset currently only deliver to your own inbox
 
 ---
 
-## 5. Android push notifications (FCM) — for pushes to actually arrive
+## 5. Push notifications — for pushes to actually arrive
 
-1. Create a Firebase project for package **`com.cardlink.app`**, download `google-services.json`.
-2. Add to `app.json`: `"android": { "googleServicesFile": "./google-services.json", ... }`.
-3. `eas credentials` → Android → Push Notifications → upload the FCM **V1** service-account key.
-4. Rebuild. (Until then, push registration silently no-ops — nothing breaks.)
+The whole pipeline is built (registration hook + Android channel + brand notification
+icon; DB triggers `notifications_push` / `chat_messages_push` → `send_expo_push()` →
+Expo Push API). What's missing is the platform credentials Expo relays through. Until
+then, registration silently no-ops — nothing breaks.
+
+### Android (needed for the "share the APK" case)
+1. **Firebase project** → Add an **Android app** with package **`com.cardlink.app`** →
+   download **`google-services.json`** → put it in the repo root (next to `app.json`).
+2. **Add ONE line** to `app.json` under `"android"` (do this *with* step 1 — referencing
+   a missing file breaks the build, so don't add it early):
+   ```json
+   "android": {
+     "googleServicesFile": "./google-services.json",
+     "allowBackup": false,
+     ...
+   }
+   ```
+3. **Upload the FCM V1 key to EAS:** in Firebase → Project settings → Service accounts →
+   *Generate new private key* (downloads a JSON). Then run `eas credentials` →
+   **Android → Push Notifications: Manage → Upload FCM V1 service account key** → pick
+   that JSON. (Google killed the legacy FCM server key in 2024 — it must be **V1**.)
+4. Rebuild the Android app. Install on a device, open it (grants notification permission),
+   then have a **second account** message or propose a trade to that user → push arrives.
+
+### iOS (already partly working — your device registered a token)
+- Delivery needs an **APNs key**. EAS auto-provisions it during an iOS build **if** you're
+  enrolled in the Apple Developer Program ($99/yr). Run `eas credentials` → iOS →
+  *Push Notifications Key* to confirm one exists. No `google-services.json` needed on iOS.
+- Test with **two accounts** — the triggers only fire on a message/notification *to* you
+  *from someone else*, so solo testing shows nothing.
+
+> Already done for you: `expo-notifications` config plugin (brand small-icon
+> `android-icon-monochrome.png` + accent `#2563EB`), the Android notification channel,
+> permission handling, token upsert, and all server-side sending.
 
 ---
 
