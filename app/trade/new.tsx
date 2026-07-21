@@ -8,6 +8,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useOwnedCards, type OwnedCard } from '../../src/hooks/useOwnedCards';
 import { useProfile } from '../../src/hooks/useProfile';
 import { track } from '../../src/services/analytics';
+import { useTheme } from '../../src/theme';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
 import { useWishlist } from '../../src/hooks/useWishlist';
 
@@ -22,7 +23,8 @@ function SelectableCards({
   onToggle: (id: string) => void;
   emptyText: string;
 }) {
-  if (!cards.length) return <Text style={styles.muted}>{emptyText}</Text>;
+  const { colors } = useTheme();
+  if (!cards.length) return <Text style={[styles.muted, { color: colors.textMuted }]}>{emptyText}</Text>;
   // For-trade cards first so they're easy to grab.
   const sorted = [...cards].sort((a, b) => Number(b.isForTrade) - Number(a.isForTrade));
   return (
@@ -46,7 +48,7 @@ function SelectableCards({
               </View>
             )}
             {isSel && (
-              <View style={styles.check}>
+              <View style={[styles.check, { backgroundColor: colors.card }]}>
                 <Ionicons name="checkmark-circle" size={20} color="#2563EB" />
               </View>
             )}
@@ -62,6 +64,7 @@ export default function NewTradeScreen() {
   const { with: withId, card: wantCardId } = useLocalSearchParams<{ with: string; card?: string }>();
   const { user } = useAuth();
   const router = useRouter();
+  const { colors } = useTheme();
 
   const { data: theirCards, isLoading: theirLoading } = useOwnedCards(withId);
   const { data: myCards, isLoading: myLoading } = useOwnedCards(user?.id);
@@ -134,8 +137,8 @@ export default function NewTradeScreen() {
         </View>
       )}
 
-      <Text style={styles.section}>You want from {theirName}</Text>
-      <Text style={styles.hint}>Their cards — “Trade” = they've listed it as available.</Text>
+      <Text style={[styles.section, { color: colors.text }]}>You want from {theirName}</Text>
+      <Text style={[styles.hint, { color: colors.textFaint }]}>Their cards — “Trade” = they've listed it as available.</Text>
       <SelectableCards
         cards={theirCards ?? []}
         selected={wantIds}
@@ -143,8 +146,8 @@ export default function NewTradeScreen() {
         emptyText={`${theirName} has no cards in their collection yet.`}
       />
 
-      <Text style={styles.section}>You give</Text>
-      <Text style={styles.hint}>Any of your cards — “Trade” = you've listed it as available.</Text>
+      <Text style={[styles.section, { color: colors.text }]}>You give</Text>
+      <Text style={[styles.hint, { color: colors.textFaint }]}>Any of your cards — “Trade” = you've listed it as available.</Text>
       <SelectableCards
         cards={myCards ?? []}
         selected={giveIds}
@@ -152,10 +155,11 @@ export default function NewTradeScreen() {
         emptyText="You don't own any cards yet."
       />
 
-      <Text style={styles.section}>Note (optional)</Text>
+      <Text style={[styles.section, { color: colors.text }]}>Note (optional)</Text>
       <TextInput
-        style={styles.note}
+        style={[styles.note, { borderColor: colors.border, color: colors.text }]}
         placeholder="Add a message, or mention cash on top…"
+        placeholderTextColor={colors.textFaint}
         value={note}
         onChangeText={setNote}
         multiline

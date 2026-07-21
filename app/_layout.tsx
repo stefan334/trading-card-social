@@ -62,8 +62,8 @@ function RootNavigator() {
       <Stack.Screen name="set/[id]" options={{ headerShown: true, title: 'Set' }} />
       <Stack.Screen name="binder/[id]" options={{ headerShown: true, title: 'Binder' }} />
       <Stack.Screen name="binder/edit/[id]" options={{ headerShown: true, title: 'Edit Binder', ...pinLight }} />
-      <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade', ...pinLight }} />
-      <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade', ...pinLight }} />
+      <Stack.Screen name="trade/[id]" options={{ headerShown: true, title: 'Trade' }} />
+      <Stack.Screen name="trade/new" options={{ headerShown: true, title: 'New Trade' }} />
       <Stack.Screen name="scan" options={{ headerShown: true, title: 'Scan Card', presentation: 'modal', ...pinLight }} />
       <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Feedback' }} />
       <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact us' }} />

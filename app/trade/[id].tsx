@@ -11,6 +11,7 @@ import { useTrade, type TradeItemView } from '../../src/hooks/useTrade';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
 import { useSubmitReview, useTradeReviews } from '../../src/hooks/useTradeReviews';
 import { supabase } from '../../src/services/supabase/client';
+import { useTheme } from '../../src/theme';
 
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
   return (
@@ -25,7 +26,8 @@ function StarRating({ value, onChange }: { value: number; onChange?: (v: number)
 }
 
 function CardStrip({ items }: { items: TradeItemView[] }) {
-  if (!items.length) return <Text style={styles.muted}>Nothing</Text>;
+  const { colors } = useTheme();
+  if (!items.length) return <Text style={[styles.muted, { color: colors.textMuted }]}>Nothing</Text>;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.strip}>
       {items.map((it) => (
@@ -36,7 +38,7 @@ function CardStrip({ items }: { items: TradeItemView[] }) {
             ) : (
               <View style={[styles.cardImage, styles.placeholder]} />
             )}
-            <Text numberOfLines={1} style={styles.cardName}>
+            <Text numberOfLines={1} style={[styles.cardName, { color: colors.text }]}>
               {it.name}
             </Text>
           </Pressable>
@@ -50,6 +52,7 @@ function CardStrip({ items }: { items: TradeItemView[] }) {
 export default function TradeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
+  const { colors } = useTheme();
   const { data: trade, isLoading, error } = useTrade(id);
   const { accept, confirm, decline, cancel } = useTradeActions();
   const { sendMessage, markRead } = useChatActions();
@@ -112,16 +115,16 @@ export default function TradeDetailScreen() {
         </Link>
       </View>
 
-      <Text style={styles.section}>{meIsInitiator ? 'You give' : `${trade.initiator.username} gives`}</Text>
+      <Text style={[styles.section, { color: colors.text }]}>{meIsInitiator ? 'You give' : `${trade.initiator.username} gives`}</Text>
       <CardStrip items={trade.offeredByInitiator} />
 
-      <Text style={styles.section}>{meIsInitiator ? 'You receive' : `${trade.counterparty.username} gives`}</Text>
+      <Text style={[styles.section, { color: colors.text }]}>{meIsInitiator ? 'You receive' : `${trade.counterparty.username} gives`}</Text>
       <CardStrip items={trade.offeredByCounterparty} />
 
       {trade.note ? (
         <>
-          <Text style={styles.section}>Note</Text>
-          <Text style={styles.note}>{trade.note}</Text>
+          <Text style={[styles.section, { color: colors.text }]}>Note</Text>
+          <Text style={[styles.note, { color: colors.text }]}>{trade.note}</Text>
         </>
       ) : null}
 
@@ -143,9 +146,9 @@ export default function TradeDetailScreen() {
       )}
 
       {trade.status === 'accepted' && (
-        <View style={styles.panel}>
-          <Text style={styles.panelTitle}>Deal agreed 🤝</Text>
-          <Text style={styles.panelBody}>
+        <View style={[styles.panel, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.panelTitle, { color: colors.text }]}>Deal agreed 🤝</Text>
+          <Text style={[styles.panelBody, { color: colors.textMuted }]}>
             Once you've swapped the cards in person or by mail, both of you confirm here. The cards move
             into your collections when you both confirm.
           </Text>
@@ -165,24 +168,25 @@ export default function TradeDetailScreen() {
         <>
           <Text style={styles.doneNote}>Trade completed — the cards are now in your collections.</Text>
 
-          <Text style={styles.section}>Reviews</Text>
+          <Text style={[styles.section, { color: colors.text }]}>Reviews</Text>
           {reviews?.map((r) => (
-            <View key={r.id} style={styles.reviewCard}>
+            <View key={r.id} style={[styles.reviewCard, { borderColor: colors.borderLight }]}>
               <View style={styles.reviewHead}>
-                <Text style={styles.reviewName}>{r.reviewer?.displayName || r.reviewer?.username || 'User'}</Text>
+                <Text style={[styles.reviewName, { color: colors.text }]}>{r.reviewer?.displayName || r.reviewer?.username || 'User'}</Text>
                 <StarRating value={r.rating} />
               </View>
-              {r.comment ? <Text style={styles.reviewComment}>{r.comment}</Text> : null}
+              {r.comment ? <Text style={[styles.reviewComment, { color: colors.text }]}>{r.comment}</Text> : null}
             </View>
           ))}
 
           {!myReview && (meIsInitiator || meIsCounterparty) && (
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>Rate {otherName}</Text>
+            <View style={[styles.panel, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.panelTitle, { color: colors.text }]}>Rate {otherName}</Text>
               <StarRating value={rating} onChange={setRating} />
               <TextInput
-                style={styles.reviewInput}
+                style={[styles.reviewInput, { borderColor: colors.border, color: colors.text }]}
                 placeholder="How did the trade go? (optional)"
+                placeholderTextColor={colors.textFaint}
                 value={comment}
                 onChangeText={setComment}
                 multiline
@@ -199,15 +203,15 @@ export default function TradeDetailScreen() {
         </>
       )}
 
-      <Text style={styles.section}>Discussion</Text>
+      <Text style={[styles.section, { color: colors.text }]}>Discussion</Text>
       <View style={styles.chat}>
         {messages?.length ? (
           messages.map((m) => {
             const mine = m.senderId === user?.id;
             return (
               <View key={m.id} style={[styles.bubbleRow, mine ? styles.bubbleMineRow : styles.bubbleTheirsRow]}>
-                <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                  <Text style={mine ? styles.bubbleMineText : styles.bubbleTheirsText}>{m.body}</Text>
+                <View style={[styles.bubble, mine ? styles.bubbleMine : { backgroundColor: colors.card, borderBottomLeftRadius: 4 }]}>
+                  <Text style={mine ? styles.bubbleMineText : { color: colors.text }}>{m.body}</Text>
                 </View>
               </View>
             );
@@ -217,7 +221,7 @@ export default function TradeDetailScreen() {
         )}
       </View>
       <View style={styles.inputBar}>
-        <TextInput style={styles.chatInput} placeholder={`Message ${otherName}…`} value={msg} onChangeText={setMsg} multiline />
+        <TextInput style={[styles.chatInput, { borderColor: colors.border, color: colors.text }]} placeholder={`Message ${otherName}…`} placeholderTextColor={colors.textFaint} value={msg} onChangeText={setMsg} multiline />
         <Pressable style={[styles.sendBtn, !msg.trim() && styles.disabled]} onPress={sendChat} disabled={!msg.trim()}>
           <Ionicons name="send" size={18} color="white" />
         </Pressable>
