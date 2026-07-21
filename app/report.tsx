@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useKeyboardHeight } from '../src/hooks/useKeyboardHeight';
 import { track } from '../src/services/analytics';
@@ -17,6 +18,7 @@ export default function ReportScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const keyboardHeight = useKeyboardHeight(); // keep Submit reachable while typing
+  const insets = useSafeAreaInsets();
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
@@ -58,7 +60,7 @@ export default function ReportScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 16 + keyboardHeight }]} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 16 + Math.max(insets.bottom, keyboardHeight) }]} keyboardShouldPersistTaps="handled">
       <Text style={[styles.title, { color: colors.text }]}>Report {name ? `@${name}` : 'this profile'}</Text>
       <Text style={[styles.sub, { color: colors.textMuted }]}>Tell us what's wrong. Reports are confidential.</Text>
 

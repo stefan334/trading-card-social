@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useOwnedCards, type OwnedCard } from '../../src/hooks/useOwnedCards';
@@ -82,6 +83,7 @@ export default function NewTradeScreen() {
   // useKeyboardHeight) and scroll it into view on focus so it's never hidden.
   const scrollRef = useRef<ScrollView>(null);
   const keyboardHeight = useKeyboardHeight();
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (keyboardHeight > 0) scrollRef.current?.scrollToEnd({ animated: true });
   }, [keyboardHeight]);
@@ -128,7 +130,7 @@ export default function NewTradeScreen() {
   return (
     <ScrollView
       ref={scrollRef}
-      contentContainerStyle={{ padding: 16, paddingBottom: 32 + keyboardHeight }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 32 + Math.max(insets.bottom, keyboardHeight) }}
       keyboardShouldPersistTaps="handled"
     >
       {theirWishlist && theirWishlist.length > 0 && (

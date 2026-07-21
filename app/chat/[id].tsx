@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -13,9 +12,11 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AttachmentTray } from '../../src/components/AttachmentTray';
 import { useAuth } from '../../src/context/AuthContext';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useChatThread } from '../../src/hooks/useChatThread';
+import { useImageAttachments } from '../../src/hooks/useImageAttachments';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useThreadMessages, type ChatMessage } from '../../src/hooks/useThreadMessages';
 import { uploadImage } from '../../src/services/supabase/storage';
@@ -71,26 +72,27 @@ export default function ChatThreadScreen() {
     }
   }, [messages?.length]);
 
+  // Photos stage into a tray first (multi-select) and only go out when the
+  // user confirms with Send — the first photo carries the typed text.
+  const { staged, pick, removeAt, clear } = useImageAttachments();
   const [sendingImage, setSendingImage] = useState(false);
+  const canSend = Boolean(text.trim() || staged.length);
 
-  function handleSend() {
-    if (!id || !text.trim()) return;
-    sendMessage.mutate({ threadId: id, body: text });
-    setText('');
-  }
-
-  async function attachImage() {
-    if (!id || !user) return;
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.5,
-      base64: true,
-    });
-    if (res.canceled || !res.assets[0]?.base64) return;
+  async function handleSend() {
+    if (!id || !user || !canSend || sendingImage) return;
+    if (!staged.length) {
+      sendMessage.mutate({ threadId: id, body: text });
+      setText('');
+      return;
+    }
     setSendingImage(true);
     try {
-      const url = await uploadImage(res.assets[0].base64, user.id, 'chat');
-      sendMessage.mutate({ threadId: id, imageUrl: url });
+      for (let i = 0; i < staged.length; i++) {
+        const url = await uploadImage(staged[i].base64, user.id, 'chat');
+        await sendMessage.mutateAsync({ threadId: id, body: i === 0 ? text : undefined, imageUrl: url });
+      }
+      setText('');
+      clear();
     } finally {
       setSendingImage(false);
     }
@@ -133,9 +135,10 @@ export default function ChatThreadScreen() {
         />
       )}
 
+      <AttachmentTray images={staged} onRemove={removeAt} />
       <View style={[styles.inputBar, { borderTopColor: colors.borderLight }]}>
-        <Pressable style={styles.attach} onPress={attachImage} disabled={sendingImage}>
-          {sendingImage ? <ActivityIndicator size="small" /> : <Ionicons name="image" size={24} color="#2563EB" />}
+        <Pressable style={styles.attach} onPress={pick} disabled={sendingImage}>
+          <Ionicons name="image" size={24} color="#2563EB" />
         </Pressable>
         <TextInput
           style={[styles.input, { borderColor: colors.border, color: colors.text }]}
@@ -145,8 +148,12 @@ export default function ChatThreadScreen() {
           onChangeText={setText}
           multiline
         />
-        <Pressable style={[styles.send, !text.trim() && styles.sendDisabled]} onPress={handleSend} disabled={!text.trim()}>
-          <Text style={styles.sendText}>Send</Text>
+        <Pressable style={[styles.send, (!canSend || sendingImage) && styles.sendDisabled]} onPress={handleSend} disabled={!canSend || sendingImage}>
+          {sendingImage ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={styles.sendText}>Send{staged.length ? ` (${staged.length}📷)` : ''}</Text>
+          )}
         </Pressable>
       </View>
     </View>

@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useKeyboardHeight } from '../src/hooks/useKeyboardHeight';
 import { useTheme } from '../src/theme';
@@ -21,6 +22,7 @@ export default function FeedbackScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const keyboardHeight = useKeyboardHeight(); // keep the Send button reachable
+  const insets = useSafeAreaInsets();
   const [kind, setKind] = useState<(typeof KINDS)[number]['key']>('feedback');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -61,7 +63,7 @@ export default function FeedbackScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 16 + keyboardHeight }]} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 16 + Math.max(insets.bottom, keyboardHeight) }]} keyboardShouldPersistTaps="handled">
       <Text style={[styles.label, { color: colors.text }]}>What's this about?</Text>
       <View style={styles.chips}>
         {KINDS.map((k) => (

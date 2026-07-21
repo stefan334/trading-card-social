@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
 import { useTheme } from '../src/theme';
@@ -47,6 +48,7 @@ export default function AdminScreen() {
   const { profile } = useAuth();
   const isAdmin = !!profile?.isAdmin;
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const qc = useQueryClient();
   const { data: reports, isLoading: reportsLoading } = useOpenReports(isAdmin);
   const { data: feedback } = useRecentFeedback(isAdmin);
@@ -89,7 +91,7 @@ export default function AdminScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 + insets.bottom }}>
       <Text style={[styles.h, { color: colors.text }]}>Open reports {reports?.length ? `(${reports.length})` : ''}</Text>
       {reportsLoading ? (
         <ActivityIndicator style={{ marginTop: 12 }} />

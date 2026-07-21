@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
@@ -102,6 +103,7 @@ export default function CardDetailScreen() {
   const gameId = id?.split(':')[0];
   const { user } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets(); // ownership controls end at the screen bottom
 
   const { data: card, isLoading, error } = useQuery({
     queryKey: ['card', id],
@@ -137,7 +139,7 @@ export default function CardDetailScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 24 + insets.bottom }]}>
       {card.imageUrlLarge && <Image source={{ uri: card.imageUrlLarge }} style={styles.image} contentFit="contain" />}
       <Text style={[styles.name, { color: colors.text }]}>{card.name}</Text>
       <Text style={[styles.meta, { color: colors.textMuted }]}>

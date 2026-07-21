@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showToast, toastMessage } from '../src/components/Toast';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
@@ -63,6 +64,7 @@ export default function SettingsScreen() {
   const { profile, signOut } = useAuth();
   const router = useRouter();
   const { theme, mode, setMode } = useThemeMode();
+  const insets = useSafeAreaInsets();
   const [deleting, setDeleting] = useState(false);
 
   function confirmSignOut() {
@@ -108,7 +110,7 @@ export default function SettingsScreen() {
   const groupStyle = [styles.group, { backgroundColor: theme.colors.card, borderColor: theme.colors.borderLight }];
 
   return (
-    <ScrollView contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40 + insets.bottom }}>
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Preferences</Text>
       <View style={groupStyle}>
         <View style={styles.appearanceBlock}>

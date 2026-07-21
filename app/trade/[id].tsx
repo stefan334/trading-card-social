@@ -4,14 +4,18 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AttachmentTray } from '../../src/components/AttachmentTray';
 import { useAuth } from '../../src/context/AuthContext';
 import { useChatActions } from '../../src/hooks/useChatActions';
+import { useImageAttachments } from '../../src/hooks/useImageAttachments';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useThreadMessages } from '../../src/hooks/useThreadMessages';
 import { useTrade, type TradeItemView } from '../../src/hooks/useTrade';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
 import { useSubmitReview, useTradeReviews } from '../../src/hooks/useTradeReviews';
 import { supabase } from '../../src/services/supabase/client';
+import { uploadImage } from '../../src/services/supabase/storage';
 import { useTheme } from '../../src/theme';
 
 function StarRating({ value, onChange }: { value: number; onChange?: (v: number) => void }) {
@@ -63,10 +67,15 @@ export default function TradeDetailScreen() {
   const [comment, setComment] = useState('');
   const [msg, setMsg] = useState('');
 
+  // Photos: multi-select into a tray, confirmed by the send tap (same flow as DMs).
+  const { staged, pick, removeAt, clear } = useImageAttachments();
+  const [sendingImage, setSendingImage] = useState(false);
+
   // The chat composer sits at the bottom of the scroll — pad by the keyboard
-  // height and follow it so typing never happens behind the keyboard.
+  // height (or the system nav bar when closed) so it's never covered.
   const scrollRef = useRef<ScrollView>(null);
   const keyboardHeight = useKeyboardHeight();
+  const insets = useSafeAreaInsets();
   useEffect(() => {
     if (keyboardHeight > 0) scrollRef.current?.scrollToEnd({ animated: true });
   }, [keyboardHeight]);
@@ -109,16 +118,32 @@ export default function TradeDetailScreen() {
   const otherConfirmed = meIsInitiator ? trade.counterpartyConfirmedAt : trade.initiatorConfirmedAt;
   const myReview = reviews?.find((r) => r.reviewerId === user?.id);
 
-  function sendChat() {
-    if (!threadId || !msg.trim()) return;
-    sendMessage.mutate({ threadId, body: msg });
-    setMsg('');
+  const canSendChat = Boolean(msg.trim() || staged.length);
+
+  async function sendChat() {
+    if (!threadId || !canSendChat || sendingImage) return;
+    if (!staged.length) {
+      sendMessage.mutate({ threadId, body: msg });
+      setMsg('');
+      return;
+    }
+    setSendingImage(true);
+    try {
+      for (let i = 0; i < staged.length; i++) {
+        const url = await uploadImage(staged[i].base64, user!.id, 'chat');
+        await sendMessage.mutateAsync({ threadId, body: i === 0 ? msg : undefined, imageUrl: url });
+      }
+      setMsg('');
+      clear();
+    } finally {
+      setSendingImage(false);
+    }
   }
 
   return (
     <ScrollView
       ref={scrollRef}
-      contentContainerStyle={{ padding: 16, paddingBottom: 32 + keyboardHeight }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 32 + Math.max(insets.bottom, keyboardHeight) }}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.statusRow}>
@@ -224,7 +249,8 @@ export default function TradeDetailScreen() {
             return (
               <View key={m.id} style={[styles.bubbleRow, mine ? styles.bubbleMineRow : styles.bubbleTheirsRow]}>
                 <View style={[styles.bubble, mine ? styles.bubbleMine : { backgroundColor: colors.card, borderBottomLeftRadius: 4 }]}>
-                  <Text style={mine ? styles.bubbleMineText : { color: colors.text }}>{m.body}</Text>
+                  {m.imageUrl ? <Image source={{ uri: m.imageUrl }} style={styles.bubbleImage} contentFit="cover" /> : null}
+                  {m.body ? <Text style={mine ? styles.bubbleMineText : { color: colors.text }}>{m.body}</Text> : null}
                 </View>
               </View>
             );
@@ -233,10 +259,14 @@ export default function TradeDetailScreen() {
           <Text style={styles.chatEmpty}>No messages yet — say hi or ask about the cards.</Text>
         )}
       </View>
+      <AttachmentTray images={staged} onRemove={removeAt} />
       <View style={styles.inputBar}>
+        <Pressable style={styles.attachBtn} onPress={pick} disabled={sendingImage} hitSlop={6}>
+          <Ionicons name="image" size={22} color="#2563EB" />
+        </Pressable>
         <TextInput style={[styles.chatInput, { borderColor: colors.border, color: colors.text }]} placeholder={`Message ${otherName}…`} placeholderTextColor={colors.textFaint} value={msg} onChangeText={setMsg} multiline />
-        <Pressable style={[styles.sendBtn, !msg.trim() && styles.disabled]} onPress={sendChat} disabled={!msg.trim()}>
-          <Ionicons name="send" size={18} color="white" />
+        <Pressable style={[styles.sendBtn, (!canSendChat || sendingImage) && styles.disabled]} onPress={sendChat} disabled={!canSendChat || sendingImage}>
+          {sendingImage ? <ActivityIndicator size="small" color="white" /> : <Ionicons name="send" size={18} color="white" />}
         </Pressable>
       </View>
     </ScrollView>
@@ -273,6 +303,8 @@ const styles = StyleSheet.create({
   bubbleMine: { backgroundColor: '#2563EB', borderBottomRightRadius: 4 },
   bubbleTheirs: { backgroundColor: '#F3F4F6', borderBottomLeftRadius: 4 },
   bubbleMineText: { color: 'white' },
+  bubbleImage: { width: 170, height: 226, borderRadius: 10, marginBottom: 4 },
+  attachBtn: { paddingVertical: 10, paddingHorizontal: 2 },
   bubbleTheirsText: { color: '#111827' },
   inputBar: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 10 },
   chatInput: { flex: 1, maxHeight: 100, borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 9 },

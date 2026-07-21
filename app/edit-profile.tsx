@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useKeyboardHeight } from '../src/hooks/useKeyboardHeight';
 import { supabase } from '../src/services/supabase/client';
@@ -40,6 +41,7 @@ export default function EditProfileScreen() {
   }
 
   const keyboardHeight = useKeyboardHeight(); // bio/save stay visible while typing
+  const insets = useSafeAreaInsets();
   const [username, setUsername] = useState(profile?.username ?? '');
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
@@ -150,7 +152,7 @@ export default function EditProfileScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={[styles.container, { paddingBottom: 32 + keyboardHeight }]}
+      contentContainerStyle={[styles.container, { paddingBottom: 32 + Math.max(insets.bottom, keyboardHeight) }]}
       keyboardShouldPersistTaps="handled"
     >
       <Pressable style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading}>
