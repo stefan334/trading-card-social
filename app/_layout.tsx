@@ -56,6 +56,7 @@ function RootNavigator() {
       <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Feedback' }} />
       <Stack.Screen name="contact" options={{ headerShown: true, title: 'Contact us' }} />
       <Stack.Screen name="terms" options={{ headerShown: true, title: 'Terms & Conditions' }} />
+      <Stack.Screen name="privacy" options={{ headerShown: true, title: 'Privacy Policy' }} />
       <Stack.Screen name="report" options={{ headerShown: true, title: 'Report', presentation: 'modal' }} />
       <Stack.Screen name="admin" options={{ headerShown: true, title: 'Admin' }} />
       <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />

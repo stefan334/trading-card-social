@@ -35,6 +35,17 @@ export default function ContactScreen() {
         </Pressable>
       </Link>
 
+      <Link href={'/privacy' as any} asChild>
+        <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+          <Ionicons name="lock-closed" size={22} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rowTitle, { color: colors.text }]}>Privacy Policy</Text>
+            <Text style={[styles.rowSub, { color: colors.textMuted }]}>What we collect and why</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        </Pressable>
+      </Link>
+
       <Link href="/terms" asChild>
         <Pressable style={[styles.row, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <Ionicons name="document-text" size={22} color={colors.primary} />

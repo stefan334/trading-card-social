@@ -140,7 +140,8 @@ export default function SettingsScreen() {
       <View style={groupStyle}>
         <Row icon="chatbox-ellipses" label="Send feedback" onPress={() => router.push('/feedback')} />
         <Row icon="mail" label="Contact us" onPress={() => router.push('/contact')} />
-        <Row icon="document-text" label="Terms & Conditions" onPress={() => router.push('/terms')} last />
+        <Row icon="document-text" label="Terms & Conditions" onPress={() => router.push('/terms')} />
+        <Row icon="lock-closed-outline" label="Privacy Policy" onPress={() => router.push('/privacy' as any)} last />
       </View>
 
       {profile?.isAdmin ? (
