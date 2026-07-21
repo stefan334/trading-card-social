@@ -45,6 +45,7 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
   const icon = ICON[item.type];
   // A card someone else listed for trade is actionable — offer them a trade,
   // pre-filling the very card they listed when it's a single-card post.
+  const [expanded, setExpanded] = useState(false);
   const canOffer = item.type === 'card_listed' && !!meId && item.author.id !== meId;
   const offerHref =
     `/trade/new?with=${item.author.id}` +
@@ -122,24 +123,51 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
           </Pressable>
         </Link>
       ) : item.cards.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
-          {item.cards.slice(0, 8).map((c, i) => (
-            <Link key={`${c.id}-${i}`} href={`/card/${encodeURIComponent(c.id)}`} asChild>
-              <Pressable>
-                {c.imageUrlSmall ? (
-                  <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
-                ) : (
-                  <View style={[styles.cardImage, styles.placeholder]} />
-                )}
-              </Pressable>
-            </Link>
-          ))}
-          {item.cards.length > 8 ? (
-            <View style={[styles.cardImage, styles.moreTile, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.moreText, { color: colors.textMuted }]}>+{item.cards.length - 8}</Text>
+        expanded ? (
+          // Full burst, laid out as a wrapping grid — every card tappable.
+          <>
+            <View style={styles.cardWrapGrid}>
+              {item.cards.map((c, i) => (
+                <Link key={`${c.id}-${i}`} href={`/card/${encodeURIComponent(c.id)}`} asChild>
+                  <Pressable>
+                    {c.imageUrlSmall ? (
+                      <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
+                    ) : (
+                      <View style={[styles.cardImage, styles.placeholder]} />
+                    )}
+                  </Pressable>
+                </Link>
+              ))}
             </View>
-          ) : null}
-        </ScrollView>
+            <Pressable onPress={() => setExpanded(false)} style={styles.showToggle} hitSlop={6}>
+              <Ionicons name="chevron-up" size={14} color={colors.primary} />
+              <Text style={[styles.showToggleText, { color: colors.primary }]}>Show less</Text>
+            </Pressable>
+          </>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
+            {item.cards.slice(0, 8).map((c, i) => (
+              <Link key={`${c.id}-${i}`} href={`/card/${encodeURIComponent(c.id)}`} asChild>
+                <Pressable>
+                  {c.imageUrlSmall ? (
+                    <Image source={{ uri: c.imageUrlSmall }} style={styles.cardImage} />
+                  ) : (
+                    <View style={[styles.cardImage, styles.placeholder]} />
+                  )}
+                </Pressable>
+              </Link>
+            ))}
+            {item.cards.length > 8 ? (
+              <Pressable
+                style={[styles.cardImage, styles.moreTile, { backgroundColor: colors.surface }]}
+                onPress={() => setExpanded(true)}
+              >
+                <Text style={[styles.moreText, { color: colors.primary }]}>+{item.cards.length - 8}</Text>
+                <Text style={[styles.moreHint, { color: colors.textFaint }]}>view all</Text>
+              </Pressable>
+            ) : null}
+          </ScrollView>
+        )
       ) : null}
 
       {canOffer ? (
@@ -168,8 +196,12 @@ const styles = StyleSheet.create({
   heroWrap: { alignSelf: 'flex-start', paddingTop: 12 },
   heroImage: { width: 148, height: 206, borderRadius: 10 },
   heroName: { fontSize: 12, fontWeight: '600', marginTop: 5, maxWidth: 148 },
-  moreTile: { alignItems: 'center', justifyContent: 'center' },
+  moreTile: { alignItems: 'center', justifyContent: 'center', gap: 1 },
   moreText: { fontWeight: '800', fontSize: 15 },
+  moreHint: { fontSize: 10, fontWeight: '600' },
+  cardWrapGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingTop: 12 },
+  showToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10 },
+  showToggleText: { fontWeight: '600', fontSize: 13 },
   placeholder: { backgroundColor: '#E5E7EB' },
   offerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 10, marginTop: 12 },
   offerText: { color: 'white', fontWeight: '700', fontSize: 14 },
