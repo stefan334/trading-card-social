@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { SetPickerModal } from '../src/components/SetPickerModal';
 import { SupabaseSetupNotice } from '../src/components/SupabaseSetupNotice';
@@ -53,6 +53,11 @@ function ListingRow({ item, marketAvg, rating }: { item: MarketListing; marketAv
                       </Text>
                     </View>
                   ) : null}
+                  {item.owner.tradesCompleted > 0 ? (
+                    <Text style={[styles.owner, { color: colors.textFaint }]}>
+                      · {item.owner.tradesCompleted} {item.owner.tradesCompleted === 1 ? 'trade' : 'trades'}
+                    </Text>
+                  ) : null}
                   <Text style={[styles.owner, { color: colors.textFaint }]} numberOfLines={1}>
                     {item.distanceKm != null ? `· ~${item.distanceKm} km` : item.ownerLocation ? `· ${item.ownerLocation}` : ''}
                   </Text>
@@ -93,6 +98,18 @@ export default function MarketplaceScreen() {
     useMarketplace(gameId, debounced, nearMe, filterSet?.id ?? null);
   const { data: prices } = useCardPrices(listings.map((l) => l.cardId));
   const { data: ratings } = useTraderRatings(listings.map((l) => l.owner?.id).filter(Boolean) as string[]);
+
+  // Sort: 'auto' keeps the hook's order (nearest when "near me", else newest).
+  const [sort, setSort] = useState<'auto' | 'price_asc' | 'price_desc'>('auto');
+  const sorted = useMemo(() => {
+    if (sort === 'auto') return listings;
+    const nulls = 1e12; // "open to trades" (no price) sinks to the end either way
+    return [...listings].sort((a, b) =>
+      sort === 'price_asc'
+        ? (a.salePrice ?? nulls) - (b.salePrice ?? nulls)
+        : (b.salePrice ?? -1) - (a.salePrice ?? -1)
+    );
+  }, [listings, sort]);
 
   if (!isSupabaseConfigured) {
     return (
@@ -153,11 +170,29 @@ export default function MarketplaceScreen() {
         </View>
       )}
 
+      {/* Sort order */}
+      <View style={styles.chips}>
+        {(
+          [
+            { key: 'auto', label: nearMe && canFilterNear ? 'Nearest' : 'Newest' },
+            { key: 'price_asc', label: '€ low → high' },
+            { key: 'price_desc', label: '€ high → low' },
+          ] as const
+        ).map((s) => {
+          const sel = sort === s.key;
+          return (
+            <Pressable key={s.key} style={[styles.chip, sel && styles.chipOn]} onPress={() => setSort(s.key)}>
+              <Text style={[styles.chipText, sel && styles.chipTextOn]}>{s.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {isLoading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : (
         <FlatList
-          data={listings}
+          data={sorted}
           keyExtractor={(l) => l.userCardId}
           renderItem={({ item }) => (
             <ListingRow

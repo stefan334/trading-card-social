@@ -16,7 +16,7 @@ export interface NotificationItem {
 
 /** Actor id embedded in a notification payload (owner for a match, follower for a follow). */
 function actorIdOf(type: NotificationType, payload: any): string | undefined {
-  if (type === 'wishlist_match') return payload?.owner_id;
+  if (type === 'wishlist_match' || type === 'wishlist_listed') return payload?.owner_id;
   if (type === 'new_follower') return payload?.follower_id;
   if (type === 'trade_update') return payload?.actor_id;
   return undefined;

@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useBlockedIds } from './useBlocks';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
 
 export interface MarketListing {
@@ -14,7 +15,7 @@ export interface MarketListing {
   condition: string | null;
   grade: string | null;
   salePrice: number | null; // asking cash price (EUR); null = open to card trades
-  owner: { id: string; username: string; displayName: string | null; avatarUrl: string | null } | null;
+  owner: { id: string; username: string; displayName: string | null; avatarUrl: string | null; tradesCompleted: number } | null;
   ownerLocation: string | null;
   distanceKm: number | null; // from the current user, if both have location
 }
@@ -42,6 +43,7 @@ const PAGE_SIZE = 100;
  */
 export function useMarketplace(gameId: string, search: string, nearMe: boolean, setId?: string | null) {
   const { user, profile } = useAuth();
+  const blocked = useBlockedIds();
   const meId = user?.id;
   const q = search.trim().toLowerCase();
   const myCoords: [number, number] | null =
@@ -55,7 +57,7 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean, 
       const { data, error } = await supabase!
         .from('user_cards')
         .select(
-          'id, condition, grade, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id, set_id), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, is_banned)'
+          'id, condition, grade, sale_price, owner_id, card:cards(id, name, number, image_url_small, game_id, set_id), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, is_banned, trades_completed)'
         )
         .eq('is_for_trade', true)
         .order('acquired_at', { ascending: false })
@@ -70,7 +72,7 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean, 
   const all = useMemo<MarketListing[]>(() => {
     const raw = (query.data?.pages ?? []).flat();
     return raw
-      .filter((r: any) => r.owner_id !== meId && r.card && !r.owner?.is_banned)
+      .filter((r: any) => r.owner_id !== meId && r.card && !r.owner?.is_banned && !blocked.has(r.owner_id))
       .map((r: any) => {
         const oLat = r.owner?.latitude != null ? Number(r.owner.latitude) : null;
         const oLng = r.owner?.longitude != null ? Number(r.owner.longitude) : null;
@@ -86,7 +88,7 @@ export function useMarketplace(gameId: string, search: string, nearMe: boolean, 
           grade: r.grade,
           salePrice: r.sale_price != null ? Number(r.sale_price) : null,
           owner: r.owner
-            ? { id: r.owner.id, username: r.owner.username, displayName: r.owner.display_name, avatarUrl: r.owner.avatar_url }
+            ? { id: r.owner.id, username: r.owner.username, displayName: r.owner.display_name, avatarUrl: r.owner.avatar_url, tradesCompleted: r.owner.trades_completed ?? 0 }
             : null,
           ownerLocation: r.owner?.location_name ?? null,
           distanceKm: myCoords && oLat != null && oLng != null ? Math.round(distanceKm(myCoords, [oLat, oLng])) : null,

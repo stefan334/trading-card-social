@@ -158,6 +158,7 @@ export default function SettingsScreen() {
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Account</Text>
       <View style={groupStyle}>
         <Row icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
+        <Row icon="ban-outline" label="Blocked users" onPress={() => router.push('/blocked' as any)} />
         <Row icon="log-out-outline" label="Sign out" tint={theme.colors.danger} labelColor={theme.colors.danger} onPress={confirmSignOut} />
         <Row
           icon="trash-outline"

@@ -1,12 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Badges } from '../../src/components/Badges';
 import { BindersRow } from '../../src/components/BindersRow';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { ForTradeShowcase } from '../../src/components/ForTradeShowcase';
 import { ProfileView } from '../../src/components/ProfileView';
 import { WishlistShowcase } from '../../src/components/WishlistShowcase';
+import { useBlockActions, useIsBlocked } from '../../src/hooks/useBlocks';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useCollectionBySet } from '../../src/hooks/useCollectionBySet';
 import { useFollow } from '../../src/hooks/useFollow';
@@ -22,6 +23,8 @@ export default function UserProfileScreen() {
   const { canFollow, isFollowing, toggling, toggle } = useFollow(id);
   const { data: groups, isLoading: collectionLoading } = useCollectionBySet(id);
   const { startThread } = useChatActions();
+  const blocked = useIsBlocked(id);
+  const { block, unblock } = useBlockActions();
 
   if (isLoading) return <ActivityIndicator style={styles.center} />;
   if (error || !profile) return <Text style={styles.center}>Profile not found.</Text>;
@@ -30,6 +33,22 @@ export default function UserProfileScreen() {
     if (!id) return;
     const threadId = await startThread.mutateAsync({ otherId: id });
     router.push(`/chat/${threadId}`);
+  }
+
+  function confirmBlock() {
+    if (!id) return;
+    if (blocked) {
+      unblock.mutate(id);
+      return;
+    }
+    Alert.alert(
+      `Block @${profile!.username}?`,
+      "You won't see each other's activity, listings, or messages. You can unblock anytime from Settings.",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Block', style: 'destructive', onPress: () => block.mutate(id) },
+      ]
+    );
   }
 
   const actions = canFollow ? (
@@ -66,12 +85,18 @@ export default function UserProfileScreen() {
           <Text style={[styles.buttonText, { color: colors.primary }]}>Message</Text>
         </Pressable>
       </View>
-      <Link href={`/report?profile=${id}&name=${encodeURIComponent(profile.username)}` as any} asChild>
-        <Pressable style={styles.reportBtn} hitSlop={6}>
-          <Ionicons name="flag-outline" size={13} color="#9CA3AF" />
-          <Text style={styles.reportText}>Report user</Text>
+      <View style={styles.subtleRow}>
+        <Link href={`/report?profile=${id}&name=${encodeURIComponent(profile.username)}` as any} asChild>
+          <Pressable style={styles.reportBtn} hitSlop={6}>
+            <Ionicons name="flag-outline" size={13} color="#9CA3AF" />
+            <Text style={styles.reportText}>Report user</Text>
+          </Pressable>
+        </Link>
+        <Pressable style={styles.reportBtn} hitSlop={6} onPress={confirmBlock} disabled={block.isPending || unblock.isPending}>
+          <Ionicons name={blocked ? 'lock-open-outline' : 'ban-outline'} size={13} color="#9CA3AF" />
+          <Text style={styles.reportText}>{blocked ? 'Unblock' : 'Block user'}</Text>
         </Pressable>
-      </Link>
+      </View>
     </View>
   ) : undefined;
 
@@ -128,6 +153,7 @@ const styles = StyleSheet.create({
   tradeText: { color: 'white', fontWeight: '800', fontSize: 16 },
   messageButton: { backgroundColor: 'white', borderColor: '#2563EB' },
   messageText: { color: '#2563EB' },
+  subtleRow: { flexDirection: 'row', justifyContent: 'center', gap: 24 },
   reportBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 6 },
   reportText: { color: '#9CA3AF', fontSize: 13, fontWeight: '600' },
   divider: { borderTopWidth: 1, marginTop: 18 },

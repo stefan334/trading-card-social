@@ -2,6 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
 
+/** ALL card ids the current user owns (id-only select) — "owned ✓" badges in the Add grids. */
+export function useAllOwnedCardIds(): Set<string> {
+  const { user } = useAuth();
+  const meId = user?.id;
+  const { data } = useQuery({
+    queryKey: ['owned-card-ids', meId, 'all'],
+    enabled: isSupabaseConfigured && Boolean(meId),
+    queryFn: async (): Promise<string[]> => {
+      const { data, error } = await supabase!.from('user_cards').select('card_id').eq('owner_id', meId!);
+      if (error) throw error;
+      return [...new Set((data ?? []).map((r: any) => r.card_id as string))];
+    },
+  });
+  return new Set(data ?? []);
+}
+
 /** Set of the current user's owned card ids within a given set (for completion highlighting). */
 export function useOwnedCardIds(setId: string | undefined) {
   const { user } = useAuth();

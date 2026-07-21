@@ -34,6 +34,8 @@ export function useCollectionActions() {
     qc.invalidateQueries({ queryKey: ['profile', meId] });
     qc.invalidateQueries({ queryKey: ['feed', meId] }); // adding/listing creates feed activity
     qc.invalidateQueries({ queryKey: ['for-trade-cards', meId] });
+    qc.invalidateQueries({ queryKey: ['owned-card-ids', meId] }); // "owned ✓" badges
+    qc.invalidateQueries({ queryKey: ['collection-value', meId] });
     if (cardId) qc.invalidateQueries({ queryKey: ['card-ownership', meId, cardId] });
   }
 

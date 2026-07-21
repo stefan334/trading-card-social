@@ -86,7 +86,7 @@ export interface ChatMessage {
   createdAt: string;
 }
 
-export type NotificationType = 'wishlist_match' | 'trade_update' | 'chat_message' | 'new_follower';
+export type NotificationType = 'wishlist_match' | 'wishlist_listed' | 'trade_update' | 'chat_message' | 'new_follower';
 
 export interface AppNotification {
   id: string;

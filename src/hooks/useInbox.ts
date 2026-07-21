@@ -1,3 +1,4 @@
+import { useBlockedIds } from './useBlocks';
 import { useChatThreads } from './useChatThreads';
 import { useTrades } from './useTrades';
 import type { TradeStatus } from '../types/domain';
@@ -24,6 +25,7 @@ export interface InboxItem {
 export function useInbox() {
   const trades = useTrades();
   const chats = useChatThreads();
+  const blocked = useBlockedIds();
 
   const isLoading = trades.isLoading || chats.isLoading;
 
@@ -46,6 +48,7 @@ export function useInbox() {
 
   for (const c of chats.data ?? []) {
     if (c.tradeId) continue; // trade-linked chats live under the trade
+    if (c.other && blocked.has(c.other.id)) continue; // blocked either way — hide the DM
     items.push({
       key: `dm:${c.threadId}`,
       kind: 'dm',

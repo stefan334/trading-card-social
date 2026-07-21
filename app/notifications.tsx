@@ -23,6 +23,7 @@ const TRADE_VERB: Record<string, string> = {
 // Leading icon + accent colour per notification type.
 const ICON: Record<string, { name: keyof typeof Ionicons.glyphMap; color: string; bg: string }> = {
   wishlist_match: { name: 'star', color: '#B45309', bg: '#FEF3C7' },
+  wishlist_listed: { name: 'pricetag', color: '#6D28D9', bg: '#EDE9FE' },
   new_follower: { name: 'person-add', color: '#2563EB', bg: '#DBEAFE' },
   trade_update: { name: 'swap-horizontal', color: '#059669', bg: '#D1FAE5' },
 };
@@ -31,17 +32,17 @@ function NotificationRow({ item }: { item: NotificationItem }) {
   const { colors } = useTheme();
   const name = item.actor?.displayName || item.actor?.username || 'Someone';
 
-  const label =
-    item.type === 'wishlist_match'
-      ? item.card?.name ?? 'a card'
-      : item.type === 'new_follower'
-        ? 'started following you'
-        : TRADE_VERB[item.tradeStatus ?? ''] ?? 'updated a trade';
+  const isWishlist = item.type === 'wishlist_match' || item.type === 'wishlist_listed';
+  const label = isWishlist
+    ? item.card?.name ?? 'a card'
+    : item.type === 'new_follower'
+      ? 'started following you'
+      : TRADE_VERB[item.tradeStatus ?? ''] ?? 'updated a trade';
 
-  const suffix = item.type === 'wishlist_match' ? ' — on your wishlist' : '';
+  const suffix = isWishlist ? ' — on your wishlist' : '';
 
   const href =
-    item.type === 'wishlist_match' && item.card
+    isWishlist && item.card
       ? `/card/${encodeURIComponent(item.card.id)}`
       : item.type === 'trade_update' && item.tradeId
         ? `/trade/${item.tradeId}`
@@ -68,8 +69,8 @@ function NotificationRow({ item }: { item: NotificationItem }) {
         <View style={styles.middle}>
           <Text style={[styles.body, { color: colors.textMuted }]} numberOfLines={2}>
             <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
-            {item.type === 'wishlist_match' ? ` added ` : ` ${label}`}
-            {item.type === 'wishlist_match' ? (
+            {isWishlist ? (item.type === 'wishlist_listed' ? ' listed ' : ' added ') : ` ${label}`}
+            {isWishlist ? (
               <>
                 <Text style={[styles.name, { color: colors.text }]}>{label}</Text>
                 {suffix}

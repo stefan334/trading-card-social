@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { useBlockedIds } from './useBlocks';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
 
 export type FeedType = 'text' | 'card_showcase' | 'card_added' | 'card_listed' | 'card_wishlisted' | 'trade_completed';
@@ -41,6 +42,7 @@ interface FeedPage {
  * run over everything loaded so far.
  */
 export function useFeed(userId: string | undefined, meLocation?: string | null) {
+  const blocked = useBlockedIds(); // hide blocked users' activity, both directions
   const query = useInfiniteQuery({
     queryKey: ['feed', userId, meLocation ?? null],
     enabled: isSupabaseConfigured && Boolean(userId),
@@ -82,7 +84,7 @@ export function useFeed(userId: string | undefined, meLocation?: string | null) 
 
     const rows = pages
       .flatMap((p) => p.rows)
-      .filter((row: any) => row.author && !row.author.is_banned)
+      .filter((row: any) => row.author && !row.author.is_banned && !blocked.has(row.author.id))
       .map((row: any) => ({
         id: row.id as string,
         type: row.type as FeedType,
@@ -130,7 +132,7 @@ export function useFeed(userId: string | undefined, meLocation?: string | null) 
       }
     }
     return out;
-  }, [query.data, userId, meLocation]);
+  }, [query.data, userId, meLocation, blocked]);
 
   return {
     data: items,

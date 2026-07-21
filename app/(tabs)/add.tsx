@@ -21,6 +21,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useCardSearch } from '../../src/hooks/useCardSearch';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
+import { useAllOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { useScreenView } from '../../src/services/analytics';
 import { dbGetSet, dbGetSetCards } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
@@ -48,6 +49,7 @@ export default function AddScreen() {
   const insets = useSafeAreaInsets();
   useScreenView('add');
   const { items, add: addToCart, removeAt, removeOne, setFinish: setItemFinish, setAllFinishes, clear } = useBatch();
+  const owned = useAllOwnedCardIds(); // "✓ owned" badges while browsing
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
 
   const [query, setQuery] = useState('');
@@ -186,6 +188,11 @@ export default function AddScreen() {
                   ) : (
                     <View style={[styles.cardImg, styles.placeholder]} />
                   )}
+                  {owned.has(item.id) ? (
+                    <View style={styles.ownedBadge}>
+                      <Ionicons name="checkmark" size={11} color="white" />
+                    </View>
+                  ) : null}
                   {busy ? (
                     <View style={styles.overlay}><ActivityIndicator color="white" /></View>
                   ) : count > 0 ? (
@@ -355,6 +362,7 @@ const styles = StyleSheet.create({
   placeholder: { backgroundColor: '#E5E7EB' },
   cardName: { fontSize: 12, marginTop: 3 },
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: '#00000055', borderRadius: 6 },
+  ownedBadge: { position: 'absolute', top: 4, left: 4, backgroundColor: '#059669', borderRadius: 9, width: 18, height: 18, alignItems: 'center', justifyContent: 'center' },
   plus: { position: 'absolute', bottom: 6, right: 6, backgroundColor: '#2563EB', borderRadius: 11, width: 22, height: 22, alignItems: 'center', justifyContent: 'center' },
   stepper: { position: 'absolute', bottom: 6, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', backgroundColor: '#059669', borderRadius: 13, paddingHorizontal: 2 },
   stepBtn: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },

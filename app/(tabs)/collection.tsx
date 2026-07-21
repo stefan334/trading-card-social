@@ -7,10 +7,12 @@ import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCollectionBySet } from '../../src/hooks/useCollectionBySet';
+import { useCollectionValue } from '../../src/hooks/useCollectionValue';
 import { useSets } from '../../src/hooks/useSets';
 import { isSupabaseConfigured } from '../../src/services/supabase/client';
 import { listProviders } from '../../src/services/tcg-providers';
 import { useTheme } from '../../src/theme';
+import { formatPrice } from '../../src/utils/time';
 
 /**
  * Collection tab:
@@ -26,6 +28,7 @@ export default function CollectionScreen() {
 
   const [setQuery, setSetQuery] = useState('');
   const { data: groups, isLoading } = useCollectionBySet(user?.id, gameId);
+  const { data: value } = useCollectionValue(user?.id);
   const { data: sets, isLoading: setsLoading } = useSets(gameId);
 
   return (
@@ -36,6 +39,8 @@ export default function CollectionScreen() {
         <Pressable style={[styles.searchBar, { backgroundColor: colors.surface }]}>
           <Ionicons name="search" size={17} color={colors.textFaint} />
           <Text style={[styles.searchText, { color: colors.textFaint }]}>Search cards by name</Text>
+          {/* Invisible counterweight to the icon so the text sits dead-center. */}
+          <View style={{ width: 17 }} />
         </Pressable>
       </Link>
 
@@ -56,7 +61,17 @@ export default function CollectionScreen() {
         </View>
       )}
 
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Collection</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Collection</Text>
+        {value && value.total > 0 ? (
+          <View style={styles.valueWrap}>
+            <Text style={styles.valueText}>≈ {formatPrice(value.total, 'EUR')}</Text>
+            <Text style={[styles.valueHint, { color: colors.textFaint }]}>
+              {value.pricedCount}/{value.cardCount} cards priced
+            </Text>
+          </View>
+        ) : null}
+      </View>
       {!user ? (
         <Text style={[styles.muted, { color: colors.textMuted }]}>Sign in to track your collection.</Text>
       ) : isLoading ? (
@@ -67,7 +82,7 @@ export default function CollectionScreen() {
         <CollectionBySet groups={groups} />
       )}
 
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Browse Sets</Text>
+      <Text style={[styles.sectionTitle, styles.browseTitle, { color: colors.text }]}>Browse Sets</Text>
       <View style={[styles.setSearch, { backgroundColor: colors.surface }]}>
         <Ionicons name="search" size={16} color={colors.textFaint} />
         <TextInput
@@ -106,12 +121,18 @@ export default function CollectionScreen() {
 }
 
 const styles = StyleSheet.create({
-  sectionTitle: { fontSize: 18, fontWeight: '700', marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: '700' },
+  browseTitle: { marginHorizontal: 16, marginTop: 20, marginBottom: 10 },
+  valueWrap: { alignItems: 'flex-end' },
+  valueText: { fontSize: 15, fontWeight: '800', color: '#059669' },
+  valueHint: { fontSize: 11, marginTop: 1 },
   muted: { color: '#6B7280', marginHorizontal: 16 },
   searchBar: {
-    // Left-aligned like every other search field in the app.
+    // Centered pill (iOS-Safari style); the trailing spacer balances the icon.
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
     height: 44,
     marginHorizontal: 16,
