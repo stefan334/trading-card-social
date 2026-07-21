@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useOwnedCards, type OwnedCard } from '../../src/hooks/useOwnedCards';
 import { useProfile } from '../../src/hooks/useProfile';
 import { track } from '../../src/services/analytics';
@@ -77,6 +78,14 @@ export default function NewTradeScreen() {
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  // The note sits at the bottom of the form; pad by the keyboard height (see
+  // useKeyboardHeight) and scroll it into view on focus so it's never hidden.
+  const scrollRef = useRef<ScrollView>(null);
+  const keyboardHeight = useKeyboardHeight();
+  useEffect(() => {
+    if (keyboardHeight > 0) scrollRef.current?.scrollToEnd({ animated: true });
+  }, [keyboardHeight]);
+
   // Arriving from a listing / feed post ("Make an offer") pre-selects the card
   // they listed, so the offer starts with the thing you actually want.
   useEffect(() => {
@@ -117,7 +126,11 @@ export default function NewTradeScreen() {
   const nothingSelected = wantIds.size === 0 && giveIds.size === 0;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={{ padding: 16, paddingBottom: 32 + keyboardHeight }}
+      keyboardShouldPersistTaps="handled"
+    >
       {theirWishlist && theirWishlist.length > 0 && (
         <View style={styles.wishlistBox}>
           <Text style={styles.wishlistTitle}>💡 {theirName}'s wishlist — great things to offer</Text>
@@ -162,6 +175,7 @@ export default function NewTradeScreen() {
         placeholderTextColor={colors.textFaint}
         value={note}
         onChangeText={setNote}
+        onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300)}
         multiline
       />
 

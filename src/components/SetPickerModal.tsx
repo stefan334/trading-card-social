@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { dbGetSets } from '../services/catalog';
 import { getProvider } from '../services/tcg-providers';
 import { useTheme } from '../theme';
@@ -25,6 +26,7 @@ export function SetPickerModal({
   onSelect: (set: CardSet) => void;
 }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets(); // full-screen modal renders edge-to-edge
   const [search, setSearch] = useState('');
 
   const { data: sets } = useQuery({
@@ -42,7 +44,7 @@ export function SetPickerModal({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>Choose a set</Text>
           <Pressable hitSlop={8} onPress={onClose}>
@@ -63,7 +65,7 @@ export function SetPickerModal({
         <FlatList
           data={filtered}
           keyExtractor={(s) => s.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
+          contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
           renderItem={({ item }) => (
             <Pressable style={styles.row} onPress={() => pick(item)}>
               {item.imageUrl ? (

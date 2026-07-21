@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
+import { useKeyboardHeight } from '../src/hooks/useKeyboardHeight';
 import { supabase } from '../src/services/supabase/client';
 import { uploadImage } from '../src/services/supabase/storage';
 import { listProviders } from '../src/services/tcg-providers';
@@ -38,6 +39,7 @@ export default function EditProfileScreen() {
     if (pid) qc.invalidateQueries({ queryKey: ['profile', pid] });
   }
 
+  const keyboardHeight = useKeyboardHeight(); // bio/save stay visible while typing
   const [username, setUsername] = useState(profile?.username ?? '');
   const [displayName, setDisplayName] = useState(profile?.displayName ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
@@ -147,7 +149,10 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView
+      contentContainerStyle={[styles.container, { paddingBottom: 32 + keyboardHeight }]}
+      keyboardShouldPersistTaps="handled"
+    >
       <Pressable style={styles.avatarWrap} onPress={pickAvatar} disabled={uploading}>
         {avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={styles.avatar} />

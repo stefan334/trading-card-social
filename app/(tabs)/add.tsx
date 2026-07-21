@@ -14,6 +14,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SetPickerModal } from '../../src/components/SetPickerModal';
 import { useBatch } from '../../src/context/BatchContext';
 import { useAuth } from '../../src/context/AuthContext';
@@ -24,20 +25,14 @@ import { useScreenView } from '../../src/services/analytics';
 import { dbGetSet, dbGetSetCards } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
 import type { Card } from '../../src/types/card';
-import type { CardCondition } from '../../src/types/domain';
+import { FINISHES, nextFinish, type CardCondition } from '../../src/types/domain';
 import { useTheme } from '../../src/theme';
 
 const CONDITIONS: CardCondition[] = ['mint', 'near_mint', 'excellent', 'good', 'played', 'poor'];
 const LABEL: Record<CardCondition, string> = {
   mint: 'Mint', near_mint: 'Near Mint', excellent: 'Excellent', good: 'Good', played: 'Played', poor: 'Poor',
 };
-const FINISHES = [
-  { key: 'normal', label: 'Normal' },
-  { key: 'holo', label: 'Holo' },
-  { key: 'reverse_holo', label: 'Reverse Holo' },
-  { key: 'foil', label: 'Foil' },
-] as const;
-type Finish = (typeof FINISHES)[number]['key'];
+const FINISH_ABBR = Object.fromEntries(FINISHES.map((f) => [f.key, f.abbr]));
 
 /**
  * Add tab (the center "+"): one place to build up a "pack" of cards and add them
@@ -50,8 +45,9 @@ export default function AddScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   useScreenView('add');
-  const { items, add: addToCart, removeAt, removeOne, clear } = useBatch();
+  const { items, add: addToCart, removeAt, removeOne, setFinish: setItemFinish, setAllFinishes, clear } = useBatch();
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
 
   const [query, setQuery] = useState('');
@@ -75,9 +71,15 @@ export default function AddScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [condition, setCondition] = useState<CardCondition>('near_mint');
-  const [finish, setFinish] = useState<Finish>('normal');
   const [adding, setAdding] = useState(false);
   const { add } = useCollectionActions();
+
+  // Which finish the whole pack shares, or null once per-card overrides diverge —
+  // drives the highlight state of the bulk "set all" chips.
+  const sharedFinish = useMemo(
+    () => (items.length && items.every((i) => i.finish === items[0].finish) ? items[0].finish : null),
+    [items]
+  );
 
   // How many of each card id are already in the cart (for the count badge).
   const countByCard = useMemo(() => {
@@ -102,7 +104,7 @@ export default function AddScreen() {
     setAdding(true);
     try {
       for (const it of items) {
-        await add.mutateAsync({ card: it.card, set: it.set, condition, finish: finish === 'normal' ? null : finish });
+        await add.mutateAsync({ card: it.card, set: it.set, condition, finish: it.finish === 'normal' ? null : it.finish });
       }
       clear();
       setReviewOpen(false);
@@ -235,7 +237,7 @@ export default function AddScreen() {
       {/* Review sheet */}
       <Modal visible={reviewOpen} transparent animationType="slide" onRequestClose={() => setReviewOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setReviewOpen(false)} />
-        <View style={[styles.sheet, { backgroundColor: colors.card }]}>
+        <View style={[styles.sheet, { backgroundColor: colors.card, paddingBottom: 16 + insets.bottom }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>Your pack · {items.length}</Text>
@@ -251,16 +253,25 @@ export default function AddScreen() {
           ) : (
             <ScrollView style={{ maxHeight: 220 }} contentContainerStyle={styles.sheetGrid}>
               {items.map((it) => (
-                <View key={it.key} style={styles.sheetItem}>
+                <Pressable
+                  key={it.key}
+                  style={styles.sheetItem}
+                  onPress={() => setItemFinish(it.key, nextFinish(it.finish))}
+                >
                   {it.card.imageUrlSmall ? (
                     <Image source={{ uri: it.card.imageUrlSmall }} style={styles.sheetImg} />
                   ) : (
                     <View style={[styles.sheetImg, styles.placeholder]} />
                   )}
-                  <Pressable style={styles.removeBadge} onPress={() => removeAt(it.key)}>
+                  <View style={[styles.finishBadge, it.finish !== 'normal' && styles.finishBadgeOn]}>
+                    <Text style={[styles.finishBadgeText, it.finish !== 'normal' && styles.finishBadgeTextOn]}>
+                      {FINISH_ABBR[it.finish]}
+                    </Text>
+                  </View>
+                  <Pressable style={styles.removeBadge} hitSlop={4} onPress={() => removeAt(it.key)}>
                     <Ionicons name="close" size={13} color="white" />
                   </Pressable>
-                </View>
+                </Pressable>
               ))}
             </ScrollView>
           )}
@@ -274,11 +285,18 @@ export default function AddScreen() {
             ))}
           </View>
 
-          <Text style={[styles.label, { color: colors.text }]}>Finish</Text>
+          <Text style={[styles.label, { color: colors.text }]}>
+            Finish{'  '}
+            <Text style={[styles.labelHint, { color: colors.textFaint }]}>tap a card above to set it per copy</Text>
+          </Text>
           <View style={styles.chips}>
             {FINISHES.map((f) => (
-              <Pressable key={f.key} style={[styles.chip, f.key === finish && styles.chipOn]} onPress={() => setFinish(f.key)}>
-                <Text style={[styles.chipText, f.key === finish && styles.chipTextOn]}>{f.label}</Text>
+              <Pressable
+                key={f.key}
+                style={[styles.chip, f.key === sharedFinish && styles.chipOn]}
+                onPress={() => setAllFinishes(f.key)}
+              >
+                <Text style={[styles.chipText, f.key === sharedFinish && styles.chipTextOn]}>{f.label}</Text>
               </Pressable>
             ))}
           </View>
@@ -359,6 +377,11 @@ const styles = StyleSheet.create({
   sheetItem: { width: 56 },
   sheetImg: { width: 56, height: 78, borderRadius: 5 },
   removeBadge: { position: 'absolute', top: -6, right: -6, backgroundColor: '#DC2626', borderRadius: 10, width: 20, height: 20, alignItems: 'center', justifyContent: 'center' },
+  finishBadge: { alignSelf: 'center', marginTop: 3, minWidth: 26, alignItems: 'center', backgroundColor: '#E5E7EB', borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 },
+  finishBadgeOn: { backgroundColor: '#EDE9FE' },
+  finishBadgeText: { fontSize: 10, fontWeight: '800', color: '#6B7280' },
+  finishBadgeTextOn: { color: '#6D28D9' },
+  labelHint: { fontSize: 12, fontWeight: '500' },
 
   label: { fontWeight: '700', marginTop: 16, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },

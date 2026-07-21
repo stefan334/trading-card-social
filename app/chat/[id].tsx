@@ -6,8 +6,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Keyboard,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -18,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useChatThread } from '../../src/hooks/useChatThread';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useThreadMessages, type ChatMessage } from '../../src/hooks/useThreadMessages';
 import { uploadImage } from '../../src/services/supabase/storage';
 import { useTheme } from '../../src/theme';
@@ -48,23 +47,13 @@ export default function ChatThreadScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const insets = useSafeAreaInsets();
 
-  // Manual keyboard handling: KeyboardAvoidingView + edge-to-edge (Expo SDK 54)
-  // leaves the composer behind the keyboard on Android. Track the keyboard height
-  // ourselves and lift the whole conversation by it.
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  // Manual keyboard handling (shared hook): KeyboardAvoidingView + edge-to-edge
+  // (Expo SDK 54) leaves the composer behind the keyboard on Android — lift the
+  // whole conversation by the keyboard height and follow to the latest message.
+  const keyboardHeight = useKeyboardHeight();
   useEffect(() => {
-    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const showSub = Keyboard.addListener(showEvt, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
-    });
-    const hideSub = Keyboard.addListener(hideEvt, () => setKeyboardHeight(0));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+    if (keyboardHeight > 0) requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+  }, [keyboardHeight]);
 
   // Mark read on open and whenever new messages arrive while the thread is open.
   useEffect(() => {

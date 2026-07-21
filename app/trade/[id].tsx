@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useAuth } from '../../src/context/AuthContext';
 import { useChatActions } from '../../src/hooks/useChatActions';
+import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
 import { useThreadMessages } from '../../src/hooks/useThreadMessages';
 import { useTrade, type TradeItemView } from '../../src/hooks/useTrade';
 import { useTradeActions } from '../../src/hooks/useTradeActions';
@@ -62,6 +63,14 @@ export default function TradeDetailScreen() {
   const [comment, setComment] = useState('');
   const [msg, setMsg] = useState('');
 
+  // The chat composer sits at the bottom of the scroll — pad by the keyboard
+  // height and follow it so typing never happens behind the keyboard.
+  const scrollRef = useRef<ScrollView>(null);
+  const keyboardHeight = useKeyboardHeight();
+  useEffect(() => {
+    if (keyboardHeight > 0) scrollRef.current?.scrollToEnd({ animated: true });
+  }, [keyboardHeight]);
+
   const otherId = trade ? (user?.id === trade.initiator.id ? trade.counterparty.id : trade.initiator.id) : undefined;
 
   // Find/create this trade's chat thread so the discussion lives inline.
@@ -107,7 +116,11 @@ export default function TradeDetailScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
+    <ScrollView
+      ref={scrollRef}
+      contentContainerStyle={{ padding: 16, paddingBottom: 32 + keyboardHeight }}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.statusRow}>
         <Text style={styles.statusText}>{trade.status.toUpperCase()}</Text>
         <Link href={`/user/${other.id}`} style={styles.link}>

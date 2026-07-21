@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
+import { useKeyboardHeight } from '../src/hooks/useKeyboardHeight';
 import { useTheme } from '../src/theme';
 import { track } from '../src/services/analytics';
 import { supabase } from '../src/services/supabase/client';
@@ -19,6 +20,7 @@ export default function FeedbackScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const router = useRouter();
+  const keyboardHeight = useKeyboardHeight(); // keep the Send button reachable
   const [kind, setKind] = useState<(typeof KINDS)[number]['key']>('feedback');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -59,7 +61,7 @@ export default function FeedbackScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 16 + keyboardHeight }]} keyboardShouldPersistTaps="handled">
       <Text style={[styles.label, { color: colors.text }]}>What's this about?</Text>
       <View style={styles.chips}>
         {KINDS.map((k) => (

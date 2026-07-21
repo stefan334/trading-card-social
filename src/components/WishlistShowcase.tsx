@@ -4,23 +4,26 @@ import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useCardPrices } from '../hooks/useCardPrices';
+import { useOwnedCards } from '../hooks/useOwnedCards';
 import { useWishlist } from '../hooks/useWishlist';
 import { useTheme } from '../theme';
 import { formatPrice } from '../utils/time';
 
 /**
  * A user's public wishlist shown on their profile — what they're chasing. When
- * viewing someone else, each card gets an "Offer" button that opens the trade
- * builder with them (you might own something they want).
+ * viewing someone else, a wishlisted card gets an "Offer" button only if YOU
+ * own a copy — offering a card you don't have makes no sense.
  */
 export function WishlistShowcase({ userId }: { userId: string }) {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { data: cards } = useWishlist(userId);
   const { data: prices } = useCardPrices((cards ?? []).map((c) => c.cardId));
+  const viewingOther = !!user && user.id !== userId;
+  const { data: myCards } = useOwnedCards(viewingOther ? user!.id : undefined);
   if (!cards?.length) return null;
 
-  const canOffer = !!user && user.id !== userId;
+  const myCardIds = new Set((myCards ?? []).map((c) => c.cardId));
 
   return (
     <View style={[styles.section, { borderTopColor: colors.borderLight }]}>
@@ -44,7 +47,7 @@ export function WishlistShowcase({ userId }: { userId: string }) {
                 ) : null}
               </Pressable>
             </Link>
-            {canOffer ? (
+            {viewingOther && myCardIds.has(c.cardId) ? (
               <Link href={`/trade/new?with=${userId}` as any} asChild>
                 <Pressable style={styles.offerBtn}>
                   <Ionicons name="swap-horizontal" size={13} color="white" />

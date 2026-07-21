@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBatch } from '../src/context/BatchContext';
 import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
@@ -13,6 +14,7 @@ import { useTheme } from '../src/theme';
 import { getProvider, listProviders } from '../src/services/tcg-providers';
 import { ocrAvailable, recognizeCard } from '../src/services/ocr';
 import type { Card } from '../src/types/card';
+import { FINISHES, type CardFinish } from '../src/types/domain';
 
 interface Captured {
   uri: string;
@@ -28,6 +30,7 @@ interface Captured {
 export default function ScanScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { items: cart, add: addToCart } = useBatch();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -37,6 +40,7 @@ export default function ScanScreen() {
   const [query, setQuery] = useState('');
   const debounced = useDebouncedValue(query);
   const [selected, setSelected] = useState<Card | null>(null);
+  const [finish, setFinish] = useState<CardFinish>('normal');
   const [zoom, setZoom] = useState(0);
   const [detecting, setDetecting] = useState(false);
   const [detectedNumber, setDetectedNumber] = useState<string | null>(null);
@@ -61,6 +65,7 @@ export default function ScanScreen() {
     setPhoto(null);
     setQuery('');
     setSelected(null);
+    setFinish('normal'); // each new scan starts as a normal print
     setDetectedNumber(null);
   }
 
@@ -83,7 +88,7 @@ export default function ScanScreen() {
   // Drop the confirmed card into the cart and jump back to the camera for the next.
   function addToCartAndContinue() {
     if (!selected || !set) return;
-    addToCart(selected, set);
+    addToCart(selected, set, finish);
     reset();
   }
 
@@ -113,7 +118,8 @@ export default function ScanScreen() {
         <Pressable style={styles.done} onPress={() => router.back()}>
           <Text style={styles.doneText}>Done{cart.length ? ` · ${cart.length} in cart` : ''}</Text>
         </Pressable>
-        <View style={styles.zoomBar}>
+        {/* Bottom controls ride above the system nav bar (edge-to-edge Android). */}
+        <View style={[styles.zoomBar, { bottom: 120 + insets.bottom }]}>
           <Pressable style={styles.zoomBtn} onPress={() => setZoom((z) => Math.max(0, z - 0.1))}>
             <Ionicons name="remove" size={22} color="white" />
           </Pressable>
@@ -122,7 +128,7 @@ export default function ScanScreen() {
             <Ionicons name="add" size={22} color="white" />
           </Pressable>
         </View>
-        <Pressable style={styles.shutter} onPress={capture} />
+        <Pressable style={[styles.shutter, { bottom: 32 + insets.bottom }]} onPress={capture} />
       </View>
     );
   }
@@ -137,6 +143,19 @@ export default function ScanScreen() {
         </View>
         <Text style={[styles.confirmName, { color: colors.text }]}>{selected.name}</Text>
         <Text style={[styles.muted, { color: colors.textMuted }]}>#{selected.number}{set ? ` · ${set.name}` : ''}</Text>
+
+        {/* Which print is this physical copy? Sticks per card; resets each scan. */}
+        <View style={styles.finishRow}>
+          {FINISHES.map((f) => (
+            <Pressable
+              key={f.key}
+              style={[styles.finishChip, f.key === finish && styles.finishChipOn]}
+              onPress={() => setFinish(f.key)}
+            >
+              <Text style={[styles.finishChipText, f.key === finish && styles.finishChipTextOn]}>{f.label}</Text>
+            </Pressable>
+          ))}
+        </View>
 
         <Pressable style={[styles.primary, setLoading && styles.disabled]} onPress={addToCartAndContinue} disabled={setLoading}>
           {setLoading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>Add to cart &amp; scan next</Text>}
@@ -240,4 +259,9 @@ const styles = StyleSheet.create({
   confirmRow: { flexDirection: 'row', gap: 12 },
   confirmImg: { width: 120, height: 168, borderRadius: 8 },
   confirmName: { fontSize: 20, fontWeight: '800', marginTop: 6 },
+  finishRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 2, marginBottom: 4 },
+  finishChip: { borderWidth: 1, borderColor: '#D1D5DB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  finishChipOn: { backgroundColor: '#6D28D9', borderColor: '#6D28D9' },
+  finishChipText: { color: '#6B7280', fontWeight: '600', fontSize: 13 },
+  finishChipTextOn: { color: 'white' },
 });

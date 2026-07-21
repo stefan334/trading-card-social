@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
@@ -55,11 +56,24 @@ function Row({ item }: { item: InboxItem }) {
   );
 }
 
+type InboxFilter = 'all' | 'dm' | 'trade';
+const FILTERS: { key: InboxFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'dm', label: 'Chats' },
+  { key: 'trade', label: 'Trades' },
+];
+
 /** Inbox tab: trades + direct messages in one place (see useInbox). */
 export default function InboxScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { items, isLoading } = useInbox();
+  const [filter, setFilter] = useState<InboxFilter>('all');
+
+  const filtered = useMemo(
+    () => (filter === 'all' ? items : items.filter((i) => i.kind === filter)),
+    [items, filter]
+  );
 
   if (!isSupabaseConfigured) {
     return (
@@ -88,12 +102,34 @@ export default function InboxScreen() {
   }
 
   return (
-    <FlatList
-      data={items}
-      keyExtractor={(i) => i.key}
-      renderItem={({ item }) => <Row item={item} />}
-      ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />}
-    />
+    <View style={{ flex: 1 }}>
+      {/* Chats / trades filter — the inbox mixes both, let people split them. */}
+      <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+        {FILTERS.map((f) => {
+          const on = filter === f.key;
+          return (
+            <Pressable
+              key={f.key}
+              style={[styles.filterBtn, on && { backgroundColor: colors.card }]}
+              onPress={() => setFilter(f.key)}
+            >
+              <Text style={[styles.filterText, { color: on ? colors.text : colors.textMuted }]}>{f.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <FlatList
+        data={filtered}
+        keyExtractor={(i) => i.key}
+        renderItem={({ item }) => <Row item={item} />}
+        ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.borderLight }]} />}
+        ListEmptyComponent={
+          <Text style={[styles.muted, { color: colors.textMuted, marginTop: 24 }]}>
+            {filter === 'dm' ? 'No chats yet.' : 'No trades yet.'}
+          </Text>
+        }
+      />
+    </View>
   );
 }
 
@@ -115,6 +151,9 @@ const styles = StyleSheet.create({
   badge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badgeText: { color: 'white', fontSize: 11, fontWeight: '700' },
   sep: { height: 1, backgroundColor: '#F3F4F6', marginLeft: 72 },
+  filterBar: { flexDirection: 'row', margin: 12, marginBottom: 4, borderRadius: 10, padding: 3, gap: 3 },
+  filterBtn: { flex: 1, alignItems: 'center', paddingVertical: 7, borderRadius: 8 },
+  filterText: { fontWeight: '700', fontSize: 13 },
   findButton: { marginTop: 20, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24 },
   findText: { color: 'white', fontWeight: '700' },
 });

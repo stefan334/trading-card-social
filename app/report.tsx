@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
+import { useKeyboardHeight } from '../src/hooks/useKeyboardHeight';
 import { track } from '../src/services/analytics';
 import { useTheme } from '../src/theme';
 import { supabase } from '../src/services/supabase/client';
@@ -15,6 +16,7 @@ export default function ReportScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { colors } = useTheme();
+  const keyboardHeight = useKeyboardHeight(); // keep Submit reachable while typing
   const [reason, setReason] = useState<string | null>(null);
   const [details, setDetails] = useState('');
   const [sending, setSending] = useState(false);
@@ -56,7 +58,7 @@ export default function ReportScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.container, { paddingBottom: 16 + keyboardHeight }]} keyboardShouldPersistTaps="handled">
       <Text style={[styles.title, { color: colors.text }]}>Report {name ? `@${name}` : 'this profile'}</Text>
       <Text style={[styles.sub, { color: colors.textMuted }]}>Tell us what's wrong. Reports are confidential.</Text>
 
