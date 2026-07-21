@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { CollectionBySet } from '../../src/components/CollectionBySet';
 import { SupabaseSetupNotice } from '../../src/components/SupabaseSetupNotice';
@@ -24,6 +24,7 @@ export default function CollectionScreen() {
   const games = listProviders();
   const [gameId, setGameId] = useState(games[0]?.gameId ?? 'pokemon');
 
+  const [setQuery, setSetQuery] = useState('');
   const { data: groups, isLoading } = useCollectionBySet(user?.id, gameId);
   const { data: sets, isLoading: setsLoading } = useSets(gameId);
 
@@ -67,10 +68,26 @@ export default function CollectionScreen() {
       )}
 
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Browse Sets</Text>
+      <View style={[styles.setSearch, { backgroundColor: colors.surface }]}>
+        <Ionicons name="search" size={16} color={colors.textFaint} />
+        <TextInput
+          style={[styles.setSearchInput, { color: colors.text }]}
+          placeholder="Filter sets by name"
+          placeholderTextColor={colors.textFaint}
+          value={setQuery}
+          onChangeText={setSetQuery}
+          autoCapitalize="none"
+        />
+        {setQuery.length > 0 && (
+          <Pressable hitSlop={8} onPress={() => setSetQuery('')}>
+            <Ionicons name="close-circle" size={16} color={colors.textFaint} />
+          </Pressable>
+        )}
+      </View>
       {setsLoading ? (
         <ActivityIndicator style={{ marginTop: 8 }} />
       ) : (
-        sets?.map((item) => (
+        (sets ?? []).filter((it) => it.name.toLowerCase().includes(setQuery.trim().toLowerCase())).map((item) => (
           <Link key={item.id} href={`/set/${encodeURIComponent(item.id)}`} asChild>
             <Pressable style={styles.setRow}>
               {item.imageUrl && <Image source={{ uri: item.imageUrl }} style={styles.setLogo} contentFit="contain" />}
@@ -109,6 +126,8 @@ const styles = StyleSheet.create({
   chipSelected: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
   chipText: { color: '#374151', fontWeight: '600' },
   chipTextSelected: { color: 'white' },
+  setSearch: { flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16, marginBottom: 6, paddingHorizontal: 12, height: 38, borderRadius: 10 },
+  setSearchInput: { flex: 1, fontSize: 14, padding: 0 },
   setRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 12 },
   setLogo: { width: 48, height: 32 },
   setName: { fontSize: 15, fontWeight: '600' },

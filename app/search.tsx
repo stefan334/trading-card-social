@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
+import { SetPickerModal } from '../src/components/SetPickerModal';
 import { useCardSearch } from '../src/hooks/useCardSearch';
 import { useDebouncedValue } from '../src/hooks/useDebouncedValue';
 import { useUserSearch } from '../src/hooks/useUserSearch';
+import { dbGetSetCards } from '../src/services/catalog';
 import { listProviders } from '../src/services/tcg-providers';
 import { useTheme } from '../src/theme';
 import { formatPrice } from '../src/utils/time';
@@ -25,11 +28,24 @@ export default function SearchScreen() {
   const debounced = useDebouncedValue(query);
   const gameId = listProviders()[0]?.gameId ?? 'pokemon';
 
-  const cardResults = useCardSearch(mode === 'cards' ? debounced : '', gameId);
+  // Optional set filter for card search ("emma 76" style queries also work).
+  const [setFilter, setSetFilter] = useState<{ id: string; name: string } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const cardResults = useCardSearch(mode === 'cards' ? debounced : '', gameId, setFilter?.id);
   const userResults = useUserSearch(mode === 'users' ? debounced : '');
 
-  const loading = mode === 'cards' ? cardResults.isLoading : userResults.isLoading;
-  const showHint = debounced.trim().length < 2;
+  // With a set selected and no query yet, show the whole set to browse.
+  const browsingSet = mode === 'cards' && !!setFilter && debounced.trim().length < 2;
+  const setCards = useQuery({
+    queryKey: ['search-set-cards', setFilter?.id],
+    enabled: browsingSet,
+    queryFn: () => dbGetSetCards(setFilter!.id),
+  });
+
+  const cardData = browsingSet ? setCards.data ?? [] : cardResults.data ?? [];
+  const loading = mode === 'cards' ? (browsingSet ? setCards.isLoading : cardResults.isLoading) : userResults.isLoading;
+  const showHint = debounced.trim().length < 2 && !browsingSet;
 
   return (
     <View style={styles.container}>
@@ -61,14 +77,35 @@ export default function SearchScreen() {
         />
       </View>
 
+      {mode === 'cards' && (
+        <View style={styles.filterRow}>
+          <Pressable
+            style={[styles.setChip, { borderColor: setFilter ? colors.primary : colors.border }]}
+            onPress={() => setPickerOpen(true)}
+          >
+            <Ionicons name="albums-outline" size={15} color={setFilter ? colors.primary : colors.textMuted} />
+            <Text style={[styles.setChipText, { color: setFilter ? colors.primary : colors.textMuted }]} numberOfLines={1}>
+              {setFilter ? setFilter.name : 'All sets'}
+            </Text>
+          </Pressable>
+          {setFilter ? (
+            <Pressable hitSlop={10} onPress={() => setSetFilter(null)}>
+              <Ionicons name="close-circle" size={20} color={colors.textFaint} />
+            </Pressable>
+          ) : null}
+        </View>
+      )}
+
       {loading ? (
         <ActivityIndicator style={{ marginTop: 24 }} />
       ) : showHint ? (
-        <Text style={[styles.hint, { color: colors.textFaint }]}>Type at least 2 characters.</Text>
+        <Text style={[styles.hint, { color: colors.textFaint }]}>
+          Type a name — or a name + number like “Emma 76”. Pick a set to browse or narrow results.
+        </Text>
       ) : mode === 'cards' ? (
         <FlatList
           key="cards-grid"
-          data={cardResults.data ?? []}
+          data={cardData}
           keyExtractor={(c) => c.id}
           numColumns={3}
           columnWrapperStyle={styles.row}
@@ -115,6 +152,13 @@ export default function SearchScreen() {
           )}
         />
       )}
+
+      <SetPickerModal
+        visible={pickerOpen}
+        gameId={gameId}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(s) => setSetFilter({ id: s.id, name: s.name })}
+      />
     </View>
   );
 }
@@ -122,6 +166,9 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   toggle: { flexDirection: 'row', gap: 8, padding: 12 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingTop: 10 },
+  setChip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, maxWidth: '80%' },
+  setChipText: { fontWeight: '600', fontSize: 13 },
   toggleBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, backgroundColor: '#F3F4F6', alignItems: 'center' },
   toggleActive: { backgroundColor: '#2563EB' },
   toggleText: { fontWeight: '700', color: '#374151' },

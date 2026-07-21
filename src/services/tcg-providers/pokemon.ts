@@ -130,10 +130,11 @@ export const pokemonProvider: TcgProvider = {
     return mapSet(data.data);
   },
 
-  async searchCards({ setId, name, page = 1, pageSize = 25 }) {
+  async searchCards({ setId, name, number, page = 1, pageSize = 25 }) {
     const filters: string[] = [];
     if (setId) filters.push(`set.id:${stripNamespace(setId)}`);
     if (name) filters.push(`name:"*${name}*"`);
+    if (number) filters.push(`number:${parseInt(number, 10)}`);
 
     const data = await apiFetch<{ data: PokemonApiCard[]; page: number; totalCount: number }>('/cards', {
       q: filters.length ? filters.join(' ') : undefined,

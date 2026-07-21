@@ -43,7 +43,7 @@ export interface TcgProvider {
   displayName: string;
   searchSets(query?: string): Promise<CardSet[]>;
   getSet(setId: string): Promise<CardSet>;
-  searchCards(params: { setId?: string; name?: string; page?: number; pageSize?: number }): Promise<{
+  searchCards(params: { setId?: string; name?: string; number?: string; page?: number; pageSize?: number }): Promise<{
     cards: Card[];
     page: number;
     totalCount: number;

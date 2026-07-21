@@ -84,15 +84,27 @@ export async function dbGetSet(setId: string): Promise<CardSet | null> {
   };
 }
 
-/** Fuzzy name search (trigram index). null = no DB rows (fall back to API). */
-export async function dbSearchCards(gameId: string, name: string, limit = 30): Promise<Card[] | null> {
+/**
+ * Fuzzy name search (trigram index), optionally narrowed to a collector number
+ * ("emma 76") and/or a set. null = no DB rows (fall back to API).
+ */
+export async function dbSearchCards(
+  gameId: string,
+  name: string,
+  limit = 30,
+  opts?: { number?: string | null; setId?: string | null }
+): Promise<Card[] | null> {
   if (!isSupabaseConfigured || !supabase) return null;
-  const { data, error } = await supabase
-    .from('cards')
-    .select(CARD_COLS)
-    .eq('game_id', gameId)
-    .ilike('name', `%${name}%`)
-    .limit(limit);
+  let q = supabase.from('cards').select(CARD_COLS).eq('game_id', gameId);
+  if (name) q = q.ilike('name', `%${name}%`);
+  if (opts?.number) {
+    // Numbers are text ("76", "076", "SV076") — match the raw token and its
+    // zero-stripped form so "emma 076" and "emma 76" both hit.
+    const stripped = String(parseInt(opts.number, 10));
+    q = q.in('number', [...new Set([opts.number, stripped])]);
+  }
+  if (opts?.setId) q = q.eq('set_id', opts.setId);
+  const { data, error } = await q.limit(limit);
   if (error || !data || data.length === 0) return null;
   return data.map(rowToCard);
 }

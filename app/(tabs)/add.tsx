@@ -14,13 +14,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SetPickerModal } from '../../src/components/SetPickerModal';
 import { useBatch } from '../../src/context/BatchContext';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCardSearch } from '../../src/hooks/useCardSearch';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
 import { useScreenView } from '../../src/services/analytics';
-import { dbGetSet, dbGetSetCards, dbGetSets } from '../../src/services/catalog';
+import { dbGetSet, dbGetSetCards } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
 import type { Card } from '../../src/types/card';
 import type { CardCondition } from '../../src/types/domain';
@@ -60,8 +61,6 @@ export default function AddScreen() {
   // Browse-by-set: pick a set and add straight from its full card pool.
   const [browseSet, setBrowseSet] = useState<{ id: string; name: string } | null>(null);
   const [setPickerOpen, setSetPickerOpen] = useState(false);
-  const [setSearch, setSetSearch] = useState('');
-  const { data: allSets } = useQuery({ queryKey: ['add-sets', gameId], queryFn: () => dbGetSets(gameId) });
   const { data: setCards, isLoading: setCardsLoading } = useQuery({
     queryKey: ['add-set-cards', browseSet?.id],
     enabled: !!browseSet,
@@ -72,7 +71,6 @@ export default function AddScreen() {
   const displayCards: Card[] = browsing ? setCards ?? [] : results ?? [];
   const displayLoading = browsing ? setCardsLoading : isLoading;
   const showGrid = browsing || debounced.trim().length >= 2;
-  const filteredSets = (allSets ?? []).filter((s) => s.name.toLowerCase().includes(setSearch.trim().toLowerCase()));
 
   const [busyId, setBusyId] = useState<string | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -299,55 +297,12 @@ export default function AddScreen() {
         </View>
       </Modal>
 
-      {/* Set picker */}
-      <Modal visible={setPickerOpen} animationType="slide" onRequestClose={() => setSetPickerOpen(false)}>
-        <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <View style={styles.pickerHeader}>
-          <Text style={[styles.pickerTitle, { color: colors.text }]}>Browse a set</Text>
-          <Pressable hitSlop={8} onPress={() => setSetPickerOpen(false)}>
-            <Ionicons name="close" size={26} color={colors.text} />
-          </Pressable>
-        </View>
-        <View style={[styles.pickerSearch, { backgroundColor: colors.surface }]}>
-          <Ionicons name="search" size={18} color="#9CA3AF" />
-          <TextInput
-            style={[styles.input, { color: colors.text }]}
-            placeholder="Find a set"
-            placeholderTextColor="#9CA3AF"
-            value={setSearch}
-            onChangeText={setSetSearch}
-            autoCapitalize="none"
-          />
-        </View>
-        <FlatList
-          data={filteredSets}
-          keyExtractor={(s) => s.id}
-          contentContainerStyle={{ paddingBottom: 24 }}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.setRow}
-              onPress={() => {
-                setBrowseSet({ id: item.id, name: item.name });
-                setSetPickerOpen(false);
-                setSetSearch('');
-              }}
-            >
-              {item.imageUrl ? (
-                <Image source={{ uri: item.imageUrl }} style={styles.setLogo} contentFit="contain" />
-              ) : (
-                <View style={styles.setLogo} />
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.setName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.setMeta, { color: colors.textMuted }]}>{item.series ? `${item.series} · ` : ''}{item.totalCards} cards</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-            </Pressable>
-          )}
-          ListEmptyComponent={<Text style={[styles.muted, { color: colors.textMuted }]}>No sets found.</Text>}
-        />
-        </View>
-      </Modal>
+      <SetPickerModal
+        visible={setPickerOpen}
+        gameId={gameId}
+        onClose={() => setSetPickerOpen(false)}
+        onSelect={(s) => setBrowseSet({ id: s.id, name: s.name })}
+      />
     </View>
   );
 }
