@@ -32,20 +32,31 @@ if (!DATABASE_URL) {
 
 const ns = (id) => `${GAME_ID}:${id}`;
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function apiFetch(path, params) {
   const url = new URL(API + path);
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined) url.searchParams.set(k, String(v));
   }
-  for (let attempt = 0; attempt < 4; attempt++) {
-    const res = await fetch(url, { headers: API_KEY ? { 'X-Api-Key': API_KEY } : undefined });
-    if (res.ok) return res.json();
-    // Back off on rate limit / transient 5xx, then retry.
-    if (res.status === 429 || res.status >= 500) {
-      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-      continue;
+  // The API has flaky days (504s, hangs): retry hard with exponential backoff
+  // and a per-request timeout so a hung socket can't stall the whole sweep.
+  for (let attempt = 0; attempt < 7; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: API_KEY ? { 'X-Api-Key': API_KEY } : undefined,
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (res.ok) return res.json();
+      if (res.status !== 429 && res.status < 500) {
+        throw Object.assign(new Error(`API ${res.status}: ${await res.text()}`), { fatal: true });
+      }
+      // 429/5xx → fall through to backoff.
+    } catch (e) {
+      if (e?.fatal) throw e;
+      // timeout / network error / retryable status → backoff below.
     }
-    throw new Error(`API ${res.status}: ${await res.text()}`);
+    await sleep(Math.min(60_000, 2_000 * 2 ** attempt));
   }
   throw new Error(`API failed after retries: ${url}`);
 }
@@ -143,22 +154,33 @@ async function upsertCards(client, cards) {
 async function syncCards(client) {
   let page = 1;
   let total = 0;
+  let skipped = 0;
+  let totalCount = Infinity;
   for (;;) {
-    const res = await apiFetch('/cards', {
-      page,
-      pageSize: PAGE_SIZE,
-      orderBy: 'set.releaseDate,number',
-      select: 'id,name,number,rarity,images,set,cardmarket,tcgplayer',
-    });
-    const cards = res.data ?? [];
-    if (!cards.length) break;
-    await upsertCards(client, cards);
-    total += cards.length;
-    console.log(`cards page ${page}: +${cards.length} (total ${total}/${res.totalCount})`);
-    if (page * PAGE_SIZE >= (res.totalCount ?? 0)) break;
+    try {
+      const res = await apiFetch('/cards', {
+        page,
+        pageSize: PAGE_SIZE,
+        orderBy: 'set.releaseDate,number',
+        select: 'id,name,number,rarity,images,set,cardmarket,tcgplayer',
+      });
+      const cards = res.data ?? [];
+      totalCount = res.totalCount ?? totalCount;
+      if (!cards.length) break;
+      await upsertCards(client, cards);
+      total += cards.length;
+      console.log(`cards page ${page}: +${cards.length} (total ${total}/${totalCount})`);
+    } catch (e) {
+      // A page that fails even after retries shouldn't kill the sweep — upserts
+      // are idempotent, so tomorrow's run (or the next) fills the hole.
+      skipped++;
+      console.log(`cards page ${page}: SKIPPED (${e?.message ?? e})`);
+      if (skipped > 10) throw new Error(`too many skipped pages (${skipped}) — aborting`);
+    }
+    if (page * PAGE_SIZE >= totalCount) break;
     page++;
   }
-  console.log(`cards upserted: ${total}`);
+  console.log(`cards upserted: ${total}${skipped ? ` (${skipped} pages skipped)` : ''}`);
   return total;
 }
 
