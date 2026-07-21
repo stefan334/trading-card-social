@@ -124,6 +124,38 @@ then, registration silently no-ops — nothing breaks.
 
 ---
 
+## 6b. Local Android builds (free — no EAS quota)
+
+One-time setup already done on this PC: Android SDK at `C:\Android`
+(cmdline-tools + platform-tools, licenses accepted), `ANDROID_HOME` set,
+`android/` generated via prebuild (gitignored), `android/local.properties`
+points at the SDK.
+
+Build a shareable APK any time:
+
+```powershell
+cd D:\Projects\trading-card-social
+npx expo prebuild -p android      # only after native config changes (app.json plugins, new native deps)
+cd android
+.\gradlew assembleRelease
+# → android\app\build\outputs\apk\release\app-release.apk
+```
+
+Dev client: `.\gradlew assembleDebug` (→ `...\apk\debug\app-debug.apk`).
+
+Notes:
+- Local APKs are **debug-signed** → different signature from EAS builds:
+  testers must uninstall the old app ONCE, then local builds update over
+  each other fine. To match the EAS signature instead: `eas credentials`
+  → Android → credentials.json → download, then wire the keystore into
+  `android/app/build.gradle` signingConfigs.
+- Prebuild flips `package.json` scripts to `expo run:*` — flip back to
+  `expo start --*`.
+- EAS cloud quota resets monthly (this month: Aug 1) — keep cloud builds
+  for store-ready signed releases.
+
+---
+
 ## 7. Recommended before/at launch
 
 - [ ] **Crash reporting** (Sentry `@sentry/react-native`) — needs a DSN from your Sentry account; ask and I'll wire it in.
