@@ -45,7 +45,7 @@ export default function CheckoutScreen() {
   });
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<string | null>(null); // order id once paid
 
   if (isLoading) return <ActivityIndicator style={styles.center} />;
   if (!listing || listing.salePrice == null) {
@@ -92,7 +92,7 @@ export default function CheckoutScreen() {
         return;
       }
       track('order_paid', { listingId: listing!.userCardId, total });
-      setDone(true);
+      setDone(session.order_id);
     } catch (e: any) {
       setError(e?.message ?? 'Something went wrong');
     } finally {
@@ -108,8 +108,11 @@ export default function CheckoutScreen() {
         <Text style={[styles.doneText, { color: colors.textMuted }]}>
           {`The seller has been notified to ship ${listing.name}. Your money is held safely and only released after you confirm delivery.`}
         </Text>
-        <Pressable style={[styles.payBtn, { backgroundColor: colors.primary }]} onPress={() => router.back()}>
-          <Text style={styles.payText}>Done</Text>
+        <Pressable
+          style={[styles.payBtn, { backgroundColor: colors.primary }]}
+          onPress={() => router.replace(`/order/${done}` as any)}
+        >
+          <Text style={styles.payText}>View order</Text>
         </Pressable>
       </View>
     );

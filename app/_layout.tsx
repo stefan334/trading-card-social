@@ -91,6 +91,8 @@ function RootNavigator() {
       <Stack.Screen name="blocked" options={{ headerShown: true, title: 'Blocked users' }} />
       <Stack.Screen name="seller-payouts" options={{ headerShown: true, title: 'Seller payouts' }} />
       <Stack.Screen name="checkout/[id]" options={{ headerShown: true, title: 'Checkout' }} />
+      <Stack.Screen name="orders" options={{ headerShown: true, title: 'My orders' }} />
+      <Stack.Screen name="order/[id]" options={{ headerShown: true, title: 'Order' }} />
       <Stack.Screen name="connections" options={{ headerShown: true, title: 'People' }} />
     </Stack>
   );
