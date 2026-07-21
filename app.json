@@ -12,6 +12,7 @@
       "bundleIdentifier": "com.cardlink.app"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "allowBackup": false,
       "package": "com.cardlink.app",
       "adaptiveIcon": {
