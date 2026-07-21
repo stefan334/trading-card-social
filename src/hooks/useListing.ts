@@ -19,6 +19,7 @@ export interface ListingDetail {
   listedAt: string | null;
   isForTrade: boolean;
   listingPhotos: string[];
+  listingDescription: string | null;
   owner: {
     id: string;
     username: string;
@@ -43,7 +44,7 @@ export function useListing(userCardId: string | undefined) {
       const { data, error } = await supabase!
         .from('user_cards')
         .select(
-          'id, condition, grade, finish, sale_price, listed_at, is_for_trade, listing_photos, card:cards(id, name, number, image_url_small, image_url_large, set_id, set:card_sets(name)), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, trades_completed, is_banned)'
+          'id, condition, grade, finish, sale_price, listed_at, is_for_trade, listing_photos, listing_description, card:cards(id, name, number, image_url_small, image_url_large, set_id, set:card_sets(name)), owner:profiles(id, username, display_name, avatar_url, latitude, longitude, location_name, trades_completed, is_banned)'
         )
         .eq('id', userCardId!)
         .maybeSingle();
@@ -68,6 +69,7 @@ export function useListing(userCardId: string | undefined) {
         listedAt: r.listed_at,
         isForTrade: r.is_for_trade,
         listingPhotos: r.listing_photos ?? [],
+        listingDescription: r.listing_description ?? null,
         owner: r.owner
           ? {
               id: r.owner.id,

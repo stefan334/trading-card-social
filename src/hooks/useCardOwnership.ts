@@ -12,6 +12,7 @@ export interface OwnedCopy {
   isForTrade: boolean;
   salePrice: number | null;
   listingPhotos: string[];
+  listingDescription: string | null;
 }
 
 /** The current user's owned copies of a specific card (empty if none / signed out). */
@@ -25,7 +26,7 @@ export function useCardOwnership(cardId: string | undefined) {
     queryFn: async (): Promise<OwnedCopy[]> => {
       const { data, error } = await supabase!
         .from('user_cards')
-        .select('id, quantity, condition, grade, finish, is_for_trade, sale_price, listing_photos')
+        .select('id, quantity, condition, grade, finish, is_for_trade, sale_price, listing_photos, listing_description')
         .eq('owner_id', meId!)
         .eq('card_id', cardId!)
         .order('acquired_at', { ascending: true });
@@ -39,6 +40,7 @@ export function useCardOwnership(cardId: string | undefined) {
         isForTrade: r.is_for_trade,
         salePrice: r.sale_price != null ? Number(r.sale_price) : null,
         listingPhotos: r.listing_photos ?? [],
+        listingDescription: r.listing_description ?? null,
       }));
     },
   });

@@ -93,6 +93,7 @@ function RootNavigator() {
       <Stack.Screen name="checkout/[id]" options={{ headerShown: true, title: 'Checkout' }} />
       <Stack.Screen name="orders" options={{ headerShown: true, title: 'My orders' }} />
       <Stack.Screen name="order/[id]" options={{ headerShown: true, title: 'Order' }} />
+      <Stack.Screen name="list-card/[id]" options={{ headerShown: true, title: 'List card', presentation: 'modal' }} />
       <Stack.Screen name="connections" options={{ headerShown: true, title: 'People' }} />
     </Stack>
   );

@@ -1,15 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCardOwnership, type OwnedCopy } from '../../src/hooks/useCardOwnership';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
-import { uploadImage } from '../../src/services/supabase/storage';
 import { useIsWishlisted, useWishlistActions } from '../../src/hooks/useWishlistActions';
 import { getProvider } from '../../src/services/tcg-providers';
 import { useTheme } from '../../src/theme';
@@ -28,56 +26,11 @@ const CONDITION_LABEL: Record<CardCondition, string> = {
 const GRADERS = ['PSA', 'BGS', 'CGC', 'SGC'];
 const GRADE_VALUES = ['10', '9.5', '9', '8.5', '8', '7', '6'];
 
-/** One owned copy: condition + for-trade toggle + (when listed) an asking price + photos. */
+/** One owned copy: condition badges + listing state; listing happens in the composer. */
 function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { remove, toggleForTrade, setSalePrice, setListingPhotos } = useCollectionActions();
-  const [price, setPrice] = useState(copy.salePrice != null ? String(copy.salePrice) : '');
-  const [uploading, setUploading] = useState(false);
-
-  // Photos of the physical card: required (>=1) before the copy can be BOUGHT;
-  // trade-only listings work without them.
-  async function addPhotos() {
-    if (!user || uploading) return;
-    const remaining = 5 - copy.listingPhotos.length;
-    if (remaining <= 0) return;
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsMultipleSelection: true,
-      selectionLimit: remaining,
-      quality: 0.6,
-      base64: true,
-    });
-    if (res.canceled) return;
-    setUploading(true);
-    try {
-      const urls: string[] = [];
-      for (const a of res.assets) {
-        if (a.base64) urls.push(await uploadImage(a.base64, user.id, 'listing'));
-      }
-      if (urls.length) {
-        setListingPhotos.mutate({ userCardId: copy.id, photos: [...copy.listingPhotos, ...urls], cardId });
-      }
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  function removePhoto(url: string) {
-    setListingPhotos.mutate({
-      userCardId: copy.id,
-      photos: copy.listingPhotos.filter((p) => p !== url),
-      cardId,
-    });
-  }
-
-  function savePrice() {
-    const trimmed = price.trim().replace(',', '.');
-    const n = trimmed === '' ? null : Number(trimmed);
-    if (n !== null && Number.isNaN(n)) return;
-    if (n !== copy.salePrice) setSalePrice.mutate({ userCardId: copy.id, price: n, cardId });
-  }
+  const router = useRouter();
+  const { remove } = useCollectionActions();
 
   return (
     <View style={[styles.copyBlock, { borderTopColor: colors.borderLight }]}>
@@ -96,73 +49,33 @@ function CopyRow({ copy, cardId }: { copy: OwnedCopy; cardId?: string }) {
             <Text style={styles.finishBadge}>{copy.finish.replace(/_/g, ' ')}</Text>
           ) : null}
         </View>
-        <View style={styles.tradeToggle}>
-          <Text style={[styles.tradeText, { color: colors.textMuted }]}>For trade</Text>
-          <Switch
-            value={copy.isForTrade}
-            onValueChange={(v) => toggleForTrade.mutate({ userCardId: copy.id, isForTrade: v, cardId })}
-          />
-        </View>
         <Pressable onPress={() => remove.mutate({ userCardId: copy.id, cardId })} hitSlop={8}>
           <Text style={styles.remove}>Remove</Text>
         </Pressable>
       </View>
-      {copy.isForTrade && (
-        <>
-          <View style={styles.priceRow}>
-            <Text style={styles.euro}>€</Text>
-            <TextInput
-              style={[styles.priceInput, { borderColor: colors.border, color: colors.text }]}
-              placeholder="Asking price"
-              placeholderTextColor={colors.textFaint}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              value={price}
-              onChangeText={setPrice}
-              onBlur={savePrice}
-              onSubmitEditing={savePrice}
-            />
-            <Pressable style={styles.priceSave} onPress={savePrice} disabled={setSalePrice.isPending}>
-              {setSalePrice.isPending ? (
-                <ActivityIndicator color="white" size="small" />
-              ) : (
-                <Text style={styles.priceSaveText}>Set</Text>
-              )}
-            </Pressable>
-          </View>
-          <Text style={styles.priceHint}>{price.trim() ? `Listed at €${price.trim()}` : 'Leave blank = open to card trades'}</Text>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoStrip}>
-            {copy.listingPhotos.map((url) => (
-              <View key={url} style={styles.photoWrap}>
-                <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
-                <Pressable style={styles.photoRemove} hitSlop={6} onPress={() => removePhoto(url)}>
-                  <Ionicons name="close" size={12} color="white" />
-                </Pressable>
-              </View>
-            ))}
-            {copy.listingPhotos.length < 5 ? (
-              <Pressable
-                style={[styles.photoAdd, { borderColor: colors.border }]}
-                onPress={addPhotos}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <ActivityIndicator size="small" />
-                ) : (
-                  <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
-                )}
-              </Pressable>
-            ) : null}
-          </ScrollView>
-          <Text style={styles.priceHint}>
-            {copy.listingPhotos.length === 0
-              ? price.trim()
-                ? 'Add photos of your actual card — required before buyers can purchase'
-                : 'Add photos of your actual card (required if you want to sell)'
-              : `${copy.listingPhotos.length}/5 photos — buyers see these first`}
+      {copy.isForTrade ? (
+        <Pressable
+          style={[styles.listedRow, { borderColor: colors.borderLight }]}
+          onPress={() => router.push(`/list-card/${copy.id}` as any)}
+        >
+          <Ionicons name="pricetag" size={15} color="#059669" />
+          <Text style={[styles.listedText, { color: colors.text }]}>
+            {copy.salePrice != null ? `Listed at €${copy.salePrice}` : 'Listed — open to card trades'}
           </Text>
-        </>
+          <Text style={[styles.listedMeta, { color: colors.textMuted }]}>
+            {copy.listingPhotos.length > 0 ? `${copy.listingPhotos.length} photo${copy.listingPhotos.length > 1 ? 's' : ''}` : 'no photos!'}
+          </Text>
+          <Text style={[styles.editLink, { color: colors.primary }]}>Edit</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          style={[styles.listBtn, { borderColor: colors.primary }]}
+          onPress={() => router.push(`/list-card/${copy.id}` as any)}
+        >
+          <Ionicons name="pricetag-outline" size={15} color={colors.primary} />
+          <Text style={[styles.listBtnText, { color: colors.primary }]}>List for trade</Text>
+        </Pressable>
       )}
     </View>
   );
@@ -376,15 +289,16 @@ const styles = StyleSheet.create({
   priceSave: { backgroundColor: '#059669', borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, minWidth: 52, alignItems: 'center' },
   priceSaveText: { color: 'white', fontWeight: '700' },
   priceHint: { color: '#9CA3AF', fontSize: 11, marginBottom: 4 },
-  photoStrip: { gap: 8, paddingVertical: 6 },
-  photoWrap: { position: 'relative' },
-  photo: { width: 64, height: 64, borderRadius: 8, backgroundColor: '#0002' },
-  photoRemove: {
-    position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#111827CC', alignItems: 'center', justifyContent: 'center',
+  listedRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1,
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginTop: 8,
   },
-  photoAdd: {
-    width: 64, height: 64, borderRadius: 8, borderWidth: 1, borderStyle: 'dashed',
-    alignItems: 'center', justifyContent: 'center',
+  listedText: { fontSize: 13, fontWeight: '600', flex: 1 },
+  listedMeta: { fontSize: 12 },
+  editLink: { fontSize: 13, fontWeight: '700' },
+  listBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderWidth: 1, borderRadius: 10, paddingVertical: 9, marginTop: 8,
   },
+  listBtnText: { fontSize: 13, fontWeight: '700' },
 });

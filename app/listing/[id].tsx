@@ -127,6 +127,12 @@ export default function ListingScreen() {
         {listing.setName ? ` · ${listing.setName}` : ''}
       </Text>
 
+      {listing.listingDescription ? (
+        <Text style={[styles.sellerNote, { color: colors.text, backgroundColor: colors.surface }]}>
+          {listing.listingDescription}
+        </Text>
+      ) : null}
+
       {/* The offer */}
       <View style={[styles.offerBox, { backgroundColor: colors.surface }]}>
         <View style={{ flex: 1 }}>
@@ -257,6 +263,7 @@ const styles = StyleSheet.create({
   heroWrap: { alignItems: 'center' },
   hero: { width: 230, height: 322, borderRadius: 12 },
   heroPhoto: { height: 322, borderRadius: 12, backgroundColor: '#0002' },
+  sellerNote: { fontSize: 13, lineHeight: 19, borderRadius: 10, padding: 12, marginTop: 8 },
   refBadge: {
     position: 'absolute', bottom: 10, alignSelf: 'center', backgroundColor: '#111827CC',
     borderRadius: 10, paddingHorizontal: 10, paddingVertical: 3,

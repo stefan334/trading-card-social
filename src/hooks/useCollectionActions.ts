@@ -120,5 +120,39 @@ export function useCollectionActions() {
     onSuccess: (_data, vars) => invalidate(vars.cardId),
   });
 
-  return { add, remove, toggleForTrade, setSalePrice, setListingPhotos };
+  // The listing composer's atomic publish: photos are the composer's required
+  // input; price null = open to card trades; description optional.
+  const publishListing = useMutation({
+    mutationFn: async ({
+      userCardId,
+      photos,
+      price,
+      description,
+    }: {
+      userCardId: string;
+      photos: string[];
+      price: number | null;
+      description: string | null;
+      cardId?: string;
+    }) => {
+      if (!supabase) throw new Error('Not signed in.');
+      if (photos.length === 0) throw new Error('Add at least one photo of your card.');
+      const { error } = await supabase
+        .from('user_cards')
+        .update({
+          is_for_trade: true,
+          listing_photos: photos.slice(0, 5),
+          sale_price: price,
+          listing_description: description?.trim() ? description.trim().slice(0, 500) : null,
+        })
+        .eq('id', userCardId);
+      if (error) throw error;
+    },
+    onSuccess: (_data, vars) => {
+      invalidate(vars.cardId);
+      track('listing_published', { priced: vars.price != null, photos: vars.photos.length });
+    },
+  });
+
+  return { add, remove, toggleForTrade, setSalePrice, setListingPhotos, publishListing };
 }
