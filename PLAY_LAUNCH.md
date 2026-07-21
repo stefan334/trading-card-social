@@ -126,11 +126,25 @@ then, registration silently no-ops — nothing breaks.
 
 ## 6b. Local Android builds (free — no EAS quota)
 
-One-time setup already done on this PC: Android SDK at `D:\Android`
-(cmdline-tools + platform-tools, licenses accepted), `ANDROID_HOME=D:\Android`
-and `GRADLE_USER_HOME=D:\gradle-home` (keep build tooling off the full C:
-drive), `android/` generated via prebuild (gitignored),
-`android/local.properties` → `sdk.dir=D:/Android` (forward slashes required).
+One-time setup already done on this PC (2026-07-21, first successful build
+3m28s):
+
+- Android SDK at `D:\Android` (cmdline-tools + platform-tools + auto-installed
+  platform/build-tools/NDK, licenses accepted). `ANDROID_HOME=D:\Android`,
+  `GRADLE_USER_HOME=D:\gradle-home` — keep ALL build tooling off C: (it was
+  100% full). JDK 21 (Temurin) system-wide.
+- `android/local.properties` → `sdk.dir=D:/Android` — **forward slashes**
+  (backslashes are escape chars in .properties files).
+- **Windows long paths enabled**: `LongPathsEnabled=1` under
+  `HKLM\SYSTEM\CurrentControlSet\Control\FileSystem` (admin required) — without
+  it the C++ codegen build fails with "Filename longer than 260 characters".
+- **ninja 1.12.1** from SDK package `cmake;3.31.6` wired in via
+  `android/app/build.gradle` → `defaultConfig.externalNativeBuild.cmake.arguments
+  "-DCMAKE_MAKE_PROGRAM=D:/Android/cmake/3.31.6/bin/ninja.exe"` (the default
+  cmake 3.22 ships ninja 1.10 which ignores the long-path flag). Re-apply this
+  edit after any `expo prebuild --clean`.
+- `android/gradle.properties` → `reactNativeArchitectures=arm64-v8a` (covers
+  all real phones; ~4× faster than building all 4 ABIs).
 
 Build a shareable APK any time:
 
