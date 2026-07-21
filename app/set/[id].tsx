@@ -3,6 +3,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { useCardPrices } from '../../src/hooks/useCardPrices';
 import { useOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { dbGetSetCards } from '../../src/services/catalog';
 import { getProvider } from '../../src/services/tcg-providers';
@@ -39,6 +40,11 @@ export default function SetDetailScreen() {
   const { data: ownedIds } = useOwnedCardIds(id);
   const [missingOnly, setMissingOnly] = useState(false);
 
+  // Live fallback for cards the catalog has no price for (brand-new sets often
+  // gain upstream prices between daily syncs).
+  const unpricedIds = (cardPage?.cards ?? []).filter((c) => c.market?.average == null).map((c) => c.id);
+  const { data: fallbackPrices } = useCardPrices(unpricedIds);
+
   const allCards = cardPage?.cards ?? [];
   const total = set?.totalCards || cardPage?.totalCount || allCards.length;
   const ownedCount = ownedIds?.size ?? 0;
@@ -72,6 +78,7 @@ export default function SetDetailScreen() {
       ListEmptyComponent={isLoading ? <ActivityIndicator style={{ marginTop: 40 }} /> : null}
       renderItem={({ item }) => {
         const owned = ownedIds?.has(item.id);
+        const market = item.market?.average != null ? item.market : fallbackPrices?.get(item.id);
         return (
           <Link href={`/card/${encodeURIComponent(item.id)}`} asChild>
             <Pressable style={styles.cell}>
@@ -81,8 +88,8 @@ export default function SetDetailScreen() {
                 <View style={[styles.cardImage, { backgroundColor: colors.surface }]} />
               )}
               <Text style={[styles.cardNumber, { color: colors.textMuted }]}>#{item.number}</Text>
-              {item.market?.average != null ? (
-                <Text style={styles.cardPrice}>{formatPrice(item.market.average, item.market.currency)}</Text>
+              {market?.average != null ? (
+                <Text style={styles.cardPrice}>{formatPrice(market.average, market.currency)}</Text>
               ) : null}
             </Pressable>
           </Link>

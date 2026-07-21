@@ -19,10 +19,11 @@ export function useCardPrices(cardIds: string[]) {
     queryFn: async (): Promise<Map<string, CardMarketPrice>> => {
       const db = await dbGetPrices(ids);
       const prices = db?.prices ?? new Map<string, CardMarketPrice>();
-      const known = db?.known ?? new Set<string>();
 
-      // Fall back to the live API only for ids not yet in the synced catalog.
-      const missing = ids.filter((id) => !known.has(id));
+      // Fall back to the live API for any id the catalog couldn't price — both
+      // unsynced cards AND synced-but-priceless ones (brand-new sets often gain
+      // upstream prices between our daily sweeps).
+      const missing = ids.filter((id) => !prices.has(id));
       if (missing.length) {
         const byGame = new Map<string, string[]>();
         for (const id of missing) {
