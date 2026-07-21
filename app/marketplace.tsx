@@ -20,7 +20,9 @@ function ListingRow({ item, marketAvg, rating }: { item: MarketListing; marketAv
   const ownerName = item.owner?.displayName || item.owner?.username || 'Someone';
   return (
     <View style={styles.row}>
-      <Link href={`/card/${encodeURIComponent(item.cardId)}`} asChild>
+      {/* The row opens the LISTING (this specific offer); the card page stays
+          reachable from the listing's hero image. */}
+      <Link href={`/listing/${item.userCardId}` as any} asChild>
         <Pressable style={styles.rowMain}>
           {item.imageUrlSmall ? (
             <Image source={{ uri: item.imageUrlSmall }} style={styles.thumb} />

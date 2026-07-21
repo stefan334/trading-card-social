@@ -22,7 +22,8 @@ export interface MarketListing {
 
 const NEAR_RADIUS_KM = 60;
 
-function distanceKm(a: [number, number], b: [number, number]): number {
+/** Haversine distance (km) — shared with the listing detail screen. */
+export function distanceKm(a: [number, number], b: [number, number]): number {
   const R = 6371;
   const dLat = ((b[0] - a[0]) * Math.PI) / 180;
   const dLng = ((b[1] - a[1]) * Math.PI) / 180;

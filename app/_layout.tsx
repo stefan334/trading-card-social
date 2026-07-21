@@ -62,6 +62,7 @@ function RootNavigator() {
       <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit Profile', presentation: 'modal' }} />
       <Stack.Screen name="user/[id]" options={{ headerShown: true, title: 'Profile' }} />
       <Stack.Screen name="card/[id]" options={{ headerShown: true, title: 'Card' }} />
+      <Stack.Screen name="listing/[id]" options={{ headerShown: true, title: 'Listing' }} />
       <Stack.Screen name="set/[id]" options={{ headerShown: true, title: 'Set' }} />
       <Stack.Screen name="binder/[id]" options={{ headerShown: true, title: 'Binder' }} />
       <Stack.Screen name="binder/edit/[id]" options={{ headerShown: true, title: 'Edit Binder' }} />
