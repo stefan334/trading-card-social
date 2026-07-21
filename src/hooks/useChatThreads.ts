@@ -20,6 +20,10 @@ export function useChatThreads() {
   return useQuery({
     queryKey: ['chat-threads', meId],
     enabled: isSupabaseConfigured && Boolean(meId),
+    // Same fallback the open-thread screen uses (there at 3s): push arrival and
+    // app-resume invalidate this instantly, but if no push is delivered while
+    // the user sits on the Inbox, polling keeps previews + badges honest.
+    refetchInterval: 10_000,
     queryFn: async (): Promise<ChatThreadSummary[]> => {
       const { data, error } = await supabase!.rpc('my_chat_threads');
       if (error) throw error;

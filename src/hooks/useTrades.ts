@@ -19,6 +19,9 @@ export function useTrades() {
   return useQuery({
     queryKey: ['trades', meId],
     enabled: isSupabaseConfigured && Boolean(meId),
+    // Trades move slower than chats — a light poll keeps the other party's
+    // accept/decline visible in the Inbox even if no push is delivered.
+    refetchInterval: 30_000,
     queryFn: async (): Promise<TradeSummary[]> => {
       const { data, error } = await supabase!
         .from('trades')
