@@ -6,12 +6,26 @@ import {
 import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import type { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { showToast, toastMessage, ToastHost } from '../src/components/Toast';
 import { AuthProvider } from '../src/context/AuthContext';
 import { BatchProvider } from '../src/context/BatchContext';
 import { useProtectedRoute } from '../src/hooks/useProtectedRoute';
 import { AppThemeProvider, useTheme } from '../src/theme';
+
+// Native keyboard insets (see useKeyboardHeight). Guarded: binaries built
+// before the module exists (older dev client) just skip the provider.
+let KeyboardProvider: ({ children }: { children: ReactNode }) => ReactNode;
+try {
+  const kc = require('react-native-keyboard-controller');
+  const Provider = kc.KeyboardProvider;
+  KeyboardProvider = ({ children }: { children: ReactNode }) => (
+    <Provider statusBarTranslucent navigationBarTranslucent>{children}</Provider>
+  );
+} catch {
+  KeyboardProvider = ({ children }: { children: ReactNode }) => children;
+}
 
 // Cache aggressively: the Pokémon TCG API is slow, so keep fetched data "fresh"
 // for a while and serve it instantly from cache on revisit (pull-to-refresh and
@@ -103,15 +117,17 @@ function ThemedApp() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BatchProvider>
-            <AppThemeProvider>
-              <ThemedApp />
-            </AppThemeProvider>
-          </BatchProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <KeyboardProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <BatchProvider>
+              <AppThemeProvider>
+                <ThemedApp />
+              </AppThemeProvider>
+            </BatchProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </KeyboardProvider>
     </SafeAreaProvider>
   );
 }
