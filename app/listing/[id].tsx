@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
@@ -9,6 +10,7 @@ import { useCardPrices } from '../../src/hooks/useCardPrices';
 import { useChatActions } from '../../src/hooks/useChatActions';
 import { useListing, useSellerListings } from '../../src/hooks/useListing';
 import { useTraderRatings } from '../../src/hooks/useTraderRatings';
+import { sellerCanCharge } from '../../src/services/payments';
 import { useTheme } from '../../src/theme';
 import { formatPrice, formatRelativeTime } from '../../src/utils/time';
 
@@ -27,6 +29,11 @@ export default function ListingScreen() {
   const { startThread } = useChatActions();
 
   const { data: listing, isLoading } = useListing(id);
+  const { data: canCharge } = useQuery({
+    queryKey: ['seller-can-charge', listing?.owner?.id],
+    enabled: Boolean(listing?.owner?.id),
+    queryFn: () => sellerCanCharge(listing!.owner!.id),
+  });
   const { data: prices } = useCardPrices(listing ? [listing.cardId] : []);
   const { data: ratings } = useTraderRatings(listing?.owner ? [listing.owner.id] : []);
   const { data: more } = useSellerListings(listing?.owner?.id, listing?.userCardId);
@@ -38,6 +45,12 @@ export default function ListingScreen() {
   if (!listing) return <Text style={[styles.center, { color: colors.textMuted }]}>This listing is gone.</Text>;
 
   const mine = user?.id === listing.owner?.id;
+  // Buyable = priced + photographed + the seller finished payout setup.
+  const buyable =
+    listing.salePrice != null &&
+    listing.salePrice > 0 &&
+    listing.listingPhotos.length > 0 &&
+    canCharge === true;
   const rating = listing.owner ? ratings?.get(listing.owner.id) : undefined;
   const marketAvg = prices?.get(listing.cardId)?.average ?? null;
   const sellerName = listing.owner?.displayName || listing.owner?.username || 'Someone';
@@ -182,6 +195,14 @@ export default function ListingScreen() {
       {/* Actions */}
       {!mine && listing.owner ? (
         <View style={styles.actions}>
+          {buyable ? (
+            <Link href={`/checkout/${listing.userCardId}` as any} asChild>
+              <Pressable style={styles.buyBtn}>
+                <Ionicons name="bag-check" size={18} color="white" />
+                <Text style={styles.offerBtnText}>Buy {formatPrice(listing.salePrice!, 'EUR')}</Text>
+              </Pressable>
+            </Link>
+          ) : null}
           <Link href={`/trade/new?with=${listing.owner.id}&card=${encodeURIComponent(listing.cardId)}` as any} asChild>
             <Pressable style={styles.offerBtn}>
               <Ionicons name="swap-horizontal" size={18} color="white" />
@@ -258,7 +279,12 @@ const styles = StyleSheet.create({
   sellerName: { fontSize: 15, fontWeight: '700' },
   sellerMeta: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
   sellerMetaText: { fontSize: 12.5 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 14, flexWrap: 'wrap' },
+  buyBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: '#059669', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16,
+    flexGrow: 1, flexBasis: '100%',
+  },
   offerBtn: { flex: 1.4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 14 },
   offerBtnText: { color: 'white', fontWeight: '800', fontSize: 15 },
   msgBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14 },

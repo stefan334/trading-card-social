@@ -48,3 +48,50 @@ export async function refreshSellerStatus(): Promise<SellerStatus> {
   if (error) throw error;
   return data as SellerStatus;
 }
+
+export interface ShippingAddress {
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  county?: string;
+  postal_code: string;
+  phone?: string;
+}
+
+export interface CheckoutSession {
+  client_secret: string;
+  order_id: string;
+  item_price: number;
+  buyer_fee: number;
+  total: number;
+}
+
+/** Server-validated checkout: creates the pending order + PaymentIntent. */
+export async function createCheckout(
+  listingId: string,
+  address: ShippingAddress
+): Promise<CheckoutSession> {
+  if (!supabase) throw new Error('Not configured');
+  const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+    body: { listing_id: listingId, shipping_address: address },
+  });
+  if (error) {
+    // Edge errors carry the human-readable reason in the response body.
+    const ctx = (error as any)?.context;
+    if (ctx?.json) {
+      const body = await ctx.json().catch(() => null);
+      if (body?.error) throw new Error(body.error);
+    }
+    throw error;
+  }
+  return data as CheckoutSession;
+}
+
+/** Whether a seller's listings can currently be bought (payout setup done). */
+export async function sellerCanCharge(userId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc('seller_can_charge', { p_user: userId });
+  if (error) return false;
+  return Boolean(data);
+}

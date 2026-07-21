@@ -27,6 +27,18 @@ try {
   KeyboardProvider = ({ children }: { children: ReactNode }) => children;
 }
 
+// Stripe (marketplace checkout). Same guard pattern: no key or no native module
+// (older binary) -> app runs fine, checkout screens show "not configured".
+const STRIPE_PK = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
+let PaymentsProvider: ({ children }: { children: ReactNode }) => ReactNode;
+try {
+  const { StripeProvider } = require('@stripe/stripe-react-native');
+  PaymentsProvider = ({ children }: { children: ReactNode }) =>
+    STRIPE_PK ? <StripeProvider publishableKey={STRIPE_PK}>{children}</StripeProvider> : children;
+} catch {
+  PaymentsProvider = ({ children }: { children: ReactNode }) => children;
+}
+
 // Cache aggressively: the Pokémon TCG API is slow, so keep fetched data "fresh"
 // for a while and serve it instantly from cache on revisit (pull-to-refresh and
 // mutations still update it). Big perceived-speed win across the app.
@@ -78,6 +90,7 @@ function RootNavigator() {
       <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
       <Stack.Screen name="blocked" options={{ headerShown: true, title: 'Blocked users' }} />
       <Stack.Screen name="seller-payouts" options={{ headerShown: true, title: 'Seller payouts' }} />
+      <Stack.Screen name="checkout/[id]" options={{ headerShown: true, title: 'Checkout' }} />
       <Stack.Screen name="connections" options={{ headerShown: true, title: 'People' }} />
     </Stack>
   );
@@ -122,15 +135,17 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <KeyboardProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <BatchProvider>
-              <AppThemeProvider>
-                <ThemedApp />
-              </AppThemeProvider>
-            </BatchProvider>
-          </AuthProvider>
-        </QueryClientProvider>
+        <PaymentsProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <BatchProvider>
+                <AppThemeProvider>
+                  <ThemedApp />
+                </AppThemeProvider>
+              </BatchProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </PaymentsProvider>
       </KeyboardProvider>
     </SafeAreaProvider>
   );
