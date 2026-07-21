@@ -126,10 +126,11 @@ then, registration silently no-ops — nothing breaks.
 
 ## 6b. Local Android builds (free — no EAS quota)
 
-One-time setup already done on this PC: Android SDK at `C:\Android`
-(cmdline-tools + platform-tools, licenses accepted), `ANDROID_HOME` set,
-`android/` generated via prebuild (gitignored), `android/local.properties`
-points at the SDK.
+One-time setup already done on this PC: Android SDK at `D:\Android`
+(cmdline-tools + platform-tools, licenses accepted), `ANDROID_HOME=D:\Android`
+and `GRADLE_USER_HOME=D:\gradle-home` (keep build tooling off the full C:
+drive), `android/` generated via prebuild (gitignored),
+`android/local.properties` → `sdk.dir=D:/Android` (forward slashes required).
 
 Build a shareable APK any time:
 
