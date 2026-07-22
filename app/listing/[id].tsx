@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCardPrices } from '../../src/hooks/useCardPrices';
@@ -40,6 +40,7 @@ export default function ListingScreen() {
   const { width } = useWindowDimensions();
   const pageW = width - 32; // screen minus the ScrollView's 16px side padding
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [chooserOpen, setChooserOpen] = useState(false);
 
   if (isLoading) return <ActivityIndicator style={styles.center} />;
   if (!listing) return <Text style={[styles.center, { color: colors.textMuted }]}>This listing is gone.</Text>;
@@ -198,23 +199,15 @@ export default function ListingScreen() {
         </Link>
       ) : null}
 
-      {/* Actions */}
+      {/* Actions: one primary entry, the chooser splits money vs cards. */}
       {!mine && listing.owner ? (
         <View style={styles.actions}>
-          {buyable ? (
-            <Link href={`/checkout/${listing.userCardId}` as any} asChild>
-              <Pressable style={styles.buyBtn}>
-                <Ionicons name="bag-check" size={18} color="white" />
-                <Text style={styles.offerBtnText}>Buy {formatPrice(listing.salePrice!, 'EUR')}</Text>
-              </Pressable>
-            </Link>
-          ) : null}
-          <Link href={`/trade/new?with=${listing.owner.id}&card=${encodeURIComponent(listing.cardId)}` as any} asChild>
-            <Pressable style={styles.offerBtn}>
-              <Ionicons name="swap-horizontal" size={18} color="white" />
-              <Text style={styles.offerBtnText}>Make an offer</Text>
-            </Pressable>
-          </Link>
+          <Pressable style={styles.buyBtn} onPress={() => setChooserOpen(true)}>
+            <Ionicons name="bag-check" size={18} color="white" />
+            <Text style={styles.offerBtnText}>
+              {buyable ? `Buy ${formatPrice(listing.salePrice!, 'EUR')} · or offer` : 'Get this card'}
+            </Text>
+          </Pressable>
           <Pressable
             style={[styles.msgBtn, { borderColor: colors.primary }]}
             onPress={message}
@@ -229,11 +222,61 @@ export default function ListingScreen() {
               </>
             )}
           </Pressable>
-          {!buyable && listing.salePrice != null && listing.listingPhotos.length > 0 && canCharge === false ? (
-            <Text style={[styles.buyHint, { color: colors.textMuted }]}>
-              This seller hasn't enabled purchases yet — you can still propose a trade or message them.
-            </Text>
-          ) : null}
+
+          <Modal visible={chooserOpen} transparent animationType="fade" onRequestClose={() => setChooserOpen(false)}>
+            <Pressable style={styles.sheetBackdrop} onPress={() => setChooserOpen(false)}>
+              <Pressable style={[styles.sheet, { backgroundColor: colors.card }]} onPress={() => {}}>
+                <Text style={[styles.sheetTitle, { color: colors.text }]}>How do you want to get this card?</Text>
+
+                <Pressable
+                  style={[styles.sheetOption, { borderColor: colors.border }, !buyable && styles.sheetOptionOff]}
+                  disabled={!buyable}
+                  onPress={() => {
+                    setChooserOpen(false);
+                    router.push(`/checkout/${listing.userCardId}` as any);
+                  }}
+                >
+                  <Ionicons name="card" size={22} color={buyable ? '#059669' : colors.textFaint} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sheetOptionTitle, { color: buyable ? colors.text : colors.textMuted }]}>
+                      {listing.salePrice != null ? `Buy now — ${formatPrice(listing.salePrice, 'EUR')}` : 'Buy now'}
+                    </Text>
+                    <Text style={[styles.sheetOptionSub, { color: colors.textMuted }]}>
+                      {buyable
+                        ? 'Pay by card. Money is held until you confirm delivery.'
+                        : listing.salePrice == null
+                          ? 'No price set — this seller wants card trades.'
+                          : listing.listingPhotos.length === 0
+                            ? 'Not buyable yet — the listing has no photos.'
+                            : "Seller hasn't enabled purchases yet."}
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <Pressable
+                  style={[styles.sheetOption, { borderColor: colors.border }]}
+                  onPress={() => {
+                    setChooserOpen(false);
+                    router.push(
+                      `/trade/new?with=${listing.owner!.id}&card=${encodeURIComponent(listing.cardId)}` as any
+                    );
+                  }}
+                >
+                  <Ionicons name="swap-horizontal" size={22} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sheetOptionTitle, { color: colors.text }]}>Offer cards in trade</Text>
+                    <Text style={[styles.sheetOptionSub, { color: colors.textMuted }]}>
+                      Propose a card-for-card swap from your collection.
+                    </Text>
+                  </View>
+                </Pressable>
+
+                <Pressable style={styles.sheetCancel} onPress={() => setChooserOpen(false)}>
+                  <Text style={[styles.sheetCancelText, { color: colors.textMuted }]}>Cancel</Text>
+                </Pressable>
+              </Pressable>
+            </Pressable>
+          </Modal>
         </View>
       ) : mine ? (
         <>
@@ -310,7 +353,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#059669', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16,
     flexGrow: 1, flexBasis: '100%',
   },
-  buyHint: { fontSize: 12, lineHeight: 17, flexBasis: '100%', textAlign: 'center', marginTop: 2 },
+  sheetBackdrop: { flex: 1, backgroundColor: '#0008', justifyContent: 'flex-end' },
+  sheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 32, gap: 10 },
+  sheetTitle: { fontSize: 16, fontWeight: '700', marginBottom: 4, textAlign: 'center' },
+  sheetOption: { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderRadius: 14, padding: 14 },
+  sheetOptionOff: { opacity: 0.55 },
+  sheetOptionTitle: { fontSize: 15, fontWeight: '700' },
+  sheetOptionSub: { fontSize: 12, lineHeight: 17, marginTop: 2 },
+  sheetCancel: { alignItems: 'center', paddingVertical: 8 },
+  sheetCancelText: { fontSize: 14, fontWeight: '600' },
   payoutNudge: {
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#B4530922',
     borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginTop: 8,
