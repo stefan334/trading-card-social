@@ -91,6 +91,9 @@ Deno.serve(async (req) => {
         type: 'account_onboarding',
         return_url: `${redirectBase}?to=return`,
         refresh_url: `${redirectBase}?to=refresh`,
+        // Ask only what's required RIGHT NOW (identity basics); bank details
+        // and any documents are deferred until the seller wants to withdraw.
+        collection_options: { fields: 'currently_due' },
       });
       return Response.json({ url: link.url }, { headers: CORS });
     }
@@ -104,6 +107,9 @@ Deno.serve(async (req) => {
         details_submitted: account.details_submitted ?? false,
         charges_enabled: account.charges_enabled ?? false,
         payouts_enabled: account.payouts_enabled ?? false,
+        // Vinted-style staging: transfers active = can SELL (money lands in
+        // their balance); payouts_enabled = can WITHDRAW (bank + full KYC).
+        transfers_active: account.capabilities?.transfers === 'active',
       };
       await service
         .from('seller_accounts')

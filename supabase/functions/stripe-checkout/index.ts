@@ -102,12 +102,14 @@ Deno.serve(async (req) => {
     return badRequest('This listing has no photos of the actual card yet');
   }
 
-  const { data: canCharge } = await service
+  // Staged onboarding: transfers capability = money can land in the seller's
+  // balance (withdrawal KYC comes later, Vinted-style).
+  const { data: sellerAcct } = await service
     .from('seller_accounts')
-    .select('charges_enabled')
+    .select('transfers_active, charges_enabled')
     .eq('user_id', l.owner_id)
     .maybeSingle();
-  if (!canCharge?.charges_enabled) {
+  if (!sellerAcct?.transfers_active && !sellerAcct?.charges_enabled) {
     return badRequest('This seller has not finished payout setup');
   }
 

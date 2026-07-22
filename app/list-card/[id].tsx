@@ -72,7 +72,7 @@ export default function ListCardScreen() {
   // Selling for money requires an active payout account — route the seller
   // through setup BEFORE a priced listing goes live, not after.
   const needsPayoutSetup =
-    parsedPrice != null && priceValid && !sellerLoading && sellerAccount?.chargesEnabled !== true;
+    parsedPrice != null && priceValid && !sellerLoading && sellerAccount?.transfersActive !== true;
 
   async function addPhotos() {
     if (uploading) return;
@@ -225,8 +225,8 @@ export default function ListCardScreen() {
           <View style={styles.payoutGate}>
             <Ionicons name="wallet-outline" size={18} color="#B45309" />
             <Text style={styles.payoutGateText}>
-              To sell for money you need payouts set up first — it takes ~2 minutes, once. Your price and
-              photos stay right here.
+              To sell for money, Stripe needs a quick identity check first (~2 minutes, once — no bank
+              account needed yet). Your price and photos stay right here.
             </Text>
           </View>
           <Pressable

@@ -16,9 +16,11 @@ export default function SellerPayoutsScreen() {
   const { data: account, isLoading } = useSellerAccount();
   const { begin, refresh, busy, error } = useSellerOnboarding();
 
+  // Staged: selling unlocks with the light identity pass (transfers); bank +
+  // remaining KYC only gate WITHDRAWING, once money is already waiting.
   const state: 'none' | 'pending' | 'active' = !account
     ? 'none'
-    : account.chargesEnabled
+    : account.transfersActive
       ? 'active'
       : 'pending';
 
@@ -29,17 +31,36 @@ export default function SellerPayoutsScreen() {
       ) : state === 'active' ? (
         <View style={styles.centerWrap}>
           <Ionicons name="checkmark-circle" size={56} color="#059669" />
-          <Text style={[styles.title, { color: colors.text }]}>Payouts active</Text>
+          <Text style={[styles.title, { color: colors.text }]}>You can sell!</Text>
           <Text style={[styles.body, { color: colors.textMuted }]}>
-            Your listings with a price can now be bought in the app. When a buyer confirms
-            delivery, the sale amount is sent to your bank account by Stripe.
+            Your priced listings are now buyable. When a buyer confirms delivery, the money
+            lands in your seller balance.
           </Text>
           {!account?.payoutsEnabled ? (
-            <Text style={[styles.body, styles.warn]}>
-              Stripe is still verifying your bank details — sales work, but payouts start
-              once verification finishes.
+            <>
+              <View style={styles.stageBox}>
+                <Ionicons name="cash-outline" size={18} color="#B45309" />
+                <Text style={styles.stageText}>
+                  To move money from your balance to your bank, add your bank details when
+                  you're ready — takes a minute, once.
+                </Text>
+              </View>
+              <Pressable
+                style={[styles.primary, { backgroundColor: colors.primary }, busy && { opacity: 0.6 }]}
+                disabled={busy}
+                onPress={() => {
+                  track('seller_withdrawal_setup_started', {});
+                  begin();
+                }}
+              >
+                {busy ? <ActivityIndicator color="white" /> : <Text style={styles.primaryText}>Add bank details for withdrawals</Text>}
+              </Pressable>
+            </>
+          ) : (
+            <Text style={[styles.body, { color: '#059669' }]}>
+              Withdrawals are set up — Stripe pays your balance out to your bank automatically.
             </Text>
-          ) : null}
+          )}
           <Pressable
             style={[styles.secondary, { borderColor: colors.border }]}
             onPress={refresh}
@@ -65,8 +86,9 @@ export default function SellerPayoutsScreen() {
           </View>
 
           <View style={styles.points}>
-            <Point icon="shield-checkmark-outline" text="Identity + bank checks are handled by Stripe — CardLink never sees your documents or card numbers." colors={colors} />
-            <Point icon="cash-outline" text="You receive the full asking price. The buyer pays a small protection fee on top." colors={colors} />
+            <Point icon="flash-outline" text="Quick start: just name, birth date and address — no bank account needed to begin selling." colors={colors} />
+            <Point icon="shield-checkmark-outline" text="Checks are handled by Stripe (required by EU law for receiving money) — CardLink never sees your documents." colors={colors} />
+            <Point icon="cash-outline" text="You receive the full asking price into your seller balance; add bank details whenever you want to withdraw." colors={colors} />
             <Point icon="time-outline" text="Money is released when the buyer confirms delivery, or automatically 14 days after you ship." colors={colors} />
           </View>
 
@@ -126,4 +148,9 @@ const styles = StyleSheet.create({
   linkBtn: { alignItems: 'center', paddingVertical: 4 },
   linkText: { fontSize: 14, fontWeight: '500' },
   errorText: { color: '#DC2626', fontSize: 13, textAlign: 'center' },
+  stageBox: {
+    flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: '#B4530922',
+    borderRadius: 10, padding: 12, marginTop: 8,
+  },
+  stageText: { flex: 1, color: '#B45309', fontSize: 13, lineHeight: 18 },
 });

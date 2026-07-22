@@ -9,6 +9,8 @@ export interface SellerAccount {
   detailsSubmitted: boolean;
   chargesEnabled: boolean;
   payoutsEnabled: boolean;
+  /** Can SELL (funds land in their balance) — the light, upfront stage. */
+  transfersActive: boolean;
 }
 
 /** The signed-in user's Stripe Express payout state (null = never started). */
@@ -21,7 +23,7 @@ export function useSellerAccount() {
     queryFn: async (): Promise<SellerAccount | null> => {
       const { data, error } = await supabase!
         .from('seller_accounts')
-        .select('stripe_account_id, details_submitted, charges_enabled, payouts_enabled')
+        .select('stripe_account_id, details_submitted, charges_enabled, payouts_enabled, transfers_active')
         .eq('user_id', user!.id)
         .maybeSingle();
       if (error) throw error;
@@ -31,6 +33,7 @@ export function useSellerAccount() {
         detailsSubmitted: data.details_submitted,
         chargesEnabled: data.charges_enabled,
         payoutsEnabled: data.payouts_enabled,
+        transfersActive: data.transfers_active || data.charges_enabled,
       };
     },
   });
