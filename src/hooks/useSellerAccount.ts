@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { isSupabaseConfigured, supabase } from '../services/supabase/client';
-import { refreshSellerStatus, startSellerOnboarding } from '../services/payments';
+import { refreshSellerStatus, resetSellerAccount, startSellerOnboarding } from '../services/payments';
 
 export interface SellerAccount {
   stripeAccountId: string;
@@ -76,5 +76,22 @@ export function useSellerOnboarding() {
     }
   }
 
-  return { begin, refresh, busy, error };
+  /** Wipe a never-active account and immediately restart onboarding fresh. */
+  async function startOver() {
+    setBusy(true);
+    setError(null);
+    try {
+      await resetSellerAccount();
+      await queryClient.invalidateQueries({ queryKey: ['seller-account', user?.id] });
+      await startSellerOnboarding();
+      await refreshSellerStatus();
+      await queryClient.invalidateQueries({ queryKey: ['seller-account', user?.id] });
+    } catch (e: any) {
+      setError(e?.message ?? 'Could not restart setup');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return { begin, refresh, startOver, busy, error };
 }

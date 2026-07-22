@@ -90,6 +90,15 @@ export async function createCheckout(
   return data as CheckoutSession;
 }
 
+/** Delete a stuck (never-active) seller account so onboarding starts fresh. */
+export async function resetSellerAccount(): Promise<void> {
+  if (!supabase) throw new Error('Not configured');
+  const { error } = await supabase.functions.invoke('stripe-onboard', {
+    body: { action: 'reset' },
+  });
+  if (error) throw await unwrapFunctionError(error);
+}
+
 /** Whether a seller's listings can currently be bought (payout setup done). */
 export async function sellerCanCharge(userId: string): Promise<boolean> {
   if (!supabase) return false;

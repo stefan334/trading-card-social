@@ -71,6 +71,10 @@ Deno.serve(async (req) => {
           email: user.email ?? undefined,
           business_type: 'individual',
           capabilities: { transfers: { requested: true } },
+          // Sellers only RECEIVE transfers (the platform charges buyers), so the
+          // 'recipient' agreement applies — it drops the merchant questionnaire
+          // (website, product description, MCC) from onboarding entirely.
+          tos_acceptance: { service_agreement: 'recipient' },
           metadata: { cardlink_user_id: user.id },
         });
         accountId = account.id;
@@ -116,6 +120,35 @@ Deno.serve(async (req) => {
         .update({ ...flags, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
       return Response.json({ onboarded: true, ...flags }, { headers: CORS });
+    }
+
+    if (action === 'reset') {
+      // Recreate a STUCK onboarding (e.g. an account made under the old 'full'
+      // service agreement). Only allowed while nothing financial ever happened.
+      if (!existing?.stripe_account_id) {
+        return Response.json({ reset: true }, { headers: CORS });
+      }
+      const account = await stripe.accounts.retrieve(existing.stripe_account_id);
+      if (account.charges_enabled || account.payouts_enabled) {
+        return Response.json(
+          { error: 'This account is active and cannot be reset' },
+          { status: 400, headers: CORS }
+        );
+      }
+      const { data: hasOrders } = await service
+        .from('orders')
+        .select('id')
+        .eq('seller_id', user.id)
+        .limit(1);
+      if (hasOrders && hasOrders.length > 0) {
+        return Response.json(
+          { error: 'Accounts with orders cannot be reset' },
+          { status: 400, headers: CORS }
+        );
+      }
+      await stripe.accounts.del(existing.stripe_account_id).catch(() => {});
+      await service.from('seller_accounts').delete().eq('user_id', user.id);
+      return Response.json({ reset: true }, { headers: CORS });
     }
 
     return Response.json({ error: 'Unknown action' }, { status: 400, headers: CORS });

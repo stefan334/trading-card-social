@@ -14,7 +14,7 @@ export default function SellerPayoutsScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { data: account, isLoading } = useSellerAccount();
-  const { begin, refresh, busy, error } = useSellerOnboarding();
+  const { begin, refresh, startOver, busy, error } = useSellerOnboarding();
 
   // Staged: selling unlocks with the light identity pass (transfers); bank +
   // remaining KYC only gate WITHDRAWING, once money is already waiting.
@@ -112,9 +112,16 @@ export default function SellerPayoutsScreen() {
           </Pressable>
 
           {state === 'pending' ? (
-            <Pressable style={styles.linkBtn} onPress={refresh} disabled={busy}>
-              <Text style={[styles.linkText, { color: colors.primary }]}>I already finished — refresh status</Text>
-            </Pressable>
+            <>
+              <Pressable style={styles.linkBtn} onPress={refresh} disabled={busy}>
+                <Text style={[styles.linkText, { color: colors.primary }]}>I already finished — refresh status</Text>
+              </Pressable>
+              <Pressable style={styles.linkBtn} onPress={startOver} disabled={busy}>
+                <Text style={[styles.linkText, { color: colors.textMuted }]}>
+                  Stuck or asked too many questions? Start over
+                </Text>
+              </Pressable>
+            </>
           ) : null}
         </>
       )}
