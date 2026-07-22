@@ -70,6 +70,25 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
   // pre-filling the very card they listed when it's a single-card post.
   const [expanded, setExpanded] = useState(false);
   const canOffer = item.type === 'card_listed' && !!meId && item.author.id !== meId;
+
+  // Buy straight from the feed: resolve the live listing row at tap time and
+  // jump into checkout (which re-validates everything server-side anyway).
+  // Falls back to the card page if it sold or unlisted since.
+  async function buyFromFeed(cardId: string) {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from('user_cards')
+      .select('id')
+      .eq('owner_id', item.author.id)
+      .eq('card_id', cardId)
+      .eq('is_for_trade', true)
+      .not('sale_price', 'is', null)
+      .order('listed_at', { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    if (data?.id) router.push(`/checkout/${data.id}` as any);
+    else router.push(`/card/${encodeURIComponent(cardId)}` as any);
+  }
   const offerHref =
     `/trade/new?with=${item.author.id}` +
     (item.cards.length === 1 ? `&card=${encodeURIComponent(item.cards[0].id)}` : '');
@@ -188,12 +207,20 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
       ) : null}
 
       {canOffer ? (
-        <Link href={offerHref as any} asChild>
-          <Pressable style={styles.offerBtn}>
-            <Ionicons name="swap-horizontal" size={16} color="white" />
-            <Text style={styles.offerText}>Make an offer</Text>
-          </Pressable>
-        </Link>
+        <View style={styles.actionRow}>
+          {item.body && item.cards.length === 1 ? (
+            <Pressable style={[styles.offerBtn, styles.buyBtn]} onPress={() => buyFromFeed(item.cards[0].id)}>
+              <Ionicons name="bag-check" size={16} color="white" />
+              <Text style={styles.offerText}>Buy {formatPrice(Number(item.body), 'EUR')}</Text>
+            </Pressable>
+          ) : null}
+          <Link href={offerHref as any} asChild>
+            <Pressable style={[styles.offerBtn, item.body && item.cards.length === 1 && { flex: 1 }]}>
+              <Ionicons name="swap-horizontal" size={16} color="white" />
+              <Text style={styles.offerText}>Offer cards</Text>
+            </Pressable>
+          </Link>
+        </View>
       ) : null}
     </View>
   );
@@ -201,6 +228,8 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
 
 const styles = StyleSheet.create({
   card: { backgroundColor: 'white', padding: 14, marginHorizontal: 12, marginTop: 12, borderRadius: 14 },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  buyBtn: { backgroundColor: '#059669', flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 36, height: 36, borderRadius: 18 },
   name: { fontSize: 15 },
@@ -220,7 +249,7 @@ const styles = StyleSheet.create({
   showToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10 },
   showToggleText: { fontWeight: '600', fontSize: 13 },
   placeholder: { backgroundColor: '#E5E7EB' },
-  offerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#059669', borderRadius: 10, paddingVertical: 10, marginTop: 12 },
+  offerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 10, flexGrow: 1 },
   offerText: { color: 'white', fontWeight: '700', fontSize: 14 },
   followBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, borderWidth: 1, borderColor: '#2563EB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   followText: { color: '#2563EB', fontWeight: '700', fontSize: 13 },

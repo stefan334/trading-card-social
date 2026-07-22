@@ -23,6 +23,7 @@ import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useDebouncedValue } from '../../src/hooks/useDebouncedValue';
 import { useAllOwnedCardIds } from '../../src/hooks/useOwnedCardIds';
 import { useScreenView } from '../../src/services/analytics';
+import { isSupabaseConfigured, supabase } from '../../src/services/supabase/client';
 import { dbGetSet, dbGetSetCards } from '../../src/services/catalog';
 import { getProvider, listProviders } from '../../src/services/tcg-providers';
 import type { Card } from '../../src/types/card';
@@ -116,8 +117,22 @@ export default function AddScreen() {
     }
   }
 
+  // + tab does double duty: grow the collection, or turn owned cards into
+  // marketplace listings (the composer handles photos/price per card).
+  const [mode, setMode] = useState<'add' | 'list'>('add');
+
+  if (mode === 'list') {
+    return (
+      <View style={styles.container}>
+        <ModeSwitch mode={mode} onChange={setMode} colors={colors} />
+        <ListFromCollection />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
+      <ModeSwitch mode={mode} onChange={setMode} colors={colors} />
       {/* Search + scan */}
       <View style={styles.searchRow}>
         <View style={[styles.searchBar, { backgroundColor: colors.surface }]}>
@@ -332,7 +347,123 @@ export default function AddScreen() {
   );
 }
 
+/** Top toggle: grow the collection vs. list owned cards on the marketplace. */
+function ModeSwitch({ mode, onChange, colors }: { mode: 'add' | 'list'; onChange: (m: 'add' | 'list') => void; colors: any }) {
+  return (
+    <View style={[styles.modeSwitch, { backgroundColor: colors.surface }]}>
+      {(
+        [
+          { key: 'add', icon: 'albums-outline', label: 'Add to collection' },
+          { key: 'list', icon: 'pricetag-outline', label: 'Create listing' },
+        ] as const
+      ).map((m) => {
+        const on = mode === m.key;
+        return (
+          <Pressable
+            key={m.key}
+            style={[styles.modeBtn, on && { backgroundColor: colors.primary }]}
+            onPress={() => onChange(m.key)}
+          >
+            <Ionicons name={m.icon} size={15} color={on ? 'white' : colors.textMuted} />
+            <Text style={[styles.modeBtnText, { color: on ? 'white' : colors.textMuted }]}>{m.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** "Create listing" mode: pick one of your not-yet-listed cards -> composer. */
+function ListFromCollection() {
+  const { user } = useAuth();
+  const { colors } = useTheme();
+  const router = useRouter();
+  const [filter, setFilter] = useState('');
+
+  const { data: cards, isLoading } = useQuery({
+    queryKey: ['listable-cards', user?.id],
+    enabled: isSupabaseConfigured && Boolean(user?.id),
+    queryFn: async () => {
+      const { data, error } = await supabase!
+        .from('user_cards')
+        .select('id, is_for_trade, sale_price, condition, grade, finish, card:cards(id, name, number, image_url_small, set:card_sets(name))')
+        .eq('owner_id', user!.id)
+        .order('acquired_at', { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []).filter((r: any) => r.card) as any[];
+    },
+  });
+
+  const visible = (cards ?? []).filter(
+    (r: any) => !filter.trim() || r.card.name.toLowerCase().includes(filter.trim().toLowerCase())
+  );
+
+  if (isLoading) return <ActivityIndicator style={{ marginTop: 48 }} />;
+
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={[styles.searchBar, { backgroundColor: colors.surface, marginHorizontal: 12, marginBottom: 8 }]}>
+        <Ionicons name="search" size={18} color="#9CA3AF" />
+        <TextInput
+          style={[styles.input, { color: colors.text }]}
+          placeholder="Search your collection"
+          placeholderTextColor="#9CA3AF"
+          autoCapitalize="none"
+          value={filter}
+          onChangeText={setFilter}
+        />
+      </View>
+      <FlatList
+        data={visible}
+        keyExtractor={(r: any) => r.id}
+        contentContainerStyle={{ paddingHorizontal: 12, paddingBottom: 24, gap: 8 }}
+        ListEmptyComponent={
+          <Text style={[styles.listEmpty, { color: colors.textMuted }]}>
+            {cards?.length ? 'No matches.' : 'Nothing in your collection yet — add cards first, then list them.'}
+          </Text>
+        }
+        renderItem={({ item: r }: { item: any }) => (
+          <Pressable
+            style={[styles.listRow, { backgroundColor: colors.surface }]}
+            onPress={() => router.push(`/list-card/${r.id}` as any)}
+          >
+            {r.card.image_url_small ? (
+              <Image source={{ uri: r.card.image_url_small }} style={styles.listThumb} contentFit="contain" />
+            ) : (
+              <View style={styles.listThumb} />
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.listName, { color: colors.text }]} numberOfLines={1}>{r.card.name}</Text>
+              <Text style={[styles.listMeta, { color: colors.textMuted }]} numberOfLines={1}>
+                {[r.card.set?.name, r.grade ?? r.condition?.replace('_', ' ')].filter(Boolean).join(' · ')}
+              </Text>
+            </View>
+            {r.is_for_trade ? (
+              <Text style={styles.listedBadge}>{r.sale_price != null ? `€${r.sale_price}` : 'Listed'}</Text>
+            ) : (
+              <Ionicons name="chevron-forward" size={17} color={colors.textFaint} />
+            )}
+          </Pressable>
+        )}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  modeSwitch: { flexDirection: 'row', margin: 12, marginBottom: 8, borderRadius: 12, padding: 3, gap: 3 },
+  modeBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    borderRadius: 10, paddingVertical: 8,
+  },
+  modeBtnText: { fontSize: 13, fontWeight: '600' },
+  listRow: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 10 },
+  listThumb: { width: 36, height: 50, borderRadius: 4, backgroundColor: '#0001' },
+  listName: { fontSize: 14, fontWeight: '600' },
+  listMeta: { fontSize: 12, marginTop: 1, textTransform: 'capitalize' },
+  listedBadge: { color: '#059669', fontSize: 12, fontWeight: '700' },
+  listEmpty: { textAlign: 'center', marginTop: 48, fontSize: 14, paddingHorizontal: 32, lineHeight: 20 },
   container: { flex: 1 },
   searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   searchBar: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 10, backgroundColor: '#F3F4F6' },
