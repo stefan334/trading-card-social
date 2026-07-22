@@ -71,10 +71,15 @@ Deno.serve(async (req) => {
           email: user.email ?? undefined,
           business_type: 'individual',
           capabilities: { transfers: { requested: true } },
-          // Sellers only RECEIVE transfers (the platform charges buyers), so the
-          // 'recipient' agreement applies — it drops the merchant questionnaire
-          // (website, product description, MCC) from onboarding entirely.
-          tos_acceptance: { service_agreement: 'recipient' },
+          // Same-country platforms must use the full service agreement (Stripe
+          // rejects 'recipient' for RO->RO), so instead we PREFILL the merchant
+          // profile — Stripe then skips the website/product/category questions
+          // and onboarding is just identity basics.
+          business_profile: {
+            mcc: '5945', // Hobby, Toy & Game Shops — trading cards
+            product_description:
+              'Private collector selling trading cards to other collectors on CardLink, a peer-to-peer marketplace.',
+          },
           metadata: { cardlink_user_id: user.id },
         });
         accountId = account.id;
