@@ -115,6 +115,9 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Unknown action' }, { status: 400, headers: CORS });
   } catch (e) {
     console.error('stripe-onboard failure', e);
-    return Response.json({ error: 'Stripe request failed' }, { status: 502, headers: CORS });
+    // Stripe's message is user-safe and names the actual problem (e.g. Connect
+    // not yet enabled on the platform account).
+    const msg = (e as any)?.raw?.message ?? (e as any)?.message ?? 'Stripe request failed';
+    return Response.json({ error: msg }, { status: 502, headers: CORS });
   }
 });

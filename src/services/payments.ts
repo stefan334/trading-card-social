@@ -25,6 +25,16 @@ export interface SellerStatus {
 /** The URL the Stripe browser flow bounces back to (via stripe-redirect). */
 const RETURN_URL = 'cardlink://stripe-onboard';
 
+/** Non-2xx edge responses carry the reason in the body — surface it. */
+async function unwrapFunctionError(error: unknown): Promise<Error> {
+  const ctx = (error as any)?.context;
+  if (ctx?.json) {
+    const body = await ctx.json().catch(() => null);
+    if (body?.error) return new Error(body.error);
+  }
+  return error instanceof Error ? error : new Error('Request failed');
+}
+
 /**
  * Open (or resume) Stripe Express onboarding in an in-app browser tab.
  * Resolves when the tab closes; callers should then refreshSellerStatus().
@@ -34,7 +44,7 @@ export async function startSellerOnboarding(): Promise<void> {
   const { data, error } = await supabase.functions.invoke('stripe-onboard', {
     body: { action: 'start' },
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   if (!data?.url) throw new Error('No onboarding link returned');
   await WebBrowser.openAuthSessionAsync(data.url, RETURN_URL);
 }
@@ -45,7 +55,7 @@ export async function refreshSellerStatus(): Promise<SellerStatus> {
   const { data, error } = await supabase.functions.invoke('stripe-onboard', {
     body: { action: 'status' },
   });
-  if (error) throw error;
+  if (error) throw await unwrapFunctionError(error);
   return data as SellerStatus;
 }
 
@@ -76,15 +86,7 @@ export async function createCheckout(
   const { data, error } = await supabase.functions.invoke('stripe-checkout', {
     body: { listing_id: listingId, shipping_address: address },
   });
-  if (error) {
-    // Edge errors carry the human-readable reason in the response body.
-    const ctx = (error as any)?.context;
-    if (ctx?.json) {
-      const body = await ctx.json().catch(() => null);
-      if (body?.error) throw new Error(body.error);
-    }
-    throw error;
-  }
+  if (error) throw await unwrapFunctionError(error);
   return data as CheckoutSession;
 }
 

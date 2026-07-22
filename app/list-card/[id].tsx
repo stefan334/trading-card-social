@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
+import { useSellerAccount } from '../../src/hooks/useSellerAccount';
 import { isSupabaseConfigured, supabase } from '../../src/services/supabase/client';
 import { uploadImage } from '../../src/services/supabase/storage';
 import { useTheme } from '../../src/theme';
@@ -27,6 +28,7 @@ export default function ListCardScreen() {
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const { publishListing, toggleForTrade } = useCollectionActions();
+  const { data: sellerAccount } = useSellerAccount();
 
   const { data: copy, isLoading } = useQuery({
     queryKey: ['list-card', id],
@@ -101,7 +103,27 @@ export default function ListCardScreen() {
         price: parsedPrice,
         description: description || null,
       },
-      { onSuccess: () => router.back() }
+      {
+        onSuccess: () => {
+          // Priced listing but payouts not set up -> the listing exists but
+          // nobody can buy it. Walk the seller to the missing step now.
+          if (parsedPrice != null && !sellerAccount?.chargesEnabled) {
+            Alert.alert(
+              'Listed! One step left to sell',
+              'Buyers can purchase this card once you set up payouts (2 minutes, done once).',
+              [
+                { text: 'Later', style: 'cancel', onPress: () => router.back() },
+                {
+                  text: 'Set up payouts',
+                  onPress: () => router.replace('/seller-payouts' as any),
+                },
+              ]
+            );
+          } else {
+            router.back();
+          }
+        },
+      }
     );
   }
 

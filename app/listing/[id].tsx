@@ -229,11 +229,29 @@ export default function ListingScreen() {
               </>
             )}
           </Pressable>
+          {!buyable && listing.salePrice != null && listing.listingPhotos.length > 0 && canCharge === false ? (
+            <Text style={[styles.buyHint, { color: colors.textMuted }]}>
+              This seller hasn't enabled purchases yet — you can still propose a trade or message them.
+            </Text>
+          ) : null}
         </View>
       ) : mine ? (
-        <Text style={[styles.mineNote, { color: colors.textMuted }]}>
-          This is your listing — manage it from the card page.
-        </Text>
+        <>
+          <Text style={[styles.mineNote, { color: colors.textMuted }]}>
+            This is your listing — manage it from the card page.
+          </Text>
+          {listing.salePrice != null && canCharge === false ? (
+            <Link href={'/seller-payouts' as any} asChild>
+              <Pressable style={styles.payoutNudge}>
+                <Ionicons name="alert-circle" size={17} color="#B45309" />
+                <Text style={styles.payoutNudgeText}>
+                  Buyers can't purchase yet — finish payout setup
+                </Text>
+                <Ionicons name="chevron-forward" size={15} color="#B45309" />
+              </Pressable>
+            </Link>
+          ) : null}
+        </>
       ) : null}
 
       {/* More from this seller */}
@@ -292,6 +310,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#059669', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16,
     flexGrow: 1, flexBasis: '100%',
   },
+  buyHint: { fontSize: 12, lineHeight: 17, flexBasis: '100%', textAlign: 'center', marginTop: 2 },
+  payoutNudge: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#B4530922',
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginTop: 8,
+  },
+  payoutNudgeText: { color: '#B45309', fontSize: 13, fontWeight: '600', flex: 1 },
   offerBtn: { flex: 1.4, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 14 },
   offerBtnText: { color: 'white', fontWeight: '800', fontSize: 15 },
   msgBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderRadius: 12, paddingVertical: 14 },
