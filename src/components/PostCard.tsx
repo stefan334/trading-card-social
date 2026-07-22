@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { FeedItem } from '../hooks/useFeed';
+import { PAYMENTS_ENABLED } from '../config/features';
 import { supabase } from '../services/supabase/client';
 import { useTheme } from '../theme';
 import { formatPrice, formatRelativeTime } from '../utils/time';
@@ -208,7 +209,7 @@ export function PostCard({ item, meId }: { item: FeedItem; meId?: string }) {
 
       {canOffer ? (
         <View style={styles.actionRow}>
-          {item.body && item.cards.length === 1 ? (
+          {PAYMENTS_ENABLED && item.body && item.cards.length === 1 ? (
             <Pressable style={[styles.offerBtn, styles.buyBtn]} onPress={() => buyFromFeed(item.cards[0].id)}>
               <Ionicons name="bag-check" size={16} color="white" />
               <Text style={styles.offerText}>Buy {formatPrice(Number(item.body), 'EUR')}</Text>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { showToast, toastMessage } from '../src/components/Toast';
+import { PAYMENTS_ENABLED } from '../src/config/features';
 import { useAuth } from '../src/context/AuthContext';
 import { supabase } from '../src/services/supabase/client';
 import { useThemeMode, type ThemeMode } from '../src/theme';
@@ -158,8 +159,12 @@ export default function SettingsScreen() {
       <Text style={[styles.section, { color: theme.colors.textMuted }]}>Account</Text>
       <View style={groupStyle}>
         <Row icon="create-outline" label="Edit profile" onPress={() => router.push('/edit-profile')} />
-        <Row icon="receipt-outline" label="My orders" onPress={() => router.push('/orders' as any)} />
-        <Row icon="wallet-outline" label="Seller payouts" onPress={() => router.push('/seller-payouts' as any)} />
+        {PAYMENTS_ENABLED ? (
+          <>
+            <Row icon="receipt-outline" label="My orders" onPress={() => router.push('/orders' as any)} />
+            <Row icon="wallet-outline" label="Seller payouts" onPress={() => router.push('/seller-payouts' as any)} />
+          </>
+        ) : null}
         <Row icon="ban-outline" label="Blocked users" onPress={() => router.push('/blocked' as any)} />
         <Row icon="log-out-outline" label="Sign out" tint={theme.colors.danger} labelColor={theme.colors.danger} onPress={confirmSignOut} />
         <Row

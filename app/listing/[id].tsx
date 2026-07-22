@@ -11,6 +11,7 @@ import { useChatActions } from '../../src/hooks/useChatActions';
 import { useListing, useSellerListings } from '../../src/hooks/useListing';
 import { useTraderRatings } from '../../src/hooks/useTraderRatings';
 import { sellerCanCharge } from '../../src/services/payments';
+import { PAYMENTS_ENABLED } from '../../src/config/features';
 import { useTheme } from '../../src/theme';
 import { formatPrice, formatRelativeTime } from '../../src/utils/time';
 
@@ -31,7 +32,7 @@ export default function ListingScreen() {
   const { data: listing, isLoading } = useListing(id);
   const { data: canCharge } = useQuery({
     queryKey: ['seller-can-charge', listing?.owner?.id],
-    enabled: Boolean(listing?.owner?.id),
+    enabled: PAYMENTS_ENABLED && Boolean(listing?.owner?.id),
     queryFn: () => sellerCanCharge(listing!.owner!.id),
   });
   const { data: prices } = useCardPrices(listing ? [listing.cardId] : []);
@@ -48,6 +49,7 @@ export default function ListingScreen() {
   const mine = user?.id === listing.owner?.id;
   // Buyable = priced + photographed + the seller finished payout setup.
   const buyable =
+    PAYMENTS_ENABLED &&
     listing.salePrice != null &&
     listing.salePrice > 0 &&
     listing.listingPhotos.length > 0 &&
@@ -199,15 +201,25 @@ export default function ListingScreen() {
         </Link>
       ) : null}
 
-      {/* Actions: one primary entry, the chooser splits money vs cards. */}
+      {/* Actions: one primary entry; with payments live the chooser splits
+          money vs cards, otherwise it's the direct trade-offer flow. */}
       {!mine && listing.owner ? (
         <View style={styles.actions}>
-          <Pressable style={styles.buyBtn} onPress={() => setChooserOpen(true)}>
-            <Ionicons name="bag-check" size={18} color="white" />
-            <Text style={styles.offerBtnText}>
-              {buyable ? `Buy ${formatPrice(listing.salePrice!, 'EUR')} · or offer` : 'Get this card'}
-            </Text>
-          </Pressable>
+          {PAYMENTS_ENABLED ? (
+            <Pressable style={styles.buyBtn} onPress={() => setChooserOpen(true)}>
+              <Ionicons name="bag-check" size={18} color="white" />
+              <Text style={styles.offerBtnText}>
+                {buyable ? `Buy ${formatPrice(listing.salePrice!, 'EUR')} · or offer` : 'Get this card'}
+              </Text>
+            </Pressable>
+          ) : (
+            <Link href={`/trade/new?with=${listing.owner.id}&card=${encodeURIComponent(listing.cardId)}` as any} asChild>
+              <Pressable style={styles.buyBtn}>
+                <Ionicons name="swap-horizontal" size={18} color="white" />
+                <Text style={styles.offerBtnText}>Make an offer</Text>
+              </Pressable>
+            </Link>
+          )}
           <Pressable
             style={[styles.msgBtn, { borderColor: colors.primary }]}
             onPress={message}

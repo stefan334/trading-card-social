@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PAYMENTS_ENABLED } from '../../src/config/features';
 import { useAuth } from '../../src/context/AuthContext';
 import { useCollectionActions } from '../../src/hooks/useCollectionActions';
 import { useKeyboardHeight } from '../../src/hooks/useKeyboardHeight';
@@ -72,6 +73,7 @@ export default function ListCardScreen() {
   // Selling for money requires an active payout account — route the seller
   // through setup BEFORE a priced listing goes live, not after.
   const needsPayoutSetup =
+    PAYMENTS_ENABLED &&
     parsedPrice != null && priceValid && !sellerLoading && sellerAccount?.transfersActive !== true;
 
   async function addPhotos() {
@@ -199,9 +201,11 @@ export default function ListCardScreen() {
         />
       </View>
       <Text style={[styles.hint, { color: colors.textMuted }]}>
-        {parsedPrice != null && priceValid
-          ? `Buyers pay €${(Math.round((parsedPrice * 1.05 + 0.5) * 100) / 100).toFixed(2)} with buyer protection — you receive the full €${parsedPrice.toFixed(2)} (shipping included).`
-          : 'With a price, collectors can buy instantly. Either way, card-for-card offers stay open.'}
+        {PAYMENTS_ENABLED
+          ? parsedPrice != null && priceValid
+            ? `Buyers pay €${(Math.round((parsedPrice * 1.05 + 0.5) * 100) / 100).toFixed(2)} with buyer protection — you receive the full €${parsedPrice.toFixed(2)} (shipping included).`
+            : 'With a price, collectors can buy instantly. Either way, card-for-card offers stay open.'
+          : 'Your asking price, shown to collectors — deals happen via trade offers and chat. Card-for-card offers always stay open.'}
       </Text>
 
       {/* Description — optional */}
