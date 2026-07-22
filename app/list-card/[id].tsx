@@ -28,7 +28,7 @@ export default function ListCardScreen() {
   const insets = useSafeAreaInsets();
   const keyboardHeight = useKeyboardHeight();
   const { publishListing, toggleForTrade } = useCollectionActions();
-  const { data: sellerAccount } = useSellerAccount();
+  const { data: sellerAccount, isLoading: sellerLoading } = useSellerAccount();
 
   const { data: copy, isLoading } = useQuery({
     queryKey: ['list-card', id],
@@ -69,6 +69,10 @@ export default function ListCardScreen() {
   const parsedPrice = price.trim() === '' ? null : Number(price.trim().replace(',', '.'));
   const priceValid = parsedPrice === null || (!Number.isNaN(parsedPrice) && parsedPrice > 0);
   const canPublish = photos.length > 0 && priceValid && !uploading && !publishListing.isPending;
+  // Selling for money requires an active payout account — route the seller
+  // through setup BEFORE a priced listing goes live, not after.
+  const needsPayoutSetup =
+    parsedPrice != null && priceValid && !sellerLoading && sellerAccount?.chargesEnabled !== true;
 
   async function addPhotos() {
     if (uploading) return;
@@ -216,17 +220,49 @@ export default function ListCardScreen() {
         <Text style={styles.errorText}>{(publishListing.error as any)?.message ?? 'Could not publish'}</Text>
       ) : null}
 
-      <Pressable
-        style={[styles.primary, { backgroundColor: colors.primary }, !canPublish && { opacity: 0.5 }]}
-        disabled={!canPublish}
-        onPress={publish}
-      >
-        {publishListing.isPending ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <Text style={styles.primaryText}>{editing ? 'Save listing' : 'List for trade'}</Text>
-        )}
-      </Pressable>
+      {needsPayoutSetup ? (
+        <>
+          <View style={styles.payoutGate}>
+            <Ionicons name="wallet-outline" size={18} color="#B45309" />
+            <Text style={styles.payoutGateText}>
+              To sell for money you need payouts set up first — it takes ~2 minutes, once. Your price and
+              photos stay right here.
+            </Text>
+          </View>
+          <Pressable
+            style={[styles.primary, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/seller-payouts' as any)}
+          >
+            <Text style={styles.primaryText}>Set up payouts</Text>
+          </Pressable>
+          <Pressable
+            style={styles.tradeOnlyBtn}
+            disabled={photos.length === 0 || publishListing.isPending}
+            onPress={() =>
+              publishListing.mutate(
+                { userCardId: copy.id, cardId: copy.card_id, photos, price: null, description: description || null },
+                { onSuccess: () => router.back() }
+              )
+            }
+          >
+            <Text style={[styles.tradeOnlyText, { color: colors.primary }, photos.length === 0 && { opacity: 0.5 }]}>
+              or list for card trades only (no price)
+            </Text>
+          </Pressable>
+        </>
+      ) : (
+        <Pressable
+          style={[styles.primary, { backgroundColor: colors.primary }, !canPublish && { opacity: 0.5 }]}
+          disabled={!canPublish}
+          onPress={publish}
+        >
+          {publishListing.isPending ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text style={styles.primaryText}>{editing ? 'Save listing' : 'List for trade'}</Text>
+          )}
+        </Pressable>
+      )}
       {photos.length === 0 ? (
         <Text style={[styles.gateNote, { color: colors.textMuted }]}>Add at least one photo to list this card.</Text>
       ) : null}
@@ -271,4 +307,11 @@ const styles = StyleSheet.create({
   gateNote: { fontSize: 12, textAlign: 'center' },
   unlistBtn: { alignItems: 'center', paddingVertical: 12 },
   unlistText: { color: '#DC2626', fontSize: 14, fontWeight: '600' },
+  payoutGate: {
+    flexDirection: 'row', gap: 10, alignItems: 'flex-start', backgroundColor: '#B4530922',
+    borderRadius: 10, padding: 12, marginTop: 12,
+  },
+  payoutGateText: { flex: 1, color: '#B45309', fontSize: 13, lineHeight: 18 },
+  tradeOnlyBtn: { alignItems: 'center', paddingVertical: 6 },
+  tradeOnlyText: { fontSize: 14, fontWeight: '600' },
 });
